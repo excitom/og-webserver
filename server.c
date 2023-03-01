@@ -27,15 +27,17 @@ void parseArgs(int, char**);
 int epollCreate();
 int createBindAndListen(int);
 void cleanup(int);
-void sprint_buffer(const char *, int);
 void doTrace (char, unsigned char*, int);
 void doDebug (unsigned char*);
+void processInput(int);
 int sendData(int, char*, int);
-int recvData(int, char*, int);
+int recvData(int, unsigned char*, int);
 
-unsigned char buffer[4096];  // general purpose I/O buffer
+#define BUFF_SIZE 4096
+unsigned char buffer[BUFF_SIZE];  // general purpose I/O buffer
 
-// global flags
+// global variables
+int fdCount = 1;   // keep track of open sockets (for debug)
 int debug = 0;
 int trace = 0;
 unsigned short port = 8080; // listening port
@@ -43,12 +45,12 @@ unsigned short port = 8080; // listening port
 /**
  * MAIN function
  */
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 
     parseArgs(argc, argv);
 
-    int fdCount = 1;   // keep track of open sockets (for debug)
 
     int epollfd = epollCreate();
 
@@ -89,16 +91,16 @@ int main(int argc, char *argv[])
         // Loop over returned events
         //
         for (int i = 0; i < rval; i++) {
-            ssize_t rc;         // returm code from sys call
             int clientsfd;      // descriptor for client connection
             uint32_t events;    // events map
             events = epoll_events[i].events;
             int fd = epoll_events[i].data.fd;
+ printf("sockfd %d fd %d returned %d\n", sockfd, fd, events);
 
             //
             // Misc error
             //
-            if (events & EPOLLERR) {
+            if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) {
                 if (fd == sockfd) {
                     snprintf(buffer, sizeof(buffer), "EPoll on %d fds failed: %m\n", fdCount);
                     doDebug(buffer);
@@ -113,86 +115,7 @@ int main(int argc, char *argv[])
             }
 
             //
-            // Other end of the connection hung up, we can't write any more
-            //
-            if (events & EPOLLHUP) {
-                if (fd == sockfd) {
-                    snprintf(buffer, sizeof(buffer), "EPoll on %d fds failed: %m\n", fdCount);
-                    doDebug(buffer);
-                    cleanup(sockfd);
-                } else {
-                    snprintf(buffer, sizeof(buffer), "Closing socket with sockfd %d\n", fd);
-                    doDebug(buffer);
-                    shutdown(fd, SHUT_RDWR);
-                    close(fd);
-                    continue;
-                }
-            }
-
-            //
-            // Other end of the connection hung up, we can't read any more
-            //
-            if (events & EPOLLRDHUP) {
-                if (fd == sockfd) {
-                    snprintf(buffer, sizeof(buffer), "EPoll on %d fds failed: %m\n", fdCount);
-                    doDebug(buffer);
-                    cleanup(sockfd);
-                } else {
-                    snprintf(buffer, sizeof(buffer), "Closing socket with sockfd %d\n", fd);
-                    doDebug(buffer);
-                    shutdown(fd, SHUT_RDWR);
-                    close(fd);
-                    continue;
-                }
-            }
-
-            //
-            // There is data coming in on a socket
-            //
-            if (events & EPOLLOUT) {
-                if (fd != sockfd) {
-                    rc = snprintf(buffer, sizeof(buffer), "HTTP/1.1 200 OK\r\n\r\nContent-Type: text/html\r\n\r\n<HTML>Hello socket %d from server socket %d!\r\n</HTML>\r\n", fd, sockfd);
-                    while ((rc = send(fd, buffer, rc, 0)) < 0) {
-                        if ((fd < 0) && (errno != EINTR)) {
-                            snprintf(buffer, sizeof(buffer), "Send to socket %d failed: %m\n", fd);
-                            doDebug(buffer);
-                            fdCount--;
-                            shutdown(fd, SHUT_RDWR);
-                            close(fd);
-                            continue;
-                        }
-                    }
-
-                    if (rc == 0) {
-                        snprintf(buffer, sizeof(buffer), "Closing socket with sockfd %d\n", fd);
-                        doDebug(buffer);
-                        fdCount--;
-                        shutdown(fd, SHUT_RDWR);
-                        close(fd);
-                        continue;
-                    } else if (rc > 0) {
-                        printf("Sent '");
-                        sprint_buffer(buffer, rc);
-                        printf("' to socket with sockfd %d\n", fd);
-
-                        ev.events = EPOLLIN;
-                        ev.data.u64 = 0LL;
-                        ev.data.fd = fd;
-
-                        if (epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev) < 0) {
-                            snprintf(buffer, sizeof(buffer), "Couldn't modify client socket %d in epoll set: %m\n", fd);
-                            doDebug(buffer);
-                            cleanup(sockfd);      
-                        }
-                    }
-                } else {
-                    snprintf(buffer, sizeof(buffer), "Unexpected input from sockfd %d, ignored\n", fd);
-                    doDebug(buffer);
-                }
-            }
-
-            //
-            // There is data to write to a socket
+            // There is data from a socket
             //
             if (events & EPOLLIN) {
                 //
@@ -233,47 +156,9 @@ int main(int argc, char *argv[])
                     fdCount++;
                 } else {
                     //
-                    // Read the incoming data
+                    // Process the incoming data from a socket
                     //
-                    while ((rc = recv(fd, buffer, sizeof(buffer), 0)) < 0) {
-                        if ((fd < 0) && (errno != EINTR)) {
-                            snprintf(buffer, sizeof(buffer), "Receive from socket %d failed: %m\n", fd);
-                            doDebug(buffer);
-                            fdCount--;
-                            shutdown(fd, SHUT_RDWR);
-                            close(fd);
-                            continue;
-                        }
-                    }
-
-                    //
-                    // If recv() returned 0 then the other end closed 
-                    //
-                    if (rc == 0) {
-                        snprintf(buffer, sizeof(buffer), "Closing socket with sockfd %d\n", fd);
-                        doDebug(buffer);
-                        fdCount--;
-                        shutdown(fd, SHUT_RDWR);
-                        close(fd);
-                        continue;
-                    } else if (rc > 0) {
-                        printf("Received '");
-                        sprint_buffer(buffer, rc);
-                        printf("' from socket with sockfd %d\n", fd);
-
-                        //
-                        // Make sure the socket is ready for read and write
-                        //
-                        ev.events = EPOLLIN | EPOLLOUT;
-                        ev.data.u64 = 0LL;
-                        ev.data.fd = fd;
-
-                        if (epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev) < 0) {
-                            snprintf(buffer, sizeof(buffer), "Couldn't modify client socket %d in epoll set: %m\n", fd);
-                            doDebug(buffer);
-                            cleanup(sockfd);      
-                        }
-                    }
+                    processInput(fd);
                 }
             } // End, process an event
         } // End, loop over returned events
@@ -285,7 +170,8 @@ int main(int argc, char *argv[])
  *
  * Returns: file descriptor
  */
-int epollCreate()
+int
+epollCreate()
 {
 
     int pollsize = 1;   // deprecated parameter, but must be > 0
@@ -307,7 +193,8 @@ int epollCreate()
  *
  * Returns: socket file descriptor
  */
-int createBindAndListen(int port)
+int
+createBindAndListen(int port)
 {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -359,23 +246,10 @@ int createBindAndListen(int port)
 }
 
 /**
- * Output a some data
- */
-void sprint_buffer(const char *buffer, int size)
-{
-    for (int i = 0; i < size; i++)
-    {
-        if (isprint(buffer[i]))
-            printf("%c", buffer[i]);
-        else
-            printf("\\0x%02X", buffer[i]);
-    }
-}
-
-/**
  * Parse command line args
  */
-void parseArgs(int argc, char* argv[])
+void
+parseArgs(int argc, char* argv[])
 {
     int c;
     while ((c = getopt(argc, argv, "hdtp:")) != EOF)
@@ -405,59 +279,64 @@ void parseArgs(int argc, char* argv[])
 }
 
 /**
+ * Process input
+ */
+void
+processInput(int fd)
+{
+    unsigned char inbuff[BUFF_SIZE];
+    int received = recvData(fd, (unsigned char *)&inbuff, sizeof(inbuff));
+    if (received > 0) {
+        snprintf(buffer, sizeof(buffer), "Received %d bytes from fd %d\n", received, fd);
+        doDebug(buffer);
+        int sz = snprintf(buffer, sizeof(buffer), "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<HTML>Hello socket %d!\r\n</HTML>\r\n\r\n", fd);
+        int sent = sendData(fd, buffer, sz);
+    } else {
+        // no more data to read
+        shutdown(fd, SHUT_RDWR);
+        close(fd);
+    }
+}
+
+/**
  * Receive data from a socket.
  */
-int recvData(int fd, char* ptr, int nbytes)
+int
+recvData(int fd, unsigned char* ptr, int nbytes)
 {
-    char *tp = ptr;
-    int nleft = nbytes;
+    unsigned char *p = ptr;
+    int n = 0;
     int received = 0;
-    while (nleft > 0) {
-        errno = 0;
-        int nrecv = recv(fd, ptr, nleft, 0);
-        if (nrecv == -1) {
-            if(errno == EINTR) {
-                continue;
-            }
-            else {
-                //
-                // Read from a non-blocking socket, and
-                // there's no more data, though the connection
-                // is still open.
-                //
-                nbytes = received;
-                break;
-            }
+    while ((n = recv(fd, p, nbytes, 0)) < 0) {
+        if (errno != EINTR) {
+            snprintf(buffer, sizeof(buffer), "Receive from socket %d failed: %m\n", fd);
+            doDebug(buffer);
+            fdCount--;
+            shutdown(fd, SHUT_RDWR);
+            close(fd);
+            return(0);
         }
-        if (nrecv > nleft)
-            return -1;
-        received += nrecv;
-        if (nrecv > 0) {
-            nleft -= nrecv;
-            ptr   += nrecv;
-        }
-        if (nrecv == 0) {
-            //
-            // Read from a non-blocking socket, and
-            // there no more data, and the connection is closed.
-            //
-            nbytes = received;
-            break;
-        }
+        nbytes -= n;        // reduce buffer size by amount received
+        received += n;      // increment amount received
+        p += n;             // advance the buffer pointer past received data
     }
-    doTrace( 'R', (unsigned char *)tp, nbytes);
-    return nbytes;
+    received += n;
+    doTrace( 'R', ptr, received);
+    return received;
 }
 
 /**
  * Send data to a socket
  */
-int sendData(int fd, char* ptr, int nbytes)
+int
+sendData(int fd, char* ptr, int nbytes)
 {
     doTrace( 'S', (unsigned char *)ptr, nbytes);
     int nleft = nbytes;
+printf("sending %d bytes\n", nbytes);
     while (nleft > 0) {
         int nsent = send(fd, ptr, nleft, 0);
+printf("send %d bytes\n", nsent);
         if (nsent > nleft)
             return -1;
         if (nsent > 0) {
@@ -465,6 +344,11 @@ int sendData(int fd, char* ptr, int nbytes)
             ptr   += nsent;
         }
         else if (!(nsent == -1 && errno != EINTR)) {
+            snprintf(buffer, sizeof(buffer), "Send to socket %d failed: %m\n", fd);
+            doDebug(buffer);
+            fdCount--;
+            shutdown(fd, SHUT_RDWR);
+            close(fd);
             return nsent;
         }
     }
@@ -474,7 +358,8 @@ int sendData(int fd, char* ptr, int nbytes)
 /**
  * Verbose trace
  */
-void doTrace (char direction, unsigned char *p, int bytes)
+void
+doTrace (char direction, unsigned char *p, int bytes)
 {
     if (!trace)
         return;
