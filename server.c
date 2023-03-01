@@ -333,10 +333,8 @@ sendData(int fd, char* ptr, int nbytes)
 {
     doTrace( 'S', (unsigned char *)ptr, nbytes);
     int nleft = nbytes;
-printf("sending %d bytes\n", nbytes);
     while (nleft > 0) {
         int nsent = send(fd, ptr, nleft, 0);
-printf("send %d bytes\n", nsent);
         if (nsent > nleft)
             return -1;
         if (nsent > 0) {
