@@ -13,5 +13,11 @@ int recvData(int, unsigned char*, int);
 void getTimestamp(unsigned char *);
 
 #define BUFF_SIZE 4096
-
 #define TIME_BUF 256
+
+// global variables
+struct globalVars {
+	int debug;
+	int trace;
+	unsigned short port;
+};

@@ -22,11 +22,10 @@
 #include "server.h"
 
 // global variables
-int fdCount = 1;   // keep track of open sockets (for debug)
-int debug = 0;
-int trace = 0;
-unsigned short port = 8080; // listening port
-unsigned char buffer[BUFF_SIZE];  // general purpose I/O buffer
+struct globalVars g;
+
+unsigned char buffer[BUFF_SIZE];
+int fdCount = 1;
 
 /**
  * MAIN function
@@ -34,11 +33,15 @@ unsigned char buffer[BUFF_SIZE];  // general purpose I/O buffer
 int
 main(int argc, char *argv[])
 {
+	g.debug = 0;
+	g.trace = 0;
+	g.port = 8080;
+
 	parseArgs(argc, argv);
 
 	int epollfd = epollCreate();
 
-	int sockfd = createBindAndListen(port);
+	int sockfd = createBindAndListen(g.port);
 
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
@@ -238,13 +241,13 @@ parseArgs(int argc, char* argv[])
 	while ((c = getopt(argc, argv, "hdtp:")) != EOF)
 		switch(c) {
 			case 'd':
-				debug = 1;
+				g.debug = 1;
 				break;
 			case 't':
-				trace = 1;
+				g.trace = 1;
 				break;
 			case 'p':
-				port = atoi(optarg);
+				g.port = atoi(optarg);
 				break;
 			case 'h':
 				printf("Tom's OG web server\n");
@@ -344,7 +347,7 @@ sendData(int fd, char* ptr, int nbytes)
 void
 doTrace (char direction, unsigned char *p, int bytes)
 {
-	if (!trace)
+	if (!g.trace)
 		return;
 
 	int f, l, i;
@@ -387,7 +390,7 @@ doTrace (char direction, unsigned char *p, int bytes)
  * Note: Assumes a formatted string input.
  */
 void doDebug(unsigned char* buffer) {
-	if (!debug) {
+	if (!g.debug) {
 		return;
 	}
 	fprintf(stderr, buffer);
