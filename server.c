@@ -24,7 +24,7 @@
 // global variables
 struct globalVars g;
 
-unsigned char buffer[BUFF_SIZE];
+unsigned char* buffer;
 int fdCount = 1;
 
 /**
@@ -36,6 +36,7 @@ main(int argc, char *argv[])
 	g.debug = 0;
 	g.trace = 0;
 	g.port = 8080;
+	buffer = malloc(BUFF_SIZE);
 
 	parseArgs(argc, argv);
 
@@ -49,7 +50,7 @@ main(int argc, char *argv[])
 	ev.data.fd = sockfd;
 
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sockfd, &ev) < 0) {
-		snprintf(buffer, sizeof(buffer), "Couldn't add server socket %d to epoll set: %m\n", sockfd);
+		snprintf(buffer, BUFF_SIZE, "Couldn't add server socket %d to epoll set: %m\n", sockfd);
 		doDebug(buffer);
 		cleanup(sockfd);	  
 	}
@@ -58,7 +59,7 @@ main(int argc, char *argv[])
 	// Main event loop
 	//
 	while(1) {
-		snprintf(buffer, sizeof(buffer), "Starting epoll_wait on %d fds\n", fdCount);
+		snprintf(buffer, BUFF_SIZE, "Starting epoll_wait on %d fds\n", fdCount);
 		doDebug(buffer);
 
 		int rval;
@@ -68,7 +69,7 @@ main(int argc, char *argv[])
 		//
 		while ((rval = epoll_wait(epollfd, epoll_events, EPOLL_ARRAY_SIZE, -1)) < 0) {
 			if ((rval < 0) && (errno != EINTR)) {
-				snprintf(buffer, sizeof(buffer), "EPoll on %d fds failed: %m\n", fdCount);
+				snprintf(buffer, BUFF_SIZE, "EPoll on %d fds failed: %m\n", fdCount);
 				doDebug(buffer);
 				cleanup(sockfd);
 			}
@@ -88,11 +89,11 @@ main(int argc, char *argv[])
 			//
 			if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) {
 				if (fd == sockfd) {
-					snprintf(buffer, sizeof(buffer), "EPoll on %d fds failed: %m\n", fdCount);
+					snprintf(buffer, BUFF_SIZE, "EPoll on %d fds failed: %m\n", fdCount);
 					doDebug(buffer);
 					cleanup(sockfd);
 				} else {
-					snprintf(buffer, sizeof(buffer), "Closing socket with sockfd %d\n", fd);
+					snprintf(buffer, BUFF_SIZE, "Closing socket with sockfd %d\n", fd);
 					doDebug(buffer);
 					shutdown(fd, SHUT_RDWR);
 					close(fd);
@@ -112,17 +113,18 @@ main(int argc, char *argv[])
 					socklen_t salen = sizeof(peeraddr);
 					while ((clientsfd = accept(sockfd, (struct sockaddr *) &peeraddr, &salen)) < 0) {
 						if ((clientsfd < 0) && (errno != EINTR)) {
-							snprintf(buffer, sizeof(buffer), "Accept on socket %d failed: %m\n", sockfd);
+							snprintf(buffer, BUFF_SIZE, "Accept on socket %d failed: %m\n", sockfd);
 							doDebug(buffer);
 							cleanup(sockfd);
 						}
 					}
 
-					if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, buffer, sizeof(buffer)) != NULL) {
-						snprintf(buffer, sizeof(buffer), "Accepted connection from %s:%u, assigned new sockfd %d\n", buffer, ntohs(peeraddr.sin_port), clientsfd);
+					char ipinput[INET_ADDRSTRLEN];
+					if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, ipinput, BUFF_SIZE) != NULL) {
+						snprintf(buffer, BUFF_SIZE, "Accepted connection from %s:%u, assigned new sockfd %d\n", ipinput, ntohs(peeraddr.sin_port), clientsfd);
 						doDebug(buffer);
 					} else {
-						snprintf(buffer, sizeof(buffer), "Failed to convert address from binary to text form: %m\n");
+						snprintf(buffer, BUFF_SIZE, "Failed to convert address from binary to text form: %m\n");
 						doDebug(buffer);
 					}
 
@@ -134,7 +136,7 @@ main(int argc, char *argv[])
 					ev.data.fd = clientsfd;	
 
 					if (epoll_ctl(epollfd, EPOLL_CTL_ADD, clientsfd, &ev) < 0) {
-						snprintf(buffer, sizeof(buffer), "Couldn't add client socket %d to epoll set: %m\n", clientsfd);
+						snprintf(buffer, BUFF_SIZE, "Couldn't add client socket %d to epoll set: %m\n", clientsfd);
 						doDebug(buffer);
 						cleanup(sockfd);	  
 					}
@@ -164,11 +166,11 @@ epollCreate()
 	int epollfd = epoll_create(pollsize);
 
 	if (epollfd < 0) {
-		snprintf(buffer, sizeof(buffer), "Could not create the epoll fd: %m");
+		snprintf(buffer, BUFF_SIZE, "Could not create the epoll fd: %m");
 		doDebug(buffer);
 		exit(1);
 	}
-	snprintf(buffer, sizeof(buffer), "epoll fd created successfully");
+	snprintf(buffer, BUFF_SIZE, "epoll fd created successfully");
 	doDebug(buffer);
 	return epollfd;
 }
@@ -184,14 +186,14 @@ createBindAndListen(int port)
 {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
-		snprintf(buffer, sizeof(buffer), "Could not create new socket: %m\n");
+		snprintf(buffer, BUFF_SIZE, "Could not create new socket: %m\n");
 		doDebug(buffer);
 		exit(1);
 	}
-	snprintf(buffer, sizeof(buffer), "New socket created with sockfd %d\n", sockfd);
+	snprintf(buffer, BUFF_SIZE, "New socket created with sockfd %d\n", sockfd);
 	doDebug(buffer);
 	if (fcntl(sockfd, F_SETFL, O_NONBLOCK)) {
-		snprintf(buffer, sizeof(buffer), "Could not make the socket non-blocking: %m\n");
+		snprintf(buffer, BUFF_SIZE, "Could not make the socket non-blocking: %m\n");
 		doDebug(buffer);
 		close(sockfd);
 		exit(1);
@@ -199,7 +201,7 @@ createBindAndListen(int port)
 
 	int on = 1;
 	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) {
-		snprintf(buffer, sizeof(buffer), "Could not set socket %d option for reusability: %m\n", sockfd);
+		snprintf(buffer, BUFF_SIZE, "Could not set socket %d option for reusability: %m\n", sockfd);
 		doDebug(buffer);
 		close(sockfd);
 		exit(1);
@@ -211,21 +213,21 @@ createBindAndListen(int port)
 	bindaddr.sin_port = htons(port);
 
 	if (bind(sockfd, (struct sockaddr *) &bindaddr, sizeof(struct sockaddr_in)) < 0) {
-		snprintf(buffer, sizeof(buffer), "Could not bind socket %d to address 'INADDR_ANY' and port %u: %m", sockfd, port);
+		snprintf(buffer, BUFF_SIZE, "Could not bind socket %d to address 'INADDR_ANY' and port %u: %m", sockfd, port);
 		doDebug(buffer);
 		close(sockfd);
 		exit(1);
 	} else {
-		snprintf(buffer, sizeof(buffer), "Bound socket %d to address 'INADDR_ANY' and port %u\n", sockfd, port);
+		snprintf(buffer, BUFF_SIZE, "Bound socket %d to address 'INADDR_ANY' and port %u\n", sockfd, port);
 		doDebug(buffer);
 	}
 
 	if (listen(sockfd, SOMAXCONN)) {
-		snprintf(buffer, sizeof(buffer), "Could not start listening on server socket %d: %m\n", sockfd);
+		snprintf(buffer, BUFF_SIZE, "Could not start listening on server socket %d: %m\n", sockfd);
 		doDebug(buffer);
 		cleanup(sockfd);
 	} else {
-		snprintf(buffer, sizeof(buffer), "Server socket %d started listening to address 'INADDR_ANY' and port %u\n", sockfd, port);
+		snprintf(buffer, BUFF_SIZE, "Server socket %d started listening to address 'INADDR_ANY' and port %u\n", sockfd, port);
 		doDebug(buffer);
 	}
 	return sockfd;
@@ -265,28 +267,6 @@ parseArgs(int argc, char* argv[])
 }
 
 /**
- * Process input
- */
-void
-processInput(int fd)
-{
-	unsigned char inbuff[BUFF_SIZE];
-	int received = recvData(fd, (unsigned char *)&inbuff, sizeof(inbuff));
-	if (received > 0) {
-		snprintf(buffer, sizeof(buffer), "Received %d bytes from fd %d\n", received, fd);
-		doDebug(buffer);
-		unsigned char ts[TIME_BUF];
-		getTimestamp((unsigned char *)&ts);
-		int sz = snprintf(buffer, sizeof(buffer), "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nDate: %s\r\n\r\n<HTML><P>Hello socket %d!</P><P>%s</P>\r\n</HTML>\r\n\r\n", ts, fd, ts);
-		int sent = sendData(fd, buffer, sz);
-	} else {
-		// no more data to read
-		shutdown(fd, SHUT_RDWR);
-		close(fd);
-	}
-}
-
-/**
  * Receive data from a socket.
  */
 int
@@ -297,7 +277,7 @@ recvData(int fd, unsigned char* ptr, int nbytes)
 	int received = 0;
 	while ((n = recv(fd, p, nbytes, 0)) < 0) {
 		if (errno != EINTR) {
-			snprintf(buffer, sizeof(buffer), "Receive from socket %d failed: %m\n", fd);
+			snprintf(buffer, BUFF_SIZE, "Receive from socket %d failed: %m\n", fd);
 			doDebug(buffer);
 			fdCount--;
 			shutdown(fd, SHUT_RDWR);
@@ -330,7 +310,7 @@ sendData(int fd, char* ptr, int nbytes)
 			ptr   += nsent;
 		}
 		else if (!(nsent == -1 && errno != EINTR)) {
-			snprintf(buffer, sizeof(buffer), "Send to socket %d failed: %m\n", fd);
+			snprintf(buffer, BUFF_SIZE, "Send to socket %d failed: %m\n", fd);
 			doDebug(buffer);
 			fdCount--;
 			shutdown(fd, SHUT_RDWR);
