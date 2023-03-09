@@ -8,10 +8,11 @@ void cleanup(int);
 void doTrace (char, unsigned char*, int);
 void doDebug (unsigned char*);
 void processInput(int);
-int sendData(int, char*, int);
+int sendData(int, unsigned char*, int);
 int recvData(int, unsigned char*, int);
 void getTimestamp(unsigned char *);
 void sendErrorResponse( int, int, char *);
+void handleGetVerb(int, char *);
 
 #define BUFF_SIZE 4096
 #define TIME_BUF 256
@@ -21,4 +22,5 @@ struct globalVars {
 	int debug;
 	int trace;
 	unsigned short port;
+	char *docRoot;
 };

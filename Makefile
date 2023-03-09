@@ -1,15 +1,39 @@
-objects = server.o getTimestamp.o processInput.o sendErrorResponse.o
-all: $(objects)
+CFLAGS = 
 
-$(objects): %.o: %.c
-	cc -c $< -o $@
+SRCS = server.c \
+	  getTimestamp.c \
+	  processInput.c \
+	  sendErrorResponse.c \
+	  handleGetVerb.c
 
-server: $(objects)
-	cc -lcurl -o server $(objects)
+OBJS = $(SRCS:.c=.o)
+EXE = server
 
-debug: $(objects)
-	cc -c $< -o $@
+RELDIR = release
+RELEXE = $(RELDIR)/$(EXE)
+RELOBJS = $(addprefix $(RELDIR)/, $(OBJS))
+RELCFLAGS = -O3 -DNDBG
+
+DBGDIR = debug
+DBGEXE = $(DBGDIR)/$(EXE)
+DBGOBJS = $(addprefix $(DBGDIR)/, $(OBJS))
+DBGCFLAGS = -O0 -DDBG -g
+
+debug: $(DBGEXE)
+
+$(DBGEXE): $(DBGOBJS)
+	cc $(CFLAGS) $(DBGCFLAGS) -o $(DBGEXE) $^
+
+$(DBGDIR)/%.o: %.c
+	cc -c $(CFLAGS) $(DBGCFLAGS) -o $@ $<
+
+release: $(RELEXE)
+
+$(RELEXE): $(RELOBJS)
+	cc $(CFLAGS) $(RELCFLAGS) -o $(RELEXE) $^
+
+$(RELDIR)/%.o: %.c
+	cc -c $(CFLAGS) $(RELCFLAGS) -o $@ $<
 
 clean:
-	rm -f *.o
-	rm -f server
+	rm -f $(RELEXE) $(RELOBJS) $(DBGEXE) $(DBGOBJS)

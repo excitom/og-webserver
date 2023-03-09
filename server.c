@@ -24,7 +24,7 @@
 // global variables
 struct globalVars g;
 
-unsigned char* buffer;
+char* buffer;
 int fdCount = 1;
 
 /**
@@ -258,12 +258,27 @@ parseArgs(int argc, char* argv[])
 				printf("	-t = turn on tracing\n");
 				printf("	-h = print this message\n");
 				printf("	-p = port on which to listen\n");
+				printf("Positional paramter:\n");
+				printf("	doc_root_path - default /www/og\n");
 				printf("\n");
 				exit(0);
 			default:
 				printf("Unrecognized option %c ignored\n", (char)c);
 				break;
 		}
+	if (optind >= argc) {
+		char d[64] = "/www/og";
+		int len = strlen(d);
+		g.docRoot = malloc(len+1);
+		strcpy(g.docRoot, d);
+	} else {
+		char *d;
+		int len = strlen(argv[optind]);
+		g.docRoot = malloc(len+1);
+		strcpy(g.docRoot, argv[optind]);
+		optind++;
+	}
+	printf("DOCROOT %s\n", g.docRoot);
 }
 
 /**
@@ -297,7 +312,7 @@ recvData(int fd, unsigned char* ptr, int nbytes)
  * Send data to a socket
  */
 int
-sendData(int fd, char* ptr, int nbytes)
+sendData(int fd, unsigned char* ptr, int nbytes)
 {
 	doTrace( 'S', (unsigned char *)ptr, nbytes);
 	int nleft = nbytes;
@@ -361,7 +376,7 @@ doTrace (char direction, unsigned char *p, int bytes)
 		for (i = 0; i < bytes; i++) {
 			fprintf(stderr, "%c", d[i]);
 		}
-		fprintf(stderr, "\n");
+		fputc('\n', stderr);
 	}
 }
 
@@ -375,6 +390,9 @@ doDebug(unsigned char* buffer) {
 		return;
 	}
 	fputs(buffer, stderr);
+	if (!strchr(buffer, '\n')) {
+		fputc('\n', stderr);
+	}
 }
 
 /*

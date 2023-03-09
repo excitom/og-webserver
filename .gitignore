@@ -36,12 +36,14 @@ server
 *.i*86
 *.x86_64
 *.hex
+release/
 
 # Debug files
 *.dSYM/
 *.su
 *.idb
 *.pdb
+debug/
 
 # Kernel Module Compile Results
 *.mod*

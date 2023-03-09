@@ -64,7 +64,17 @@ processInput(int fd)
 			close(fd);
 			return;
 		}
-		printf("VERB: %s\nPATH: %s\nHOST %s\n", verb, path, host);
+		//
+		// Only support the GET verb at this time
+		//
+		if (strcmp(verb, "GET") != 0) {
+			doDebug("Unsupported verb");
+			sendErrorResponse(fd, 405, "Method Not Allowed");
+			shutdown(fd, SHUT_RDWR);
+			close(fd);
+			return;
+		}
+		handleGetVerb(fd, path);
 	}
 
 	return;

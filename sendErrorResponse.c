@@ -27,7 +27,7 @@ sendErrorResponse( int fd, int code, char *msg )
 	int sz1 = snprintf(buffer1, BUFF_SIZE, responseBody, code, msg, code, msg);
 
 	char buffer2[64];
-	int sz2 = snprintf(buffer2, 64, "Content-Length: %d\r\n", sz1);
+	int sz2 = snprintf(buffer2, 64, "Content-Length: %d\r\n\r\n", sz1);
 
 	unsigned char ts[TIME_BUF];
 	getTimestamp((unsigned char *)&ts);
@@ -41,9 +41,9 @@ sendErrorResponse( int fd, int code, char *msg )
 
 	int sz3 = snprintf(buffer3, BUFF_SIZE, responseHeaders, code, msg, ts);
 
-	sendData(fd, buffer1, sz1);
-	sendData(fd, buffer2, sz2);
 	sendData(fd, buffer3, sz3);
+	sendData(fd, buffer2, sz2);
+	sendData(fd, buffer1, sz1);
 	shutdown(fd, SHUT_RDWR);
 	close(fd);
 	return;
