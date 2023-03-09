@@ -12,21 +12,23 @@
 #include "global.h"
 
 /**
- * Process input
+ * Process input from a socket
  */
 void
 processInput(int fd)
 {
-	char *host;
-	char *path;
-	char *verb;
+	char *host = NULL;
+	char *port = NULL;
+	char *path = NULL;
+	char *verb = NULL;
 	char *p;
 	char inbuff[BUFF_SIZE];
-	unsigned char buffer[BUFF_SIZE];
+	char outbuff[BUFF_SIZE];
 
 	int received = recvData(fd, (char *)&inbuff, sizeof(inbuff));
-	printf("RECEIVED %d BYTES\n", received);
-	printf("%s\n", inbuff);
+
+	snprintf(outbuff, BUFF_SIZE, "RECEIVED %d BYTES\n", received);
+	doDebug(outbuff);
 	if (received <= 0) {
 		// no data to read
 		doDebug("NO DATA\n");
@@ -34,13 +36,17 @@ processInput(int fd)
 		close(fd);
 		return;
 	} else {
+		// Expected format:
+		// verb path HTTP/1.1\r\n
+		// Host: nn.nn.nn.nn:pp\r\n
+		// ... other headers we are ignoring
+		//
 		verb = (char *)&inbuff;
 		p = strchr(verb, ' ');
 		*p++ = '\0';
 		path = p;
 		p = strchr(path, ' ');
 		*p++ = '\0';
-		host = NULL;
 		while(*p++) {
 			if (strncmp(p, "Host: ", 6) == 0) {
 				break;
@@ -51,15 +57,15 @@ processInput(int fd)
 			p = strchr(host, '\r');
 			*p = '\0';
 		}
+		if (!verb || !path || ! host) {
+			doDebug("Bad request");
+			sendErrorResponse(fd, 400, "Bad Request");
+			shutdown(fd, SHUT_RDWR);
+			close(fd);
+			return;
+		}
 		printf("VERB: %s\nPATH: %s\nHOST %s\n", verb, path, host);
-		//snprintf(buffer, BUFF_SIZE, "Received %d bytes from fd %d\n", received, fd);
-		//doDebug(buffer);
-
 	}
-		//unsigned char ts[TIME_BUF];
-		//getTimestamp((unsigned char *)&ts);
-		//int sz = snprintf(buffer, BUFF_SIZE, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nDate: %s\r\n\r\n<HTML><P>Hello socket %d!</P><P>%s</P>\r\n</HTML>\r\n\r\n", ts, fd, ts);
-		//int sent = sendData(fd, buffer, sz);
 
 	return;
 }

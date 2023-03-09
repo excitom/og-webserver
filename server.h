@@ -11,6 +11,7 @@ void processInput(int);
 int sendData(int, char*, int);
 int recvData(int, unsigned char*, int);
 void getTimestamp(unsigned char *);
+void sendErrorResponse( int, int, char *);
 
 #define BUFF_SIZE 4096
 #define TIME_BUF 256

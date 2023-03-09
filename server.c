@@ -369,17 +369,19 @@ doTrace (char direction, unsigned char *p, int bytes)
  * Debug print to stderr
  * Note: Assumes a formatted string input.
  */
-void doDebug(unsigned char* buffer) {
+void
+doDebug(unsigned char* buffer) {
 	if (!g.debug) {
 		return;
 	}
-	fprintf(stderr, buffer);
+	fputs(buffer, stderr);
 }
 
 /*
  * Cleanp listening socket and exit
  */
-void cleanup(int sockfd)
+void
+cleanup(int sockfd)
 {
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);

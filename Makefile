@@ -1,4 +1,4 @@
-objects = server.o getTimestamp.o processInput.o
+objects = server.o getTimestamp.o processInput.o sendErrorResponse.o
 all: $(objects)
 
 $(objects): %.o: %.c
