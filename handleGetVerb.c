@@ -23,12 +23,12 @@ handleGetVerb(int sockfd, char *path)
 	char buffer[BUFF_SIZE];
 	strcpy(fullPath, g.docRoot);
 	strcat(fullPath, path);
-	int fd = open(path, O_RDONLY);
+	int fd = open(fullPath, O_RDONLY);
 	if (fd == -1) {
 		int e = errno;
-		snprintf(buffer, BUFF_SIZE, "file open failed: %s\n", strerror(e));
+		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", fullPath, strerror(e));
 		doDebug(buffer);
-		sendErrorResponse(fd, 404, "Not Found");
+		sendErrorResponse(sockfd, 404, "Not Found");
 	} else {
   		int size = lseek(fd, 0, SEEK_END);
 
