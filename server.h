@@ -13,9 +13,16 @@ int recvData(int, unsigned char*, int);
 void getTimestamp(unsigned char *);
 void sendErrorResponse( int, int, char *);
 void handleGetVerb(int, char *);
+void parseMimeTypes();
 
 #define BUFF_SIZE 4096
 #define TIME_BUF 256
+
+struct _mimeTypes {
+	struct _mimeTypes *next;
+	char *mimeType;
+	char *extension;
+};
 
 // global variables
 struct globalVars {
@@ -23,4 +30,6 @@ struct globalVars {
 	int trace;
 	unsigned short port;
 	char *docRoot;
+	char *configPath;
+	struct _mimeTypes *mimeTypes;
 };

@@ -4,7 +4,8 @@ SRCS = server.c \
 	  getTimestamp.c \
 	  processInput.c \
 	  sendErrorResponse.c \
-	  handleGetVerb.c
+	  handleGetVerb.c \
+	  parseMimeTypes.c
 
 OBJS = $(SRCS:.c=.o)
 EXE = server

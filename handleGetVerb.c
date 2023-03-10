@@ -29,32 +29,31 @@ handleGetVerb(int sockfd, char *path)
 		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", fullPath, strerror(e));
 		doDebug(buffer);
 		sendErrorResponse(sockfd, 404, "Not Found");
-	} else {
-  		int size = lseek(fd, 0, SEEK_END);
+	}
+  	int size = lseek(fd, 0, SEEK_END);
 
-		unsigned char ts[TIME_BUF];
-		getTimestamp((unsigned char *)&ts);
+	unsigned char ts[TIME_BUF];
+	getTimestamp((unsigned char *)&ts);
 
-		char *responseHeaders = 
+	char *responseHeaders = 
 "HTTP/1.1 200 OK\r\n"
 "Server: ogws/0.1\r\n"
 "Date: %s\r\n"
 "Content-Type: text/html\r\n"
 "Content-Length: %d\r\n\r\n";
 
-		int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, ts, size);
-		int sent = sendData(sockfd, buffer, sz);
-		if (sent != sz) {
-			doDebug("Problem sending response headers");
-		}
-
-		off_t offset;
-		sent = sendfile(sockfd, fd, &offset, size);
-		if (sent != size) {
-			doDebug("Problem sending response body");
-		}
-		close(fd);
+	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, ts, size);
+	int sent = sendData(sockfd, buffer, sz);
+	if (sent != sz) {
+		doDebug("Problem sending response headers");
 	}
+
+	off_t offset;
+	sent = sendfile(sockfd, fd, &offset, size);
+	if (sent != size) {
+		doDebug("Problem sending response body");
+	}
+	close(fd);
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
 	return;

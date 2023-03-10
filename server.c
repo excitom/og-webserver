@@ -39,6 +39,7 @@ main(int argc, char *argv[])
 	buffer = malloc(BUFF_SIZE);
 
 	parseArgs(argc, argv);
+	parseMimeTypes();
 
 	int epollfd = epollCreate();
 
@@ -258,8 +259,9 @@ parseArgs(int argc, char* argv[])
 				printf("	-t = turn on tracing\n");
 				printf("	-h = print this message\n");
 				printf("	-p = port on which to listen\n");
-				printf("Positional paramter:\n");
-				printf("	doc_root_path - default /www/og\n");
+				printf("Positional paramters:\n");
+				printf("	config_path - default /etc/ogws\n");
+				printf("	doc_root_path - default /www/ogws\n");
 				printf("\n");
 				exit(0);
 			default:
@@ -268,7 +270,23 @@ parseArgs(int argc, char* argv[])
 		}
 	char buffer[BUFF_SIZE];
 	if (optind >= argc) {
-		strcpy(buffer, "/www/og");
+		strcpy(buffer, "/etc/ogws");
+		int len = strlen(buffer);
+		g.configPath = malloc(len+1);
+		strcpy(g.configPath, buffer);
+	} else {
+		int len = strlen(argv[optind]);
+		g.docRoot = malloc(len+1);
+		strcpy(g.docRoot, argv[optind]);
+		optind++;
+	}
+	if (access(g.configPath, R_OK) == -1) {
+		perror("config path not valid:");
+		exit(1);
+	}
+
+	if (optind >= argc) {
+		strcpy(buffer, "/www/ogws");
 		int len = strlen(buffer);
 		g.docRoot = malloc(len+1);
 		strcpy(g.docRoot, buffer);
@@ -282,7 +300,7 @@ parseArgs(int argc, char* argv[])
 		perror("doc root not valid:");
 		exit(1);
 	}
-	snprintf(buffer, BUFF_SIZE, "Document root: %s", g.docRoot);
+	snprintf(buffer, BUFF_SIZE, "Document root: %s \nConfig path: %s", g.docRoot, g.configPath);
 	doDebug(buffer);
 }
 
@@ -395,7 +413,7 @@ doDebug(unsigned char* buffer) {
 		return;
 	}
 	fputs(buffer, stderr);
-	if (!strchr(buffer, '\n')) {
+	if (strchr(buffer, '\n') != NULL) {
 		fputc('\n', stderr);
 	}
 }
