@@ -266,19 +266,24 @@ parseArgs(int argc, char* argv[])
 				printf("Unrecognized option %c ignored\n", (char)c);
 				break;
 		}
+	char buffer[BUFF_SIZE];
 	if (optind >= argc) {
-		char d[64] = "/www/og";
-		int len = strlen(d);
+		strcpy(buffer, "/www/og");
+		int len = strlen(buffer);
 		g.docRoot = malloc(len+1);
-		strcpy(g.docRoot, d);
+		strcpy(g.docRoot, buffer);
 	} else {
-		char *d;
 		int len = strlen(argv[optind]);
 		g.docRoot = malloc(len+1);
 		strcpy(g.docRoot, argv[optind]);
 		optind++;
 	}
-	printf("DOCROOT %s\n", g.docRoot);
+	if (access(g.docRoot, R_OK) == -1) {
+		perror("doc root not valid:");
+		exit(1);
+	}
+	snprintf(buffer, BUFF_SIZE, "Document root: %s", g.docRoot);
+	doDebug(buffer);
 }
 
 /**
