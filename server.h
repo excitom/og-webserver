@@ -15,6 +15,9 @@ void getTimestamp(unsigned char *, int);
 void sendErrorResponse( int, int, char *);
 void handleGetVerb(int, char *);
 void parseMimeTypes();
+void accessLog(char *);
+void errorLog(char *);
+void openLogFiles();
 
 #define BUFF_SIZE 4096
 #define TIME_BUF 256
@@ -35,6 +38,7 @@ struct _mimeTypes {
 struct globalVars {
 	int debug;
 	int trace;
+	int foreground;
 	unsigned short port;
 	char *docRoot;
 	char *configPath;

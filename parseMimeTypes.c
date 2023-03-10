@@ -31,6 +31,7 @@ parseMimeTypes() {
 	if (fd == -1) {
 		int e = errno;
 		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
+		doDebug(buffer);
 		exit(1);
 	}
   	int size = lseek(fd, 0, SEEK_END);

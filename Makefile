@@ -6,6 +6,8 @@ SRCS = server.c \
 	  sendErrorResponse.c \
 	  handleGetVerb.c \
 	  parseMimeTypes.c \
+	  parseArgs.c \
+	  log.c \
 	  daemonize.c
 
 OBJS = $(SRCS:.c=.o)

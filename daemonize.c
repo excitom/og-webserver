@@ -20,7 +20,7 @@ daemonize()
 	//
 	char buffer[BUFF_SIZE];
 	char *p = buffer;
-	if (!g.debug) {
+	if (!g.foreground) {
 		pid_t pid;
 
     	// create new process
@@ -57,6 +57,7 @@ daemonize()
 		if (fd == -1) {
 			int e = errno;
 			snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
+			doDebug(buffer);
 			exit(1);
 		}
 		//
@@ -69,26 +70,7 @@ daemonize()
 	//
 	// Open the web server log and error log files
 	//
-	unsigned char ts[TIME_BUF];
-	getTimestamp((unsigned char *)&ts, LOG_FILE_FORMAT);
-	strcpy(p, g.logPath);
-	strcat(p, "/access.log.");
-	strcat(p, ts);
-	g.accessFd = open(p, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-	if (g.accessFd == -1) {
-		int e = errno;
-		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
-		exit(1);
-	}
-	strcpy(p, g.logPath);
-	strcat(p, "/error.log.");
-	strcat(p, ts);
-	g.errorFd = open(p, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-	if (g.errorFd == -1) {
-		int e = errno;
-		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
-		exit(1);
-	}
+	openLogFiles();
 
 	// close stdin
 	close(0);

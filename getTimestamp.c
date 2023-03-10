@@ -31,7 +31,7 @@ getTimestamp(unsigned char *buf, int opt)
 		strftime(buf, TIME_BUF, "%Y%m%d", ptm);
 	}
 	else if (opt == LOG_RECORD_FORMAT) {
-		strftime(buf, TIME_BUF, "%Y%m%d %H:%M:%S", ptm);
+		strftime(buf, TIME_BUF, "%Y%m%d %H:%M:%S ", ptm);
 	}
 	else {
 		doDebug("Unrecognized log record format");
