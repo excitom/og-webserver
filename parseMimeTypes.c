@@ -30,7 +30,7 @@ parseMimeTypes() {
 	int fd = open(p, O_RDONLY);
 	if (fd == -1) {
 		int e = errno;
-		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", g.configPath, strerror(e));
+		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
 		exit(1);
 	}
   	int size = lseek(fd, 0, SEEK_END);
@@ -121,7 +121,7 @@ parseLine(char *p) {
  * Save an individual mime type in the list
  */
 void
-saveMimeType(char *p, char *mimeType)
+saveMimeType(char *extension, char *mimeType)
 {
 	struct _mimeTypes *mt = addMimeTypeEntry();
 
@@ -131,8 +131,8 @@ saveMimeType(char *p, char *mimeType)
 	mt->mimeType = buff;
 
 	// save the extension
-	buff = malloc(strlen(p)+1);
-	strcpy(buff, p);
+	buff = malloc(strlen(extension)+1);
+	strcpy(buff, extension);
 	mt->extension = buff;
 	return;
 }

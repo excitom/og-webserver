@@ -5,7 +5,8 @@ SRCS = server.c \
 	  processInput.c \
 	  sendErrorResponse.c \
 	  handleGetVerb.c \
-	  parseMimeTypes.c
+	  parseMimeTypes.c \
+	  daemonize.c
 
 OBJS = $(SRCS:.c=.o)
 EXE = server

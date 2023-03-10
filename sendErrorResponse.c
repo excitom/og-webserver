@@ -30,7 +30,7 @@ sendErrorResponse( int fd, int code, char *msg )
 	int sz2 = snprintf(buffer2, 64, "Content-Length: %d\r\n\r\n", sz1);
 
 	unsigned char ts[TIME_BUF];
-	getTimestamp((unsigned char *)&ts);
+	getTimestamp((unsigned char *)&ts, RESPONSE_FORMAT);
 
 	char buffer3[BUFF_SIZE];
 	char *responseHeaders = 

@@ -33,7 +33,7 @@ handleGetVerb(int sockfd, char *path)
   	int size = lseek(fd, 0, SEEK_END);
 
 	unsigned char ts[TIME_BUF];
-	getTimestamp((unsigned char *)&ts);
+	getTimestamp((unsigned char *)&ts, RESPONSE_FORMAT);
 
 	char *responseHeaders = 
 "HTTP/1.1 200 OK\r\n"

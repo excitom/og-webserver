@@ -39,6 +39,9 @@ main(int argc, char *argv[])
 	buffer = malloc(BUFF_SIZE);
 
 	parseArgs(argc, argv);
+	daemonize();
+	snprintf(buffer, BUFF_SIZE, "Document root: %s \nConfig path: %s\nLog path %s\n", g.docRoot, g.configPath, g.logPath);
+	doDebug(buffer);
 	parseMimeTypes();
 
 	int epollfd = epollCreate();
@@ -262,6 +265,7 @@ parseArgs(int argc, char* argv[])
 				printf("Positional paramters:\n");
 				printf("	config_path - default /etc/ogws\n");
 				printf("	doc_root_path - default /www/ogws\n");
+				printf("	log_file_path - default /var/log/ogws\n");
 				printf("\n");
 				exit(0);
 			default:
@@ -269,6 +273,9 @@ parseArgs(int argc, char* argv[])
 				break;
 		}
 	char buffer[BUFF_SIZE];
+	//
+	// config file path
+	//
 	if (optind >= argc) {
 		strcpy(buffer, "/etc/ogws");
 		int len = strlen(buffer);
@@ -276,8 +283,8 @@ parseArgs(int argc, char* argv[])
 		strcpy(g.configPath, buffer);
 	} else {
 		int len = strlen(argv[optind]);
-		g.docRoot = malloc(len+1);
-		strcpy(g.docRoot, argv[optind]);
+		g.configPath = malloc(len+1);
+		strcpy(g.configPath, argv[optind]);
 		optind++;
 	}
 	if (access(g.configPath, R_OK) == -1) {
@@ -285,6 +292,9 @@ parseArgs(int argc, char* argv[])
 		exit(1);
 	}
 
+	//
+	// doc root file path
+	//
 	if (optind >= argc) {
 		strcpy(buffer, "/www/ogws");
 		int len = strlen(buffer);
@@ -300,8 +310,25 @@ parseArgs(int argc, char* argv[])
 		perror("doc root not valid:");
 		exit(1);
 	}
-	snprintf(buffer, BUFF_SIZE, "Document root: %s \nConfig path: %s", g.docRoot, g.configPath);
-	doDebug(buffer);
+
+	//
+	// log file path
+	//
+	if (optind >= argc) {
+		strcpy(buffer, "/var/log/ogws");
+		int len = strlen(buffer);
+		g.logPath = malloc(len+1);
+		strcpy(g.logPath, buffer);
+	} else {
+		int len = strlen(argv[optind]);
+		g.logPath = malloc(len+1);
+		strcpy(g.logPath, argv[optind]);
+		optind++;
+	}
+	if (access(g.logPath, R_OK) == -1) {
+		perror("doc root not valid:");
+		exit(1);
+	}
 }
 
 /**
