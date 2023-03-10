@@ -23,13 +23,13 @@ daemonize()
 	if (!g.foreground) {
 		pid_t pid;
 
-    	// create new process
-    	pid = fork();
-    	if (pid == -1) {
-        	exit(1);
+		// create new process
+		pid = fork();
+		if (pid == -1) {
+			exit(1);
 		}
-    	else if (pid != 0) {
-        	exit (0);
+		else if (pid != 0) {
+			exit (0);
 		}
 
 		// save the pid in a file
@@ -38,16 +38,16 @@ daemonize()
 		FILE* fp = fopen(p, "w+");
 		fprintf(fp, "%d\n", getpid() );
 		fclose(fp);
-		
-    	// create new session and process group
-    	if (setsid ( ) == -1) {
-        	exit(1);
+
+		// create new session and process group
+		if (setsid ( ) == -1) {
+			exit(1);
 		}
 
-    	// set the working directory to the root directory 
+		// set the working directory to the root directory 
 		// i.e. make sure to move off of a mounted file system
-    	if (chdir ("/") == -1) {
-        	exit(1);
+		if (chdir ("/") == -1) {
+			exit(1);
 		}
 
 		// create a file for debug and trace information

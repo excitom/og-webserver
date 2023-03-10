@@ -6,9 +6,9 @@
 
 /**
  * Get a timestamp for the header
- * Option: 0 = response header format
- *         1 = log file name format
- *         2 = log file record format
+ * Option: RESPONSE_FORMAT = response header format
+ *         LOG_FILE_FORMAT = log file name format
+ *         LOG_RECORD_FORMAT = log file record format
  */
 void
 getTimestamp(unsigned char *buf, int opt)
