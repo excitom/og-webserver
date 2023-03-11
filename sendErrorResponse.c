@@ -16,6 +16,7 @@
 void
 sendErrorResponse( int fd, int code, char *msg )
 {
+	doDebug(msg);
 	char buffer1[BUFF_SIZE];
 	char *responseBody = 
 "<html>\r\n"
