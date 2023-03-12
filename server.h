@@ -12,12 +12,13 @@ void processInput(int);
 int sendData(int, unsigned char*, int);
 int recvData(int, unsigned char*, int);
 void getTimestamp(unsigned char *, int);
-void sendErrorResponse( int, int, char *);
-void handleGetVerb(int, char *);
+void sendErrorResponse( int, int, char*);
+void handleGetVerb(int, char*);
 void parseMimeTypes();
-void accessLog(char *);
-void errorLog(char *);
+void accessLog(char*);
+void errorLog(char*);
 void openLogFiles();
+void getMimeType(char*, char*);
 
 #define BUFF_SIZE 4096
 #define TIME_BUF 256
