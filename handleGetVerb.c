@@ -42,7 +42,7 @@ handleGetVerb(int sockfd, char *path)
 	}
 
 	// if the path pointing to a directory?
-	if (sb.st_mode & S_IFMT == S_IFDIR) {
+	if (S_ISDIR(sb.st_mode)) {
 		if (fullPath[size-1] != '/') {
 			strcat(fullPath, "/");
 		}
@@ -84,10 +84,11 @@ handleGetVerb(int sockfd, char *path)
 		doDebug("Problem sending response headers");
 	}
 
-	off_t offset;
+	off_t offset = 0;
 	sent = sendfile(sockfd, fd, &offset, size);
 	if (sent != size) {
-		doDebug("Problem sending response body");
+		snprintf(buffer, BUFF_SIZE, "Problem sending response body: SIZE %d SENT %d\n", size, sent);
+		doDebug(buffer);
 	}
 	close(fd);
 	shutdown(sockfd, SHUT_RDWR);
