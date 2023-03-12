@@ -33,8 +33,6 @@ processInput(int fd)
 	if (received <= 0) {
 		// no data to read
 		doDebug("NO DATA\n");
-		shutdown(fd, SHUT_RDWR);
-		close(fd);
 		return;
 	} else {
 		// Expected format:

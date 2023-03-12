@@ -19,8 +19,9 @@ parseArgs(int argc, char* argv[])
 	g.debug = 0;
 	g.trace = 0;
 	g.port = 8080;
+	g.epollArraySize = 64;
 	int c;
-	while ((c = getopt(argc, argv, "hdftp:")) != EOF)
+	while ((c = getopt(argc, argv, "hdftp:e:")) != EOF)
 		switch(c) {
 			case 'd':
 				g.debug = 1;
@@ -34,6 +35,9 @@ parseArgs(int argc, char* argv[])
 			case 'p':
 				g.port = atoi(optarg);
 				break;
+			case 'e':
+				g.epollArraySize = atoi(optarg);
+				break;
 			case 'h':
 				printf("Tom's OG web server\n");
 				printf("Options are:\n");
@@ -42,6 +46,7 @@ parseArgs(int argc, char* argv[])
 				printf("	-t = turn on tracing\n");
 				printf("	-h = print this message\n");
 				printf("	-p = port on which to listen\n");
+				printf("	-e = max concurrent epoll events\n");
 				printf("Positional paramters:\n");
 				printf("	config_path - default /etc/ogws\n");
 				printf("	doc_root_path - default /www/ogws\n");

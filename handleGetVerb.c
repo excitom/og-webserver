@@ -91,8 +91,6 @@ handleGetVerb(int sockfd, char *path)
 		doDebug(buffer);
 	}
 	close(fd);
-	shutdown(sockfd, SHUT_RDWR);
-	close(sockfd);
 	return;
 }
 

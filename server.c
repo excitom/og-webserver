@@ -62,11 +62,11 @@ main(int argc, char *argv[])
 		doDebug(buffer);
 
 		int rval;
-		struct epoll_event epoll_events[EPOLL_ARRAY_SIZE];
+		struct epoll_event epoll_events[g.epollArraySize];
 		//
 		// Loop if interrupted by a signal
 		//
-		while ((rval = epoll_wait(epollfd, epoll_events, EPOLL_ARRAY_SIZE, -1)) < 0) {
+		while ((rval = epoll_wait(epollfd, epoll_events, g.epollArraySize, -1)) < 0) {
 			if ((rval < 0) && (errno != EINTR)) {
 				snprintf(buffer, BUFF_SIZE, "EPoll on %d fds failed: %m\n", fdCount);
 				doDebug(buffer);
@@ -146,6 +146,8 @@ main(int argc, char *argv[])
 					// Process the incoming data from a socket
 					//
 					processInput(fd);
+					shutdown(fd, SHUT_RDWR);
+					close(fd);
 					fdCount--;
 				}
 			} // End, process an event

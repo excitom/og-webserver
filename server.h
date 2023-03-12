@@ -1,6 +1,3 @@
-// Max number of events to process in one gulp (but NOT max possible events)
-#define EPOLL_ARRAY_SIZE   64
-
 void parseArgs(int, char**);
 void daemonize();
 int epollCreate();
@@ -40,6 +37,7 @@ struct globalVars {
 	int debug;
 	int trace;
 	int foreground;
+	int epollArraySize;
 	unsigned short port;
 	char *docRoot;
 	char *configPath;

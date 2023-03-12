@@ -45,7 +45,5 @@ sendErrorResponse( int fd, int code, char *msg )
 	sendData(fd, buffer3, sz3);
 	sendData(fd, buffer2, sz2);
 	sendData(fd, buffer1, sz1);
-	shutdown(fd, SHUT_RDWR);
-	close(fd);
 	return;
 }
