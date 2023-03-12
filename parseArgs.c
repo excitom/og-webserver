@@ -109,4 +109,6 @@ parseArgs(int argc, char* argv[])
 		perror("doc root not valid:");
 		exit(1);
 	}
+	snprintf(buffer, BUFF_SIZE, "Listening port: %d\nDocument root: %s \nConfig path: %s\nLog path %s\n", g.port, g.docRoot, g.configPath, g.logPath);
+	doDebug(buffer);
 }

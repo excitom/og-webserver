@@ -37,8 +37,6 @@ main(int argc, char *argv[])
 
 	parseArgs(argc, argv);
 	daemonize();
-	snprintf(buffer, BUFF_SIZE, "Document root: %s \nConfig path: %s\nLog path %s\n", g.docRoot, g.configPath, g.logPath);
-	doDebug(buffer);
 	parseMimeTypes();
 
 	int epollfd = epollCreate();
@@ -148,6 +146,7 @@ main(int argc, char *argv[])
 					// Process the incoming data from a socket
 					//
 					processInput(fd);
+					fdCount--;
 				}
 			} // End, process an event
 		} // End, loop over returned events
