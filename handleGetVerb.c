@@ -71,14 +71,15 @@ handleGetVerb(int sockfd, char *path)
 	unsigned char ts[TIME_BUF];
 	getTimestamp((unsigned char *)&ts, RESPONSE_FORMAT);
 
+	int httpCode = 200;
 	char *responseHeaders = 
-"HTTP/1.1 200 OK\r\n"
+"HTTP/1.1 %d OK\r\n"
 "Server: ogws/0.1\r\n"
 "Date: %s\r\n"
 "Content-Type: %s\r\n"
 "Content-Length: %d\r\n\r\n";
 
-	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, ts, mimeType, size);
+	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, ts, mimeType, size);
 	int sent = sendData(sockfd, buffer, sz);
 	if (sent != sz) {
 		doDebug("Problem sending response headers");
@@ -91,6 +92,8 @@ handleGetVerb(int sockfd, char *path)
 		doDebug(buffer);
 	}
 	close(fd);
+
+	accessLog(sockfd, "GET", httpCode, path, size);
 	return;
 }
 

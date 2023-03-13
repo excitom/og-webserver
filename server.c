@@ -119,7 +119,7 @@ main(int argc, char *argv[])
 					}
 
 					char ipinput[INET_ADDRSTRLEN];
-					if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, ipinput, BUFF_SIZE) != NULL) {
+					if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, ipinput, INET_ADDRSTRLEN) != NULL) {
 						snprintf(buffer, BUFF_SIZE, "Accepted connection from %s:%u, assigned new sockfd %d\n", ipinput, ntohs(peeraddr.sin_port), clientsfd);
 						doDebug(buffer);
 					} else {
