@@ -57,7 +57,10 @@ processInput(int fd)
 			*p = '\0';
 		}
 		if (!verb || !path || ! host) {
-			sendErrorResponse(fd, 400, "Bad Request");
+			if (!path) {
+				path = "/";
+			}
+			sendErrorResponse(fd, 400, "Bad Request", path);
 			return;
 		}
 
@@ -73,7 +76,7 @@ processInput(int fd)
 			*p = '\0';
 			// only accepting HTTP at this point
 			if (strncmp(host, "http", 4) != 0) {
-				sendErrorResponse(fd, 406, "Not Acceptable");
+				sendErrorResponse(fd, 406, "Not Acceptable", path);
 				return;
 			}
 			protocol = host;
@@ -91,7 +94,7 @@ processInput(int fd)
 		// Only support the GET verb at this time
 		//
 		if (strcmp(verb, "GET") != 0) {
-			sendErrorResponse(fd, 405, "Method Not Allowed");
+			sendErrorResponse(fd, 405, "Method Not Allowed", path);
 			return;
 		}
 		handleGetVerb(fd, path);

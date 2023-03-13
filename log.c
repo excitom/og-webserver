@@ -34,16 +34,20 @@ accessLog(int sockfd, char *verb, int httpCode, char *path, int size)
 }
 
 void
-errorLog(int sockfd, char *msg)
+errorLog(int sockfd, char *verb, int httpCode, char *path, char *msg)
 {
+	unsigned char ts[TIME_BUF];
+	getTimestamp((unsigned char *)&ts, LOG_RECORD_FORMAT);
+
+	struct sockaddr_in peeraddr;
+	socklen_t len = sizeof(peeraddr);
+	getpeername(sockfd, (struct sockaddr*)&peeraddr, &len);
+	char peerIp[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, peerIp, INET_ADDRSTRLEN);
+
 	char buffer[BUFF_SIZE];
-	char *p = (char *)&buffer;
-	getTimestamp(p, LOG_RECORD_FORMAT);
-	strcat(p, msg);
-	if (strchr(p, '\n') != NULL) {
-		strcat(p, "\n");
-	}
-	write(g.errorFd, p, strlen(p));
+	int sz = snprintf(buffer, BUFF_SIZE, "%s %s %s %d %s %s\n", ts, peerIp, verb, httpCode, path, msg);
+	write(g.errorFd, buffer, sz);
 }
 
 void openLogFiles()

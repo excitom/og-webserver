@@ -21,9 +21,14 @@ handleGetVerb(int sockfd, char *path)
 {
 	// todo: disallow ../ in the path
 	int size = strlen(g.docRoot) + strlen(path);
-	if (size > 255) {
+	int maxLen = 255;
+	if (size > maxLen) {
 		doDebug("URI too long");
-		sendErrorResponse(sockfd, 414, "URI too long");
+		char truncated[maxLen+5];
+		strncpy(truncated, path, maxLen);
+		truncated[maxLen] = '\0';
+		strcat(truncated, "...");
+		sendErrorResponse(sockfd, 414, "URI too long", truncated);
 		return;
 	}
 
@@ -37,7 +42,7 @@ handleGetVerb(int sockfd, char *path)
 		int e = errno;
 		snprintf(buffer, BUFF_SIZE, "%s: file stat failed: %s\n", fullPath, strerror(e));
 		doDebug(buffer);
-		sendErrorResponse(sockfd, 404, "Not Found");
+		sendErrorResponse(sockfd, 404, "Not Found", path);
 		return;
 	}
 
@@ -60,7 +65,7 @@ handleGetVerb(int sockfd, char *path)
 		int e = errno;
 		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", fullPath, strerror(e));
 		doDebug(buffer);
-		sendErrorResponse(sockfd, 404, "Not Found");
+		sendErrorResponse(sockfd, 404, "Not Found", path);
 		return;
 	}
 

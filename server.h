@@ -9,11 +9,11 @@ void processInput(int);
 int sendData(int, unsigned char*, int);
 int recvData(int, unsigned char*, int);
 void getTimestamp(unsigned char *, int);
-void sendErrorResponse( int, int, char*);
+void sendErrorResponse( int, int, char*, char*);
 void handleGetVerb(int, char*);
 void parseMimeTypes();
 void accessLog(int, char*, int, char*, int);
-void errorLog(int, char*);
+void errorLog(int, char*, int, char*, char*);
 void openLogFiles();
 void getMimeType(char*, char*);
 

@@ -14,7 +14,7 @@
  * Send an error response to a HTTP request
  */
 void
-sendErrorResponse( int fd, int code, char *msg )
+sendErrorResponse( int fd, int code, char *msg, char *path )
 {
 	doDebug(msg);
 	char buffer1[BUFF_SIZE];
@@ -45,5 +45,7 @@ sendErrorResponse( int fd, int code, char *msg )
 	sendData(fd, buffer3, sz3);
 	sendData(fd, buffer2, sz2);
 	sendData(fd, buffer1, sz1);
+
+	errorLog(fd, "GET", code, path, msg);
 	return;
 }
