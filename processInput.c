@@ -20,8 +20,7 @@ processInput(int fd)
 	char *host = NULL;
 	char *path = NULL;
 	char *verb = NULL;
-	char *protocol = "http";
-	char *port = "80";
+	char *queryString = NULL;
 	char *p;
 	char inbuff[BUFF_SIZE];
 	char outbuff[BUFF_SIZE];
@@ -64,31 +63,12 @@ processInput(int fd)
 			return;
 		}
 
-		// looking for "://" to separate host and protocol
-		char *end = host + strlen(host) - 1;
-		p = strchr(host, ':');
-		if ((p != NULL) &&
-			(p < end-3) &&
-			(p[1] == '/') &&
-			(p[2] == '/'))
-		{
-			// truncate the host to just be the protocol part
-			*p = '\0';
-			// only accepting HTTP at this point
-			if (strncmp(host, "http", 4) != 0) {
-				sendErrorResponse(fd, 406, "Not Acceptable", path);
-				return;
-			}
-			protocol = host;
-			host = p+1;
-		}
-
-		// looking for : to separate host and port
-		p = strchr(host, ':');
+		// find the query string, if any
+		p = strchr(path, '?');
 		if (p != NULL) {
-			*p = '\0';
-			port = p+1;
+			*p++ = '\0';
 		}
+		queryString = p;
 
 		//
 		// Only support the GET verb at this time
@@ -97,7 +77,7 @@ processInput(int fd)
 			sendErrorResponse(fd, 405, "Method Not Allowed", path);
 			return;
 		}
-		handleGetVerb(fd, path);
+		handleGetVerb(fd, path, queryString);
 	}
 
 	return;

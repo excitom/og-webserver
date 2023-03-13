@@ -10,7 +10,7 @@ int sendData(int, unsigned char*, int);
 int recvData(int, unsigned char*, int);
 void getTimestamp(unsigned char *, int);
 void sendErrorResponse( int, int, char*, char*);
-void handleGetVerb(int, char*);
+void handleGetVerb(int, char*, char*);
 void parseMimeTypes();
 void accessLog(int, char*, int, char*, int);
 void errorLog(int, char*, int, char*, char*);

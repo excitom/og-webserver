@@ -17,7 +17,7 @@
  * Handle a GET request
  */
 void
-handleGetVerb(int sockfd, char *path)
+handleGetVerb(int sockfd, char *path, char *queryString)
 {
 	// todo: disallow ../ in the path
 	int size = strlen(g.docRoot) + strlen(path);

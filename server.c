@@ -118,13 +118,15 @@ main(int argc, char *argv[])
 						}
 					}
 
-					char ipinput[INET_ADDRSTRLEN];
-					if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, ipinput, INET_ADDRSTRLEN) != NULL) {
-						snprintf(buffer, BUFF_SIZE, "Accepted connection from %s:%u, assigned new sockfd %d\n", ipinput, ntohs(peeraddr.sin_port), clientsfd);
-						doDebug(buffer);
-					} else {
-						snprintf(buffer, BUFF_SIZE, "Failed to convert address from binary to text form: %m\n");
-						doDebug(buffer);
+					if (g.debug) {
+						char ipinput[INET_ADDRSTRLEN];
+						if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, ipinput, INET_ADDRSTRLEN) != NULL) {
+							snprintf(buffer, BUFF_SIZE, "Accepted connection from %s:%u, assigned new sockfd %d\n", ipinput, ntohs(peeraddr.sin_port), clientsfd);
+							doDebug(buffer);
+						} else {
+							snprintf(buffer, BUFF_SIZE, "Failed to convert address from binary to text form: %m\n");
+							doDebug(buffer);
+						}
 					}
 
 					//
@@ -146,6 +148,8 @@ main(int argc, char *argv[])
 					// Process the incoming data from a socket
 					//
 					processInput(fd);
+
+					// not handling "keep alive" yet
 					shutdown(fd, SHUT_RDWR);
 					close(fd);
 					fdCount--;
