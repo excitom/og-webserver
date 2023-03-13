@@ -48,8 +48,8 @@ parseMimeTypes() {
 
 	// allocate space to hold the whole file
   	int size = lseek(fd, 0, SEEK_END);
-	char * buffer = malloc(size+1);
-	p = buffer;
+	char * data = malloc(size+1);
+	p = data;
 	if (p == NULL) {
 		perror("Out of memory");
 		exit(1);
@@ -95,7 +95,7 @@ parseMimeTypes() {
 	}
 
 	// freeup the space for the file
-	free(buffer);
+	free(data);
 }
 
 /**

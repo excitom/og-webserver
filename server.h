@@ -6,6 +6,8 @@ void cleanup(int);
 void doTrace (char, unsigned char*, int);
 void doDebug (unsigned char*);
 void processInput(int);
+void processHttpInput(int);
+void processHttpsInput(int);
 int sendData(int, unsigned char*, int);
 int recvData(int, unsigned char*, int);
 void getTimestamp(unsigned char *, int);

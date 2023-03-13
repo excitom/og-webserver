@@ -17,6 +17,29 @@
 void
 processInput(int fd)
 {
+	// check if this is a SSL/TLS connection by peeking at the first 
+	// byte. If it is 0x16 assume an encrypted connection
+	char buf[1];
+	int sz = recv(fd, &buf, 1, MSG_PEEK);
+	if (sz != 1) {
+		// shouldn't happen
+		doDebug("NO DATA\n");
+		sendErrorResponse(fd, 400, "Bad Request", "No data");
+		return;
+	}
+	if (buf[0] == '\16') {
+		processHttpsInput(fd);
+	} else {
+		processHttpInput(fd);
+	}
+	return;
+}
+
+/**
+ * Input is plain text HTTP
+ */
+void
+processHttpInput(int fd) {
 	char *host = NULL;
 	char *path = NULL;
 	char *verb = NULL;
@@ -32,6 +55,7 @@ processInput(int fd)
 	if (received <= 0) {
 		// no data to read
 		doDebug("NO DATA\n");
+		sendErrorResponse(fd, 400, "Bad Request", "No data");
 		return;
 	} else {
 		// Expected format:
@@ -80,5 +104,13 @@ processInput(int fd)
 		handleGetVerb(fd, path, queryString);
 	}
 
+	return;
+}
+
+/**
+ * Input is encrypted HTTPS
+ */
+void
+processHttpsInput(int fd) {
 	return;
 }
