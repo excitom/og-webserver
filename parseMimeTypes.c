@@ -19,6 +19,17 @@ struct _mimeTypes *addMimeTypeEntry();
  * Assumption: The types listed in the file are ordered by frequency of 
  * use, roughly, so storing them in a list that is sequentially searched
  * is simple and sufficiently fast.
+ *
+ * Expected format: 
+ * 	types {
+ * 	  mimeType			extension;
+ * 	  mimeType			extension extension;
+ * 	  mimeType			extension;
+ * 	  ....
+ * 	  mimeType			extension extension extension;
+ * 	}
+ * 	The white space is ignored except for one space between mimeType and
+ * 	extension. The whole file could be one long line.
  */
 void
 parseMimeTypes() {
@@ -34,8 +45,11 @@ parseMimeTypes() {
 		doDebug(buffer);
 		exit(1);
 	}
+
+	// allocate space to hold the whole file
   	int size = lseek(fd, 0, SEEK_END);
-	p = malloc(size+1);
+	char * buffer = malloc(size+1);
+	p = buffer;
 	if (p == NULL) {
 		perror("Out of memory");
 		exit(1);
@@ -50,6 +64,7 @@ parseMimeTypes() {
 	if (g.debug) {
 		fprintf(stderr, "MIME Type size: %d\n", size);
 	}
+
 	char *q = strchr(p, '{');
 	if (q == NULL) {
 		perror("Invalid mime.type file, no starting delimiter.");
@@ -65,6 +80,7 @@ parseMimeTypes() {
 			exit(1);
 		}
 		if (*p != '}') {
+			// a line ends with a ';'. Newline characters don't matter.
 			p = parseLine(p);
 		}
 	}
@@ -77,10 +93,19 @@ parseMimeTypes() {
 			mt = mt->next;
 		}
 	}
+
+	// freeup the space for the file
+	free(buffer);
 }
 
 /**
  * Parse a line from the mime.types file
+ *
+ * Each line ends with a ';' and contains at least one space 
+ * separating the mime type and the extension.
+ *
+ * The can be multiple extensions which are separated by space. They all
+ * share the same mime type.
  */
 char *
 parseLine(char *p) {
