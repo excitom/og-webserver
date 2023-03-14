@@ -18,10 +18,11 @@ parseArgs(int argc, char* argv[])
 	g.foreground = 0;
 	g.debug = 0;
 	g.trace = 0;
+	g.useTLS = 0;
 	g.port = 8080;
 	g.epollArraySize = 64;
 	int c;
-	while ((c = getopt(argc, argv, "hdftp:e:")) != EOF)
+	while ((c = getopt(argc, argv, "hdfstp:e:")) != EOF)
 		switch(c) {
 			case 'd':
 				g.debug = 1;
@@ -31,6 +32,9 @@ parseArgs(int argc, char* argv[])
 				break;
 			case 'f':
 				g.foreground = 1;
+				break;
+			case 's':
+				g.useTLS = 1;
 				break;
 			case 'p':
 				g.port = atoi(optarg);
@@ -47,6 +51,7 @@ parseArgs(int argc, char* argv[])
 				printf("	-h = print this message\n");
 				printf("	-p = port on which to listen\n");
 				printf("	-e = max concurrent epoll events\n");
+				printf("	-s = use SSL/TLS\n");
 				printf("Positional paramters:\n");
 				printf("	config_path - default /etc/ogws\n");
 				printf("	doc_root_path - default /www/ogws\n");

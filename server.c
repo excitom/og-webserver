@@ -19,6 +19,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include "server.h"
 
 // global variables
@@ -52,6 +54,13 @@ main(int argc, char *argv[])
 		snprintf(buffer, BUFF_SIZE, "Couldn't add server socket %d to epoll set: %m\n", sockfd);
 		doDebug(buffer);
 		cleanup(sockfd);	  
+	}
+
+	if (g.useTLS) {
+		ctx = create_context();
+		configure_context(ctx);
+		SSL_load_error_strings();
+		ERR_load_crypto_strings();
 	}
 
 	//
@@ -118,6 +127,16 @@ main(int argc, char *argv[])
 						}
 					}
 
+					SSL *ssl = NULL;
+					if (g.useTLS) {
+						ssl = SSL_new(ctx);
+						SSL_set_fd(ssl, clientsfd);
+						if (SSL_accept(ssl) <= 0) {
+							perror("SSL accept failed ");
+							cleanup(sockfd);
+						}
+					}
+
 					if (g.debug) {
 						char ipinput[INET_ADDRSTRLEN];
 						if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, ipinput, INET_ADDRSTRLEN) != NULL) {
@@ -147,9 +166,13 @@ main(int argc, char *argv[])
 					//
 					// Process the incoming data from a socket
 					//
-					processInput(fd);
+					processInput(fd, ssl);
 
 					// not handling "keep alive" yet
+					if (g.useTLS) {
+						SSL_shutdown(ssl);
+						SSL_free(ssl);
+					}
 					shutdown(fd, SHUT_RDWR);
 					close(fd);
 					fdCount--;
@@ -292,6 +315,44 @@ sendData(int fd, unsigned char* ptr, int nbytes)
 		}
 	}
 	return nbytes;
+}
+
+/**
+ * Create SSL context
+ */
+SSL_CTX *
+create_context()
+{
+	const SSL_METHOD *method;
+	SSL_CTX *ctx;
+
+	method = TLS_server_method();
+
+	ctx = SSL_CTX_new(method);
+	if (!ctx) {
+		perror("Unable to create SSL context");
+		exit(1);
+	}
+
+	return ctx;
+}
+
+/**
+ * Configure SSL
+ */
+void
+configure_context(SSL_CTX *ctx)
+{
+	/* Set the key and cert */
+	if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
+		perror("Unable to use SSL certificate ");
+		exit(1);
+	}
+
+	if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0 ) {
+		perror("Unable to use SSL private key ");
+		exit(EXIT_FAILURE);
+	}
 }
 
 /*
