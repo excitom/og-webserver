@@ -29,7 +29,7 @@ processInput(int fd, SSL *ssl) {
 
 	size_t received;
 	if (g.useTLS) {
-		SSL_read_ex(ssl, (void *)&inbuff, BUFF_SIZE, received);
+		SSL_read_ex(ssl, (void *)&inbuff, BUFF_SIZE, &received);
 	} else {
 		received = recvData(fd, (char *)&inbuff, sizeof(inbuff));
 	}

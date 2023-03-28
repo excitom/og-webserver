@@ -19,8 +19,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
-#include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/ssl.h>
 #include "server.h"
 
 // global variables
@@ -56,11 +56,11 @@ main(int argc, char *argv[])
 		cleanup(sockfd);	  
 	}
 
+	SSL_CTX *ctx;
+	SSL *ssl = NULL;
 	if (g.useTLS) {
 		ctx = create_context();
 		configure_context(ctx);
-		SSL_load_error_strings();
-		ERR_load_crypto_strings();
 	}
 
 	//
@@ -127,7 +127,6 @@ main(int argc, char *argv[])
 						}
 					}
 
-					SSL *ssl = NULL;
 					if (g.useTLS) {
 						ssl = SSL_new(ctx);
 						SSL_set_fd(ssl, clientsfd);

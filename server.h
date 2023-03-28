@@ -5,6 +5,7 @@ int createBindAndListen(int);
 void cleanup(int);
 void doTrace (char, unsigned char*, int);
 void doDebug (unsigned char*);
+#include <openssl/ssl.h>
 void processInput(int, SSL*);
 void configure_context(SSL_CTX*);
 SSL_CTX *create_context();

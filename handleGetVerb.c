@@ -10,6 +10,9 @@
 #include <arpa/inet.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 #include "server.h"
 #include "global.h"
 
@@ -17,7 +20,7 @@
  * Handle a GET request
  */
 void
-handleGetVerb(int sockfd, char *path, char *queryString)
+handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 {
 	// todo: disallow ../ in the path
 	int size = strlen(g.docRoot) + strlen(path);
@@ -85,17 +88,30 @@ handleGetVerb(int sockfd, char *path, char *queryString)
 "Content-Length: %d\r\n\r\n";
 
 	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, ts, mimeType, size);
-	int sent = sendData(sockfd, buffer, sz);
+	off_t offset = 0;
+	size_t sent;
+	if (g.useTLS) {
+		if (SSL_write_ex(ssl, buffer, sz, &sent) == 0) {
+			doDebug("Problem sending response headers");
+		}
+	} else {
+		sent = sendData(sockfd, buffer, sz);
+	}
+
 	if (sent != sz) {
 		doDebug("Problem sending response headers");
 	}
 
-	off_t offset = 0;
-	sent = sendfile(sockfd, fd, &offset, size);
+	if (g.useTLS) {
+		sent = SSL_sendfile(ssl, fd, offset, size, 0);
+	} else {
+		sent = sendfile(sockfd, fd, &offset, size);
+	}
 	if (sent != size) {
 		snprintf(buffer, BUFF_SIZE, "Problem sending response body: SIZE %d SENT %d\n", size, sent);
 		doDebug(buffer);
 	}
+
 	close(fd);
 
 	accessLog(sockfd, "GET", httpCode, path, size);

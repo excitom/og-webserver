@@ -22,11 +22,12 @@ DBGDIR = debug
 DBGEXE = $(DBGDIR)/$(EXE)
 DBGOBJS = $(addprefix $(DBGDIR)/, $(OBJS))
 DBGCFLAGS = -O0 -DDBG -g
+SSLFLAGS = -ldl -lpthread -lssl -lcrypto
 
 debug: $(DBGEXE)
 
 $(DBGEXE): $(DBGOBJS)
-	cc $(CFLAGS) $(DBGCFLAGS) -o $(DBGEXE) $^
+	cc $(CFLAGS) $(DBGCFLAGS) -o $(DBGEXE) $^ $(SSLFLAGS)
 
 $(DBGDIR)/%.o: %.c
 	cc -c $(CFLAGS) $(DBGCFLAGS) -o $@ $<
@@ -34,7 +35,7 @@ $(DBGDIR)/%.o: %.c
 release: $(RELEXE)
 
 $(RELEXE): $(RELOBJS)
-	cc $(CFLAGS) $(RELCFLAGS) -o $(RELEXE) $^
+	cc $(CFLAGS) $(RELCFLAGS) -o $(RELEXE) $^ $(SSLFLAGS)
 
 $(RELDIR)/%.o: %.c
 	cc -c $(CFLAGS) $(RELCFLAGS) -o $@ $<
