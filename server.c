@@ -343,15 +343,28 @@ void
 configure_context(SSL_CTX *ctx)
 {
 	/* Set the key and cert */
-	if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
+	char *path = malloc(256);
+	strcpy(path, g.configPath);
+	strcat(path, "/combined.crt");
+	if (SSL_CTX_use_certificate_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
+		fprintf(stderr, "CERT %s\n", path);
 		perror("Unable to use SSL certificate ");
 		exit(1);
 	}
 
-	if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0 ) {
+	strcpy(path, g.configPath);
+	strcat(path, "/halsoft.key");
+	if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0 ) {
+		fprintf(stderr, "KEY %s\n", path);
 		perror("Unable to use SSL private key ");
 		exit(EXIT_FAILURE);
 	}
+
+	/* verify private key */
+    if ( !SSL_CTX_check_private_key(ctx) ) {
+        fprintf(stderr, "Private key does not match the public certificate\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /*
