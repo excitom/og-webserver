@@ -68,9 +68,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 	// send the response headers
 	sendData(sockfd, ssl, (char *)&buffer, sz);
 
-	// send the response body (page header, list, page footer)
 	sendData(sockfd, ssl, header, strlen(header));
-	sendData(sockfd, ssl, footer, strlen(footer));
 	while(fragments != NULL) {
 		struct _fragment *f = fragments;
 		fragments = f->next;
@@ -78,6 +76,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 		free(f->fragment);
 		free(f);
 	}
+	sendData(sockfd, ssl, footer, strlen(footer));
 	return;
 }
 
