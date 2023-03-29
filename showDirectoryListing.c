@@ -107,9 +107,8 @@ addFragment(char *dirPath, char *fileName)
 	// <li><a href="PATH">FILE NAME</a></li>
 	//
 	char buffer[BUFF_SIZE];
-	snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a></li>", dirPath, fileName, fileName);
-	char *p = (char *)&buffer;
-	f->len = strlen(p);
+	f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a></li>", dirPath, fileName, fileName);
 	f->fragment = (char *)malloc(f->len+1);
-	strcpy(f->fragment, p);
+	strcpy(f->fragment, (char *)&buffer);
+	return;
 }
