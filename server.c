@@ -59,8 +59,8 @@ main(int argc, char *argv[])
 	SSL_CTX *ctx;
 	SSL *ssl = NULL;
 	if (g.useTLS) {
-		ctx = create_context();
-		configure_context(ctx);
+		ctx = createContext();
+		configureContext(ctx);
 	}
 
 	//
@@ -127,15 +127,6 @@ main(int argc, char *argv[])
 						}
 					}
 
-					if (g.useTLS) {
-						ssl = SSL_new(ctx);
-						SSL_set_fd(ssl, clientsfd);
-						if (SSL_accept(ssl) <= 0) {
-							perror("SSL accept failed ");
-							cleanup(sockfd);
-						}
-					}
-
 					if (g.debug) {
 						char ipinput[INET_ADDRSTRLEN];
 						if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, ipinput, INET_ADDRSTRLEN) != NULL) {
@@ -165,12 +156,23 @@ main(int argc, char *argv[])
 					//
 					// Process the incoming data from a socket
 					//
+					if (g.useTLS) {
+						ssl = SSL_new(ctx);
+						SSL_set_fd(ssl, fd);
+						if (SSL_accept(ssl) <= 0) {
+							ERR_print_errors_fp(stderr);
+							perror("SSL accept failed ");
+							cleanup(sockfd);
+						}
+						ShowCerts(ssl);
+					}
+
 					processInput(fd, ssl);
 
 					// not handling "keep alive" yet
 					if (g.useTLS) {
 						SSL_shutdown(ssl);
-						SSL_free(ssl);
+						SSL_CTX_free(ctx);
 					}
 					shutdown(fd, SHUT_RDWR);
 					close(fd);
@@ -292,35 +294,40 @@ recvData(int fd, unsigned char* ptr, int nbytes)
  * Send data to a socket
  */
 int
-sendData(int fd, unsigned char* ptr, int nbytes)
+sendData(int fd, SSL *ssl, unsigned char* ptr, int nbytes)
 {
 	doTrace( 'S', (unsigned char *)ptr, nbytes);
-	int nleft = nbytes;
-	while (nleft > 0) {
-		int nsent = send(fd, ptr, nleft, 0);
-		if (nsent > nleft)
-			return -1;
-		if (nsent > 0) {
-			nleft -= nsent;
-			ptr   += nsent;
+	size_t nsent;
+	if (g.useTLS) {
+		if (SSL_write_ex(ssl, ptr, nbytes, &nsent) == 0) {
+			if (g.debug) {
+				ERR_print_errors_fp(stderr);
+			}
 		}
-		else if (!(nsent == -1 && errno != EINTR)) {
-			snprintf(buffer, BUFF_SIZE, "Send to socket %d failed: %m\n", fd);
-			doDebug(buffer);
-			fdCount--;
-			shutdown(fd, SHUT_RDWR);
-			close(fd);
-			return nsent;
+	} else {
+		int nleft = nbytes;
+		while (nleft > 0) {
+			nsent = send(fd, ptr, nleft, 0);
+			if (nsent > nleft)
+				return -1;
+			if (nsent > 0) {
+				nleft -= nsent;
+				ptr   += nsent;
+			}
+			else if (!(nsent == -1 && errno != EINTR)) {
+				snprintf(buffer, BUFF_SIZE, "Send to socket %d failed: %m\n", fd);
+				doDebug(buffer);
+			}
 		}
 	}
-	return nbytes;
+	return nsent;
 }
 
 /**
  * Create SSL context
  */
 SSL_CTX *
-create_context()
+createContext()
 {
 	const SSL_METHOD *method;
 	SSL_CTX *ctx;
@@ -329,8 +336,8 @@ create_context()
 
 	ctx = SSL_CTX_new(method);
 	if (!ctx) {
-		perror("Unable to create SSL context");
-		exit(1);
+		ERR_print_errors_fp(stderr);
+		exit(EXIT_FAILURE);
 	}
 
 	return ctx;
@@ -340,23 +347,23 @@ create_context()
  * Configure SSL
  */
 void
-configure_context(SSL_CTX *ctx)
+configureContext(SSL_CTX *ctx)
 {
 	/* Set the key and cert */
 	char *path = malloc(256);
 	strcpy(path, g.configPath);
-	strcat(path, "/combined.crt");
+	strcat(path, "/certificate.pem");
 	if (SSL_CTX_use_certificate_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
 		fprintf(stderr, "CERT %s\n", path);
-		perror("Unable to use SSL certificate ");
-		exit(1);
+		ERR_print_errors_fp(stderr);
+		exit(EXIT_FAILURE);
 	}
 
 	strcpy(path, g.configPath);
-	strcat(path, "/halsoft.key");
+	strcat(path, "/key.pem");
 	if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0 ) {
 		fprintf(stderr, "KEY %s\n", path);
-		perror("Unable to use SSL private key ");
+		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}
 
@@ -365,6 +372,33 @@ configure_context(SSL_CTX *ctx)
         fprintf(stderr, "Private key does not match the public certificate\n");
         exit(EXIT_FAILURE);
     }
+}
+
+/**
+ * Debug output: Show SSL certificate details
+ */
+void
+ShowCerts(SSL* ssl)
+{
+	if (!g.debug) {
+		return;
+	}
+    X509 *cert;
+    char *line;
+    cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
+    if ( cert != NULL ) {
+        printf("Server certificates:\n");
+        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+        printf("Subject: %s\n", line);
+        free(line);
+        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+        printf("Issuer: %s\n", line);
+        free(line);
+        X509_free(cert);
+    }
+    else {
+        printf("No certificates.\n");
+	}
 }
 
 /*

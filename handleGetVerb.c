@@ -31,7 +31,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 		strncpy(truncated, path, maxLen);
 		truncated[maxLen] = '\0';
 		strcat(truncated, "...");
-		sendErrorResponse(sockfd, 414, "URI too long", truncated);
+		sendErrorResponse(sockfd, ssl, 414, "URI too long", truncated);
 		return;
 	}
 
@@ -45,7 +45,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 		int e = errno;
 		snprintf(buffer, BUFF_SIZE, "%s: file stat failed: %s\n", fullPath, strerror(e));
 		doDebug(buffer);
-		sendErrorResponse(sockfd, 404, "Not Found", path);
+		sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
 		return;
 	}
 
@@ -54,7 +54,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 		if (fullPath[size-1] != '/') {
 			strcat(fullPath, "/");
 		}
-		// note: not supporting directory listings
+		// default to the index file if not specified
 		strcat(fullPath, "index.html");
 	}
 
@@ -65,10 +65,15 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 
 	int fd = open(fullPath, O_RDONLY);
 	if (fd == -1) {
-		int e = errno;
-		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", fullPath, strerror(e));
-		doDebug(buffer);
-		sendErrorResponse(sockfd, 404, "Not Found", path);
+		// if the path is a directory, and the index file is not present,
+		// do we want to show a directory listing?
+		if (S_ISDIR(sb.st_mode) && g.dirList) {
+			showDirectoryListing(sockfd, ssl, path);
+		} else {
+			snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", fullPath, strerror(errno));
+			doDebug(buffer);
+			sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
+		}
 		return;
 	}
 
@@ -88,20 +93,12 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 "Content-Length: %d\r\n\r\n";
 
 	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, ts, mimeType, size);
-	off_t offset = 0;
-	size_t sent;
-	if (g.useTLS) {
-		if (SSL_write_ex(ssl, buffer, sz, &sent) == 0) {
-			doDebug("Problem sending response headers");
-		}
-	} else {
-		sent = sendData(sockfd, buffer, sz);
-	}
-
+	size_t sent = sendData(sockfd, ssl, buffer, sz);
 	if (sent != sz) {
 		doDebug("Problem sending response headers");
 	}
 
+	off_t offset = 0;
 	if (g.useTLS) {
 		sent = SSL_sendfile(ssl, fd, offset, size, 0);
 	} else {
@@ -111,8 +108,6 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 		snprintf(buffer, BUFF_SIZE, "Problem sending response body: SIZE %d SENT %d\n", size, sent);
 		doDebug(buffer);
 	}
-
-	close(fd);
 
 	accessLog(sockfd, "GET", httpCode, path, size);
 	return;
@@ -140,4 +135,3 @@ getMimeType(char *name, char *mimeType)
 	}
 	return;
 }
-

@@ -19,10 +19,11 @@ parseArgs(int argc, char* argv[])
 	g.debug = 0;
 	g.trace = 0;
 	g.useTLS = 0;
+	g.dirList = 0;
 	g.port = 8080;
 	g.epollArraySize = 64;
 	int c;
-	while ((c = getopt(argc, argv, "hdfstp:e:")) != EOF)
+	while ((c = getopt(argc, argv, "dfhlstp:e:")) != EOF)
 		switch(c) {
 			case 'd':
 				g.debug = 1;
@@ -35,6 +36,9 @@ parseArgs(int argc, char* argv[])
 				break;
 			case 's':
 				g.useTLS = 1;
+				break;
+			case 'l':
+				g.dirList = 1;
 				break;
 			case 'p':
 				g.port = atoi(optarg);
@@ -49,6 +53,7 @@ parseArgs(int argc, char* argv[])
 				printf("	-d = turn on debugging\n");
 				printf("	-t = turn on tracing\n");
 				printf("	-h = print this message\n");
+				printf("	-l = show directoy listing if missing index file\n");
 				printf("	-p = port on which to listen\n");
 				printf("	-e = max concurrent epoll events\n");
 				printf("	-s = use SSL/TLS\n");

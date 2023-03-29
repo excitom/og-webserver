@@ -39,7 +39,7 @@ processInput(int fd, SSL *ssl) {
 	if (received <= 0) {
 		// no data to read
 		doDebug("NO DATA\n");
-		sendErrorResponse(fd, 400, "Bad Request", "No data");
+		sendErrorResponse(fd, ssl, 400, "Bad Request", "No data");
 		return;
 	} else {
 		// Expected format:
@@ -67,7 +67,7 @@ processInput(int fd, SSL *ssl) {
 			if (!path) {
 				path = "/";
 			}
-			sendErrorResponse(fd, 400, "Bad Request", path);
+			sendErrorResponse(fd, ssl, 400, "Bad Request", path);
 			return;
 		}
 
@@ -82,7 +82,7 @@ processInput(int fd, SSL *ssl) {
 		// Only support the GET verb at this time
 		//
 		if (strcmp(verb, "GET") != 0) {
-			sendErrorResponse(fd, 405, "Method Not Allowed", path);
+			sendErrorResponse(fd, ssl, 405, "Method Not Allowed", path);
 			return;
 		}
 		handleGetVerb(fd, ssl, path, queryString);

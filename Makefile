@@ -8,7 +8,8 @@ SRCS = server.c \
 	  parseMimeTypes.c \
 	  parseArgs.c \
 	  log.c \
-	  daemonize.c
+	  daemonize.c \
+	  showDirectoryListing.c
 
 OBJS = $(SRCS:.c=.o)
 EXE = server
