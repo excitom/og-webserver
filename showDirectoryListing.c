@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #include "server.h"
 #include "global.h"
 
@@ -45,7 +46,11 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 		addFragment(path, ep->d_name);
 	}
 	closedir(dp);
-	char *header =	"<html><head><title>Directory Listing</title></head>"
+	char *header =	"<html><head>"
+					"<title>Directory Listing</title>"
+					"<style type=\"text/css\">body {font-family: system-ui;}"
+					".sz {font-size: 10px;}</style>"
+					"</head>"
 					"<body><h1>Directory Listing</h1><ul>";
 	char *footer =	"</ul></body></html>";
 	int contentLength = strlen(header) + strlen(footer);
@@ -68,6 +73,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 	// send the response headers
 	sendData(sockfd, ssl, (char *)&buffer, sz);
 
+	// send the response body
 	sendData(sockfd, ssl, header, strlen(header));
 	while(fragments != NULL) {
 		struct _fragment *f = fragments;
@@ -103,11 +109,28 @@ addFragment(char *dirPath, char *fileName)
 		prev->next = f;
 	}
 	//
-	// fragment structure:
-	// <li><a href="PATH">FILE NAME</a></li>
+	// Get the file size
 	//
 	char buffer[BUFF_SIZE];
-	f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a></li>", dirPath, fileName, fileName);
+	char *fullPath = (char *)&buffer;
+	strcpy(fullPath, g.docRoot);
+	strcat(fullPath, dirPath);
+	strcat(fullPath, fileName);
+	struct stat sb;
+	int fileSize = 0;
+	if (stat(fullPath, &sb) == 0) {
+		fileSize = (int)sb.st_size;
+	}
+	
+	//
+	// fragment structure:
+	// <li><a href="PATH">FILE NAME</a> SIZE Bytes</li>
+	//
+	if (S_ISDIR(sb.st_mode)) {
+		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a> Directory</li>", dirPath, fileName, fileName, fileSize);
+	} else {
+		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a><span  class=\"sz\"> - %'d Bytes</span></li>", dirPath, fileName, fileName, fileSize);
+	}
 	f->fragment = (char *)malloc(f->len+1);
 	strcpy(f->fragment, (char *)&buffer);
 	return;

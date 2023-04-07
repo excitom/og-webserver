@@ -9,7 +9,8 @@ SRCS = server.c \
 	  parseArgs.c \
 	  log.c \
 	  daemonize.c \
-	  showDirectoryListing.c
+	  showDirectoryListing.c \
+	  sslServer.c
 
 OBJS = $(SRCS:.c=.o)
 EXE = server

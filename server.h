@@ -21,7 +21,9 @@ void errorLog(int, char*, int, char*, char*);
 void openLogFiles();
 void getMimeType(char*, char*);
 void showDirectoryListing(int, SSL*, char *);
+void sslServer();
 
+#define FAIL    -1
 #define BUFF_SIZE 4096
 #define TIME_BUF 256
 
@@ -52,4 +54,6 @@ struct globalVars {
 	int accessFd;
 	int errorFd;
 	struct _mimeTypes *mimeTypes;
+	char certFile[256];
+	char keyFile[256];
 };

@@ -5,7 +5,7 @@
  * model. There is a single process and a no threads, but everything is
  * done with non-blocking, asynchronous I/O.
  *
- * Tom Lang 2/2023
+ * (c) Tom Lang 2/2023
  */
 
 #include <stdlib.h>
@@ -21,6 +21,7 @@
 #include <sys/epoll.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <locale.h>
 #include "server.h"
 
 // global variables
@@ -35,11 +36,17 @@ int fdCount = 1;
 int
 main(int argc, char *argv[])
 {
+	setlocale(LC_NUMERIC, "");
 	buffer = malloc(BUFF_SIZE);
 
 	parseArgs(argc, argv);
 	daemonize();
 	parseMimeTypes();
+
+	if (g.useTLS) {
+		sslServer();
+		exit(0);
+	}
 
 	int epollfd = epollCreate();
 
@@ -54,13 +61,6 @@ main(int argc, char *argv[])
 		snprintf(buffer, BUFF_SIZE, "Couldn't add server socket %d to epoll set: %m\n", sockfd);
 		doDebug(buffer);
 		cleanup(sockfd);	  
-	}
-
-	SSL_CTX *ctx;
-	SSL *ssl = NULL;
-	if (g.useTLS) {
-		ctx = createContext();
-		configureContext(ctx);
 	}
 
 	//
@@ -156,24 +156,9 @@ main(int argc, char *argv[])
 					//
 					// Process the incoming data from a socket
 					//
-					if (g.useTLS) {
-						ssl = SSL_new(ctx);
-						SSL_set_fd(ssl, fd);
-						if (SSL_accept(ssl) <= 0) {
-							ERR_print_errors_fp(stderr);
-							perror("SSL accept failed ");
-							cleanup(sockfd);
-						}
-						ShowCerts(ssl);
-					}
-
-					processInput(fd, ssl);
+					processInput(fd, NULL);
 
 					// not handling "keep alive" yet
-					if (g.useTLS) {
-						SSL_shutdown(ssl);
-						SSL_CTX_free(ctx);
-					}
 					shutdown(fd, SHUT_RDWR);
 					close(fd);
 					fdCount--;
@@ -222,11 +207,15 @@ createBindAndListen(int port)
 	}
 	snprintf(buffer, BUFF_SIZE, "New socket created with sockfd %d\n", sockfd);
 	doDebug(buffer);
-	if (fcntl(sockfd, F_SETFL, O_NONBLOCK)) {
-		snprintf(buffer, BUFF_SIZE, "Could not make the socket non-blocking: %m\n");
-		doDebug(buffer);
-		close(sockfd);
-		exit(1);
+
+	// use blocking I/O for TLS until for now
+	if (!g.useTLS) {
+		if (fcntl(sockfd, F_SETFL, O_NONBLOCK)) {
+			snprintf(buffer, BUFF_SIZE, "Could not make the socket non-blocking: %m\n");
+			doDebug(buffer);
+			close(sockfd);
+			exit(1);
+		}
 	}
 
 	int on = 1;
@@ -238,6 +227,7 @@ createBindAndListen(int port)
 	}
 
 	struct sockaddr_in bindaddr;
+	bzero(&bindaddr, sizeof(bindaddr));
 	bindaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	bindaddr.sin_family= AF_INET;
 	bindaddr.sin_port = htons(port);
@@ -321,84 +311,6 @@ sendData(int fd, SSL *ssl, unsigned char* ptr, int nbytes)
 		}
 	}
 	return nsent;
-}
-
-/**
- * Create SSL context
- */
-SSL_CTX *
-createContext()
-{
-	const SSL_METHOD *method;
-	SSL_CTX *ctx;
-
-	method = TLS_server_method();
-
-	ctx = SSL_CTX_new(method);
-	if (!ctx) {
-		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
-	}
-
-	return ctx;
-}
-
-/**
- * Configure SSL
- */
-void
-configureContext(SSL_CTX *ctx)
-{
-	/* Set the key and cert */
-	char *path = malloc(256);
-	strcpy(path, g.configPath);
-	strcat(path, "/certificate.pem");
-	if (SSL_CTX_use_certificate_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
-		fprintf(stderr, "CERT %s\n", path);
-		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
-	}
-
-	strcpy(path, g.configPath);
-	strcat(path, "/key.pem");
-	if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0 ) {
-		fprintf(stderr, "KEY %s\n", path);
-		ERR_print_errors_fp(stderr);
-		exit(EXIT_FAILURE);
-	}
-
-	/* verify private key */
-    if ( !SSL_CTX_check_private_key(ctx) ) {
-        fprintf(stderr, "Private key does not match the public certificate\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-/**
- * Debug output: Show SSL certificate details
- */
-void
-ShowCerts(SSL* ssl)
-{
-	if (!g.debug) {
-		return;
-	}
-    X509 *cert;
-    char *line;
-    cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
-    if ( cert != NULL ) {
-        printf("Server certificates:\n");
-        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        printf("Subject: %s\n", line);
-        free(line);
-        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        printf("Issuer: %s\n", line);
-        free(line);
-        X509_free(cert);
-    }
-    else {
-        printf("No certificates.\n");
-	}
 }
 
 /*

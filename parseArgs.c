@@ -126,4 +126,13 @@ parseArgs(int argc, char* argv[])
 	}
 	snprintf(buffer, BUFF_SIZE, "Listening port: %d\nDocument root: %s \nConfig path: %s\nLog path %s\n", g.port, g.docRoot, g.configPath, g.logPath);
 	doDebug(buffer);
+
+	// Temporary - hardcoded cert and key file names
+	if (g.useTLS) {
+		strcpy(g.certFile, "/halsoft.crt");
+		strcpy(g.keyFile, "/halsoft.key");
+	} else {
+		g.certFile[0] = '\0';
+		g.keyFile[0] = '\0';
+	}
 }

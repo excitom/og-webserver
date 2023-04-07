@@ -34,22 +34,22 @@ struct _mimeTypes *addMimeTypeEntry();
 void
 parseMimeTypes() {
 	g.mimeTypes = NULL;		// start with an empty list
-	char buffer[BUFF_SIZE];
-	char *p = buffer;
-	strcpy(p, g.configPath);
-	strcat(p, "/mime.types");
-	int fd = open(p, O_RDONLY);
+	char *fileName = malloc(256);
+	strcpy(fileName, g.configPath);
+	strcat(fileName, "/mime.types");
+	int fd = open(fileName, O_RDONLY);
 	if (fd == -1) {
 		int e = errno;
-		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
+		char buffer[BUFF_SIZE];
+		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", fileName, strerror(e));
 		doDebug(buffer);
 		exit(1);
 	}
 
 	// allocate space to hold the whole file
   	int size = lseek(fd, 0, SEEK_END);
-	char * data = malloc(size+1);
-	p = data;
+	char *data = malloc(size+1);
+	char *p = data;
 	if (p == NULL) {
 		perror("Out of memory");
 		exit(1);
@@ -94,8 +94,9 @@ parseMimeTypes() {
 		}
 	}
 
-	// freeup the space for the file
+	// freeup the space for the file and file name
 	free(data);
+	free(fileName);
 }
 
 /**
