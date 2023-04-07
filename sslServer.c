@@ -44,8 +44,9 @@ sslServer()
 		int clientfd = accept(sockfd, (struct sockaddr*)&addr, &len);
 		ssl = SSL_new(ctx);
 		SSL_set_fd(ssl, clientfd);
-    	if ( SSL_accept(ssl) == FAIL ) {     /* do SSL-protocol accept */
-        	ERR_print_errors_fp(stderr);
+		if ( SSL_accept(ssl) == FAIL ) {     /* do SSL-protocol accept */
+			ERR_print_errors_fp(stderr);
+			perror("Accept failed");
 		} else {
 			processInput(clientfd, ssl);
 		}
@@ -54,6 +55,7 @@ sslServer()
 	}
 	close(sockfd);
 	SSL_CTX_free(ctx);
+	free(buffer);
 }
 
 /**
@@ -73,6 +75,8 @@ createContext()
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}
+	// enable kernel level TLS
+	SSL_CTX_set_options(ctx, SSL_OP_ENABLE_KTLS);
 
 	return ctx;
 }

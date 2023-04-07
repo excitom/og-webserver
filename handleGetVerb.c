@@ -100,7 +100,14 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 
 	off_t offset = 0;
 	if (g.useTLS) {
-		sent = SSL_sendfile(ssl, fd, offset, size, 0);
+		//sent = SSL_sendfile(ssl, fd, offset, size, 0);
+		char *p = malloc(size);
+		read(fd, p, size);
+		if (SSL_write_ex(ssl, p, size, &sent) == 0) {
+			if (g.debug) {
+				ERR_print_errors_fp(stderr);
+			}
+		}
 	} else {
 		sent = sendfile(sockfd, fd, &offset, size);
 	}

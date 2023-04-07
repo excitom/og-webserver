@@ -75,8 +75,8 @@ processInput(int fd, SSL *ssl) {
 		p = strchr(path, '?');
 		if (p != NULL) {
 			*p++ = '\0';
+			queryString = p;
 		}
-		queryString = p;
 
 		//
 		// Only support the GET verb at this time
