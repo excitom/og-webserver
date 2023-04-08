@@ -108,6 +108,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 				ERR_print_errors_fp(stderr);
 			}
 		}
+		free(p);
 	} else {
 		sent = sendfile(sockfd, fd, &offset, size);
 	}
