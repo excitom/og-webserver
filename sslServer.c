@@ -44,7 +44,7 @@ sslServer()
 		int clientfd = accept(sockfd, (struct sockaddr*)&addr, &len);
 		ssl = SSL_new(ctx);
 		SSL_set_fd(ssl, clientfd);
-		if ( SSL_accept(ssl) == FAIL ) {     /* do SSL-protocol accept */
+		if ( SSL_accept(ssl) == FAIL ) {	 /* do SSL-protocol accept */
 			ERR_print_errors_fp(stderr);
 			perror("Accept failed");
 		} else {
@@ -67,8 +67,8 @@ createContext()
 	const SSL_METHOD *method;
 	SSL_CTX *ctx;
 	method = TLS_server_method();
-    OpenSSL_add_all_algorithms();  /* load & register all cryptos, etc. */
-    SSL_load_error_strings();   /* load all error messages */
+OpenSSL_add_all_algorithms();  /* load & register all cryptos, etc. */
+	SSL_load_error_strings();   /* load all error messages */
 
 	ctx = SSL_CTX_new(method);
 	if (!ctx) {
@@ -106,27 +106,27 @@ configureContext(SSL_CTX *ctx)
 	}
 
 	/* verify private key */
-    if ( !SSL_CTX_check_private_key(ctx) ) {
-        fprintf(stderr, "Private key does not match the public certificate\n");
-        exit(EXIT_FAILURE);
-    }
+	if ( !SSL_CTX_check_private_key(ctx) ) {
+		fprintf(stderr, "Private key does not match the public certificate\n");
+		exit(EXIT_FAILURE);
+	}
 }
 
 void showCerts(SSL* ssl) {
-    X509 *cert;
-    char *line;
-    cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
-    if ( cert != NULL )
-    {
-        printf("Server certificates:\n");
-        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        printf("Subject: %s\n", line);
-        free(line);
-        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        printf("Issuer: %s\n", line);
-        free(line);
-        X509_free(cert);
-    }
-    else
-        printf("No certificates.\n");
+	X509 *cert;
+	char *line;
+	cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
+	if ( cert != NULL )
+	{
+		printf("Server certificates:\n");
+		line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+		printf("Subject: %s\n", line);
+		free(line);
+		line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+		printf("Issuer: %s\n", line);
+		free(line);
+		X509_free(cert);
+	}
+	else
+		printf("No certificates.\n");
 }

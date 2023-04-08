@@ -1,3 +1,8 @@
+/**
+ * Parse command line arguments
+ *
+ * (c) Tom Lang 2/2023
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,9 +14,6 @@
 #include "server.h"
 #include "global.h"
 
-/**
- * Parse command line args
- */
 void
 parseArgs(int argc, char* argv[])
 {

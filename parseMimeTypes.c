@@ -1,18 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include "server.h"
-#include "global.h"
-
-char *parseLine(char *);
-void saveMimeType(char *, char *);
-struct _mimeTypes *addMimeTypeEntry();
-
 /**
  * Parse the mime.types file.
  *
@@ -30,7 +15,24 @@ struct _mimeTypes *addMimeTypeEntry();
  * 	}
  * 	The white space is ignored except for one space between mimeType and
  * 	extension. The whole file could be one long line.
+ *
+ * (c) Tom Lang 2/2023
  */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include "server.h"
+#include "global.h"
+
+char *parseLine(char *);
+void saveMimeType(char *, char *);
+struct _mimeTypes *addMimeTypeEntry();
+
 void
 parseMimeTypes() {
 	g.mimeTypes = NULL;		// start with an empty list

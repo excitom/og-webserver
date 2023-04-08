@@ -1,3 +1,8 @@
+/**
+ * Handle a GET request
+ *
+ * (c) Tom Lang 2/2023
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -16,9 +21,6 @@
 #include "server.h"
 #include "global.h"
 
-/**
- * Handle a GET request
- */
 void
 handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 {
