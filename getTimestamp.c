@@ -1,15 +1,17 @@
+/**
+ * Get a timestamp for the header
+ * Option: RESPONSE_FORMAT = response header format
+ *         LOG_FILE_FORMAT = log file name format
+ *         LOG_RECORD_FORMAT = log file record format
+ *
+ * (c) Tom Lang 2/2023
+ */
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
 #include "server.h"
 #include "global.h"
 
-/**
- * Get a timestamp for the header
- * Option: RESPONSE_FORMAT = response header format
- *         LOG_FILE_FORMAT = log file name format
- *         LOG_RECORD_FORMAT = log file record format
- */
 void
 getTimestamp(unsigned char *buf, int opt)
 {

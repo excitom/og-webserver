@@ -1,3 +1,16 @@
+/**
+ * When a URL is requested which is a directory name and the 
+ * directory does not contain an INDEX file, show a simple HTML
+ * page which contains a listing of the files in the directory.
+ * Each file name is a clickable link so that the file contents
+ * can be displayed.
+ *
+ * This behavior can be considered a security flaw since it can reveal
+ * information that was not inteded. Therefore it is optional to
+ * show instead a 404 error.
+ *
+ * (c) Tom Lang 2/2023
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

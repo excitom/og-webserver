@@ -1,3 +1,8 @@
+/**
+ * Turn the web server process into a daemon
+ *
+ * (c) Tom Lang 2/2023
+ */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -9,9 +14,6 @@
 #include "server.h"
 #include "global.h"
 
-/**
- * Turn the web server process into a daemon
- */
 void
 daemonize()
 {

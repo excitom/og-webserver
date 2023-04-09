@@ -1,5 +1,9 @@
+/**
+ * Manage access logs and error logs
+ *
+ * (c) Tom Lang 2/2023
+ */
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -7,15 +11,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "server.h"
 #include "global.h"
 
-/**
- * Write to access and error log files
- */
 void
 accessLog(int sockfd, char *verb, int httpCode, char *path, int size)
 {

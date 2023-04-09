@@ -1,3 +1,9 @@
+/**
+ * Process input from a socket. The expected input is an 
+ * HTTP request.
+ *
+ * (c) Tom Lang 2/2023
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,9 +20,6 @@
 #include "server.h"
 #include "global.h"
 
-/**
- * Process input from a socket
- */
 void
 processInput(int fd, SSL *ssl) {
 	char *host = NULL;

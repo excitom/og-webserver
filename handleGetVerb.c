@@ -1,5 +1,5 @@
 /**
- * Handle a GET request
+ * Handle a HTTP GET request
  *
  * (c) Tom Lang 2/2023
  */

@@ -1,3 +1,8 @@
+/**
+ * Send an HTTP error response to a bad HTTP request
+ *
+ * (c) Tom Lang 2/2023
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,9 +15,6 @@
 #include <arpa/inet.h>
 #include "server.h"
 
-/**
- * Send an error response to a HTTP request
- */
 void
 sendErrorResponse( int fd, SSL* ssl, int code, char *msg, char *path )
 {
