@@ -45,6 +45,9 @@ release/
 *.pdb
 debug/
 
+# vim swap file
+*.swp
+
 # Kernel Module Compile Results
 *.mod*
 *.cmd
