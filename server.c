@@ -257,9 +257,9 @@ createBindAndListen(int port)
  * Receive data from a socket.
  */
 int
-recvData(int fd, unsigned char* ptr, int nbytes)
+recvData(int fd, char* ptr, int nbytes)
 {
-	unsigned char *p = ptr;
+	char *p = ptr;
 	int n = 0;
 	int received = 0;
 	while ((n = recv(fd, p, nbytes, 0)) < 0) {
@@ -284,9 +284,9 @@ recvData(int fd, unsigned char* ptr, int nbytes)
  * Send data to a socket
  */
 int
-sendData(int fd, SSL *ssl, unsigned char* ptr, int nbytes)
+sendData(int fd, SSL *ssl, char* ptr, int nbytes)
 {
-	doTrace( 'S', (unsigned char *)ptr, nbytes);
+	doTrace( 'S', ptr, nbytes);
 	size_t nsent;
 	if (g.useTLS) {
 		if (SSL_write_ex(ssl, ptr, nbytes, &nsent) == 0) {

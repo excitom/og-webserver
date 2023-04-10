@@ -13,7 +13,7 @@
 #include "global.h"
 
 void
-getTimestamp(unsigned char *buf, int opt)
+getTimestamp(char *buf, int opt)
 {
 	time_t rawtime = time(NULL);
 	if (rawtime == -1) {

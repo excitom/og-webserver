@@ -72,8 +72,8 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 		contentLength += f->len;
 		f = f->next;
 	}
-	unsigned char ts[TIME_BUF];
-	getTimestamp((unsigned char *)&ts, RESPONSE_FORMAT);
+	char ts[TIME_BUF];
+	getTimestamp((char *)&ts, RESPONSE_FORMAT);
 	int httpCode = 200;
 	char *responseHeaders = 
 "HTTP/1.1 %d OK\r\n"
@@ -140,7 +140,7 @@ addFragment(char *dirPath, char *fileName)
 	// <li><a href="PATH">FILE NAME</a> SIZE Bytes</li>
 	//
 	if (S_ISDIR(sb.st_mode)) {
-		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a> Directory</li>", dirPath, fileName, fileName, fileSize);
+		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a> Directory</li>", dirPath, fileName, fileName);
 	} else {
 		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a><span  class=\"sz\"> - %'d Bytes</span></li>", dirPath, fileName, fileName, fileSize);
 	}

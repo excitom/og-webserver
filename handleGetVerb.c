@@ -84,7 +84,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 	lseek(fd, 0, SEEK_SET);
 
 	unsigned char ts[TIME_BUF];
-	getTimestamp((unsigned char *)&ts, RESPONSE_FORMAT);
+	getTimestamp((char *)&ts, RESPONSE_FORMAT);
 
 	int httpCode = 200;
 	char *responseHeaders = 
@@ -115,7 +115,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 		sent = sendfile(sockfd, fd, &offset, size);
 	}
 	if (sent != size) {
-		snprintf(buffer, BUFF_SIZE, "Problem sending response body: SIZE %d SENT %d\n", size, sent);
+		snprintf(buffer, BUFF_SIZE, "Problem sending response body: SIZE %d SENT %d\n", size, (int)sent);
 		doDebug(buffer);
 	}
 

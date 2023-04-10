@@ -34,10 +34,10 @@ processInput(int fd, SSL *ssl) {
 	if (g.useTLS) {
 		SSL_read_ex(ssl, (void *)&inbuff, BUFF_SIZE, &received);
 	} else {
-		received = recvData(fd, (char *)&inbuff, sizeof(inbuff));
+		received = recvData(fd, (char *)&inbuff, BUFF_SIZE);
 	}
 
-	snprintf(outbuff, BUFF_SIZE, "RECEIVED %d BYTES\n", received);
+	snprintf(outbuff, BUFF_SIZE, "RECEIVED %d BYTES\n", (int)received);
 	doDebug(outbuff);
 	if (received <= 0) {
 		// no data to read

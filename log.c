@@ -19,8 +19,8 @@
 void
 accessLog(int sockfd, char *verb, int httpCode, char *path, int size)
 {
-	unsigned char ts[TIME_BUF];
-	getTimestamp((unsigned char *)&ts, LOG_RECORD_FORMAT);
+	char ts[TIME_BUF];
+	getTimestamp((char *)&ts, LOG_RECORD_FORMAT);
 
 	struct sockaddr_in peeraddr;
 	socklen_t len = sizeof(peeraddr);
@@ -36,8 +36,8 @@ accessLog(int sockfd, char *verb, int httpCode, char *path, int size)
 void
 errorLog(int sockfd, char *verb, int httpCode, char *path, char *msg)
 {
-	unsigned char ts[TIME_BUF];
-	getTimestamp((unsigned char *)&ts, LOG_RECORD_FORMAT);
+	char ts[TIME_BUF];
+	getTimestamp((char *)&ts, LOG_RECORD_FORMAT);
 
 	struct sockaddr_in peeraddr;
 	socklen_t len = sizeof(peeraddr);
@@ -54,8 +54,8 @@ void openLogFiles()
 {
 	char buffer[BUFF_SIZE];
 	char *p = (char *)&buffer;
-	unsigned char ts[TIME_BUF];
-	getTimestamp((unsigned char *)&ts, LOG_FILE_FORMAT);
+	char ts[TIME_BUF];
+	getTimestamp((char *)&ts, LOG_FILE_FORMAT);
 	strcpy(p, g.logPath);
 	strcat(p, "/access.log.");
 	strcat(p, ts);
@@ -83,7 +83,7 @@ void openLogFiles()
  * Note: Assumes a formatted string input.
  */
 void
-doDebug(unsigned char* buffer) {
+doDebug(char* buffer) {
 	if (!g.debug) {
 		return;
 	}
@@ -97,7 +97,7 @@ doDebug(unsigned char* buffer) {
  * Verbose trace
  */
 void
-doTrace (char direction, unsigned char *p, int bytes)
+doTrace (char direction, char *p, int bytes)
 {
 	if (!g.trace)
 		return;

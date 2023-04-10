@@ -28,13 +28,16 @@
 // global variables
 struct globalVars g;
 
+// main thread function
 void *processRequest( void *);
 
+// thread parameters
 struct _request {
 	int clientfd;
 	SSL_CTX *ctx;
 };
 
+// list of active threads
 struct _thread {
 	struct _thread *next;
 	pthread_t thread;
@@ -46,8 +49,7 @@ struct _thread {
 void
 sslServer()
 {
-	SSL_CTX *ctx;
-	ctx = createContext();
+	SSL_CTX *ctx = createContext();
 	configureContext(ctx);
 	int sockfd = createBindAndListen(g.port);
 	int threadCount = 0;
@@ -94,6 +96,7 @@ processRequest(void *param)
 	shutdown(r->clientfd, SHUT_RDWR);
 	close(r->clientfd);
 	printf("Thread exiting\n");
+	return param;
 }
 
 /**
