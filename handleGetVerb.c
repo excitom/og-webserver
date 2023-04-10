@@ -24,6 +24,9 @@
 void
 handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 {
+	if (queryString != NULL) {
+		doDebug("Query string ignored, not yet implemented.");
+	}
 	// todo: disallow ../ in the path
 	int size = strlen(g.docRoot) + strlen(path);
 	int maxLen = 255;
@@ -83,7 +86,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 	size = lseek(fd, 0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
-	unsigned char ts[TIME_BUF];
+	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, RESPONSE_FORMAT);
 
 	int httpCode = 200;
@@ -96,7 +99,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 
 	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, ts, mimeType, size);
 	size_t sent = sendData(sockfd, ssl, buffer, sz);
-	if (sent != sz) {
+	if ((int)sent != sz) {
 		doDebug("Problem sending response headers");
 	}
 
@@ -114,7 +117,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 	} else {
 		sent = sendfile(sockfd, fd, &offset, size);
 	}
-	if (sent != size) {
+	if ((int)sent != size) {
 		snprintf(buffer, BUFF_SIZE, "Problem sending response body: SIZE %d SENT %d\n", size, (int)sent);
 		doDebug(buffer);
 	}

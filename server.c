@@ -298,13 +298,13 @@ sendData(int fd, SSL *ssl, char* ptr, int nbytes)
 		int nleft = nbytes;
 		while (nleft > 0) {
 			nsent = send(fd, ptr, nleft, 0);
-			if (nsent > nleft)
+			if ((int)nsent > nleft)
 				return -1;
 			if (nsent > 0) {
 				nleft -= nsent;
 				ptr   += nsent;
 			}
-			else if (!(nsent == -1 && errno != EINTR)) {
+			else if (!((int)nsent == -1 && errno != EINTR)) {
 				snprintf(buffer, BUFF_SIZE, "Send to socket %d failed: %m\n", fd);
 				doDebug(buffer);
 			}
