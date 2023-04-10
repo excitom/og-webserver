@@ -41,6 +41,10 @@ struct _thread {
 	pthread_t thread;
 };
 
+// thread safe counter
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+int  threadCount = 0;
+
 /**
  * The SSL server
  */
@@ -50,7 +54,6 @@ sslServer()
 	SSL_CTX *ctx = createContext();
 	configureContext(ctx);
 	int sockfd = createBindAndListen(g.port);
-	int threadCount = 0;
 	struct _thread *threadList = NULL;
 	while(1) {
 		struct sockaddr_in addr;
@@ -61,8 +64,6 @@ sslServer()
 		request.ctx = ctx;
 		pthread_t thread;
 		pthread_create(&thread, NULL, processRequest, (void *)&request);
-		threadCount++;
-		printf("Thread Count: %d\n", threadCount);
 		struct _thread *t = (struct _thread*)malloc(sizeof(struct _thread));
 		t->next = threadList;
 		threadList = t;
@@ -82,6 +83,11 @@ sslServer()
 void *
 processRequest(void *param)
 {
+	printf("Thread started ...\n");
+	pthread_mutex_lock(&mutex1);
+	threadCount++;
+	printf("Thread Count: %d\n", threadCount);
+	pthread_mutex_unlock(&mutex1);
 	struct _request *r = (struct _request *)param;
 	SSL *ssl = SSL_new(r->ctx);
 	SSL_set_fd(ssl, r->clientfd);
@@ -93,7 +99,10 @@ processRequest(void *param)
 	}
 	shutdown(r->clientfd, SHUT_RDWR);
 	close(r->clientfd);
-	printf("Thread exiting\n");
+	pthread_mutex_lock(&mutex1);
+	threadCount--;
+	printf("Thread exiting, count: %d\n", threadCount);
+	pthread_mutex_unlock(&mutex1);
 	return param;
 }
 
