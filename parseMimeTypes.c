@@ -31,7 +31,7 @@
 
 char *parseLine(char *);
 void saveMimeType(char *, char *);
-struct _mimeTypes *addMimeTypeEntry();
+_mimeTypes *addMimeTypeEntry();
 
 void
 parseMimeTypes() {
@@ -89,7 +89,7 @@ parseMimeTypes() {
 
 	if (g.debug) {
 		fprintf(stderr, "MIME Types:\n");
-		struct _mimeTypes *mt = g.mimeTypes;
+		_mimeTypes *mt = g.mimeTypes;
 		while (mt != NULL) {
 			fprintf(stderr, "MIME Type: %s -- Extension: %s\n", mt->mimeType, mt->extension);
 			mt = mt->next;
@@ -152,7 +152,7 @@ parseLine(char *p) {
 void
 saveMimeType(char *extension, char *mimeType)
 {
-	struct _mimeTypes *mt = addMimeTypeEntry();
+	_mimeTypes *mt = addMimeTypeEntry();
 
 	// save the mime type
 	char *buff = malloc(strlen(mimeType)+1);
@@ -169,16 +169,16 @@ saveMimeType(char *extension, char *mimeType)
 /**
  * allocate and chain a new mime type struct
  */
-struct _mimeTypes *
+_mimeTypes *
 addMimeTypeEntry()
 {
-	struct _mimeTypes *mt = malloc(sizeof(struct _mimeTypes));
+	_mimeTypes *mt = malloc(sizeof(_mimeTypes));
 	mt->next = NULL;
 	if (g.mimeTypes == NULL) {
 		g.mimeTypes = mt;
 	} else {
-		struct _mimeTypes *list = g.mimeTypes;
-		struct _mimeTypes *prev;
+		_mimeTypes *list = g.mimeTypes;
+		_mimeTypes *prev;
 		while(list != NULL) {
 			prev = list;
 			list = list->next;

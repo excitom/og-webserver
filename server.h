@@ -33,11 +33,11 @@ void sslServer();
 #define LOG_RECORD_FORMAT 2
 
 // mime types list
-struct _mimeTypes {
+typedef struct _mimeTypes {
 	struct _mimeTypes *next;
 	char *mimeType;
 	char *extension;
-};
+}_mimeTypes;
 
 // global variables
 struct globalVars {

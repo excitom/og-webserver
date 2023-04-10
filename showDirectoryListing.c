@@ -24,12 +24,12 @@
 #include "server.h"
 #include "global.h"
 
-struct _fragment {
+typedef struct _fragment {
 	struct _fragment *next;
 	int len;
 	char *fragment;
-};
-struct _fragment *fragments = NULL;
+} _fragment;
+_fragment *fragments = NULL;
 void addFragment(char *,char *);
 
 /**
@@ -67,7 +67,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 					"<body><h1>Directory Listing</h1><ul>";
 	char *footer =	"</ul></body></html>";
 	int contentLength = strlen(header) + strlen(footer);
-	struct _fragment *f = fragments;
+	_fragment *f = fragments;
 	while(f != NULL) {
 		contentLength += f->len;
 		f = f->next;
@@ -89,7 +89,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 	// send the response body
 	sendData(sockfd, ssl, header, strlen(header));
 	while(fragments != NULL) {
-		struct _fragment *f = fragments;
+		_fragment *f = fragments;
 		fragments = f->next;
 		sendData(sockfd, ssl, f->fragment, f->len);
 		free(f->fragment);
@@ -108,13 +108,13 @@ addFragment(char *dirPath, char *fileName)
 	if (fileName[0] == '.' && fileName[1] == '\0') {
 		return;		// skip dot entry
 	}
-	struct _fragment *f = malloc(sizeof(struct _fragment));
+	_fragment *f = malloc(sizeof(_fragment));
 	f->next = NULL;
 	if (fragments == NULL) {
 		fragments = f;
 	} else {
-		struct _fragment *list = fragments;
-		struct _fragment *prev;
+		_fragment *list = fragments;
+		_fragment *prev;
 		while(list != NULL) {
 			prev = list;
 			list = list->next;

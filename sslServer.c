@@ -30,16 +30,16 @@
 void *processRequest( void *);
 
 // thread parameters
-struct _request {
+typedef struct _request {
 	int clientfd;
 	SSL_CTX *ctx;
-};
+}_request;
 
 // list of active threads
-struct _thread {
+typedef struct _thread {
 	struct _thread *next;
 	pthread_t thread;
-};
+}_thread;
 
 // thread safe counter
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
@@ -54,17 +54,17 @@ sslServer()
 	SSL_CTX *ctx = createContext();
 	configureContext(ctx);
 	int sockfd = createBindAndListen(g.port);
-	struct _thread *threadList = NULL;
+	_thread *threadList = NULL;
 	while(1) {
 		struct sockaddr_in addr;
 		socklen_t len = sizeof(addr);
 		int clientfd = accept(sockfd, (struct sockaddr*)&addr, &len);
-		struct _request request;
+		_request request;
 		request.clientfd = clientfd;
 		request.ctx = ctx;
 		pthread_t thread;
 		pthread_create(&thread, NULL, processRequest, (void *)&request);
-		struct _thread *t = (struct _thread*)malloc(sizeof(struct _thread));
+		_thread *t = (_thread*)malloc(sizeof(_thread));
 		t->next = threadList;
 		threadList = t;
 		t->thread = thread;
@@ -88,7 +88,7 @@ processRequest(void *param)
 	threadCount++;
 	printf("Thread Count: %d\n", threadCount);
 	pthread_mutex_unlock(&mutex1);
-	struct _request *r = (struct _request *)param;
+	_request *r = (_request *)param;
 	SSL *ssl = SSL_new(r->ctx);
 	SSL_set_fd(ssl, r->clientfd);
 	if ( SSL_accept(ssl) == FAIL ) {	 /* do SSL-protocol accept */
