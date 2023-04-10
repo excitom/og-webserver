@@ -1,6 +1,4 @@
 /**
- * Tom's OG Web Server
- *
  * This is a simple web server which is implemented with an event driven
  * model. There is a single process and a no threads, but everything is
  * done with non-blocking, asynchronous I/O.
@@ -23,35 +21,17 @@
 #include <openssl/ssl.h>
 #include <locale.h>
 #include "server.h"
+#include "global.h"
 
-// global variables
-struct globalVars g;
-
-char* buffer;
+char buff[BUFF_SIZE];
+char* buffer = (char *)&buff;
 int fdCount = 1;
 
-/**
- * MAIN function
- */
-int
-main(int argc, char *argv[])
+void
+server()
 {
-	setlocale(LC_NUMERIC, "");
-	buffer = malloc(BUFF_SIZE);
-
-	parseArgs(argc, argv);
-	daemonize();
-	parseMimeTypes();
-
-	if (g.useTLS) {
-		sslServer();
-		exit(0);
-	}
-
 	int epollfd = epollCreate();
-
 	int sockfd = createBindAndListen(g.port);
-
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.u64 = 0LL;

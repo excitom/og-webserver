@@ -1,15 +1,17 @@
 CFLAGS = -Wall -Wextra
 
-SRCS = server.c \
+SRCS = ogws.c \
 	  getTimestamp.c \
 	  processInput.c \
 	  sendErrorResponse.c \
 	  handleGetVerb.c \
 	  parseMimeTypes.c \
 	  parseArgs.c \
+	  parseConfig.c \
 	  log.c \
 	  daemonize.c \
 	  showDirectoryListing.c \
+	  server.c \
 	  sslServer.c
 
 OBJS = $(SRCS:.c=.o)

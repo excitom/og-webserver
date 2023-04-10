@@ -16,11 +16,13 @@ void getTimestamp(char*, int);
 void sendErrorResponse(int, SSL*,int, char*, char*);
 void handleGetVerb(int, SSL*, char*, char*);
 void parseMimeTypes();
+void parseConfig();
 void accessLog(int, char*, int, char*, int);
 void errorLog(int, char*, int, char*, char*);
 void openLogFiles();
 void getMimeType(char*, char*);
 void showDirectoryListing(int, SSL*, char *);
+void server();
 void sslServer();
 
 #define FAIL    -1
