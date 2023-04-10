@@ -96,7 +96,7 @@ parseMimeTypes() {
 		}
 	}
 
-	// freeup the space for the file and file name
+	// free up the space for the file and file name
 	free(data);
 	free(fileName);
 }

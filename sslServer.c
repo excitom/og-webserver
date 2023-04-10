@@ -24,9 +24,7 @@
 #include <openssl/ssl.h>
 #include <pthread.h>
 #include "server.h"
-
-// global variables
-struct globalVars g;
+#include "global.h"
 
 // main thread function
 void *processRequest( void *);
