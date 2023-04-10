@@ -1,4 +1,4 @@
-CFLAGS = 
+CFLAGS = -Wall
 
 SRCS = server.c \
 	  getTimestamp.c \
