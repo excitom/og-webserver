@@ -52,6 +52,11 @@ processInput(int fd, SSL *ssl) {
 		//
 		verb = (char *)&inbuff;
 		p = strchr(verb, ' ');
+		if (!p) {
+			doDebug("Bad data");
+			sendErrorResponse(fd, ssl, 400, "Bad Request", "Bad data");
+			return;
+		}
 		*p++ = '\0';
 		path = p;
 		p = strchr(path, ' ');
