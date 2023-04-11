@@ -45,6 +45,7 @@ typedef struct _mimeTypes {
 struct globalVars {
 	int debug;
 	int trace;
+	int testConfig;
 	int foreground;
 	int autoIndex;
 	int workerConnections;

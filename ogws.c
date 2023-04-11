@@ -30,6 +30,11 @@ main(int argc, char *argv[])
 	parseArgs(argc, argv);
 	parseConfig();
 	checkConfig();
+	// exit if only testing the config
+	if (g.testConfig) {
+		printf("Config OK\n");
+		exit(0);
+	}
 	daemonize();
 	parseMimeTypes();
 

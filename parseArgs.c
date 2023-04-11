@@ -27,7 +27,7 @@ parseArgs(int argc, char* argv[])
 				g.debug = 1;
 				break;
 			case 't':
-				g.trace = 1;
+				g.testConfig = 1;
 				break;
 			case 'f':
 				g.foreground = 1;
@@ -37,7 +37,7 @@ parseArgs(int argc, char* argv[])
 				printf("Options are:\n");
 				printf("	-f = run in the foreground (else daemon)\n");
 				printf("	-d = turn on debugging\n");
-				printf("	-t = turn on tracing\n");
+				printf("	-t = test the configuration\n");
 				printf("	-h = print this message\n");
 				printf("Positional paramter:\n");
 				printf("	config_path - default /etc/ogws\n");
@@ -72,6 +72,7 @@ initGlobals() {
 	g.foreground = 0;
 	g.debug = 0;
 	g.trace = 0;
+	g.testConfig = 0;
 	g.useTLS = 0;
 	g.useSendfile = 0;
 	g.autoIndex = 0;
