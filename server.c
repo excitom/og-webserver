@@ -51,11 +51,11 @@ server()
 		doDebug(buffer);
 
 		int rval;
-		struct epoll_event epoll_events[g.epollArraySize];
+		struct epoll_event epoll_events[g.workerConnections];
 		//
 		// Loop if interrupted by a signal
 		//
-		while ((rval = epoll_wait(epollfd, epoll_events, g.epollArraySize, -1)) < 0) {
+		while ((rval = epoll_wait(epollfd, epoll_events, g.workerConnections, -1)) < 0) {
 			if ((rval < 0) && (errno != EINTR)) {
 				snprintf(buffer, BUFF_SIZE, "EPoll on %d fds failed: %m\n", fdCount);
 				doDebug(buffer);

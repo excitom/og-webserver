@@ -53,7 +53,7 @@ daemonize()
 		}
 
 		// create a file for debug and trace information
-		strcpy(p, g.logPath);
+		strcpy(p, g.configPath);
 		strcat(p, "/debug.out");
 		int fd = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 		if (fd == -1) {

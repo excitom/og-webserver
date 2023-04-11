@@ -15,7 +15,7 @@ SRCS = ogws.c \
 	  sslServer.c
 
 OBJS = $(SRCS:.c=.o)
-EXE = server
+EXE = ogws
 
 RELDIR = release
 RELEXE = $(RELDIR)/$(EXE)

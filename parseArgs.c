@@ -21,11 +21,19 @@ parseArgs(int argc, char* argv[])
 	g.debug = 0;
 	g.trace = 0;
 	g.useTLS = 0;
+	g.useSendfile = 0;
 	g.dirList = 0;
 	g.port = 8080;
-	g.epollArraySize = 64;
+	g.workerConnections = 64;
+	g.keepaliveTimeout = 65;
+	char configPath[] = "/etc/ogws";
+	g.configPath = (char *)malloc(strlen(configPath)+1);
+	strcpy(g.configPath, configPath);
+	char serverName[] = "_";
+	g.serverName = (char *)malloc(strlen(serverName)+1);
+	strcpy(g.serverName, serverName);
 	int c;
-	while ((c = getopt(argc, argv, "dfhlstp:e:")) != EOF)
+	while ((c = getopt(argc, argv, "dfhlstp:")) != EOF)
 		switch(c) {
 			case 'd':
 				g.debug = 1;
@@ -45,9 +53,6 @@ parseArgs(int argc, char* argv[])
 			case 'p':
 				g.port = atoi(optarg);
 				break;
-			case 'e':
-				g.epollArraySize = atoi(optarg);
-				break;
 			case 'h':
 				printf("Tom's OG web server\n");
 				printf("Options are:\n");
@@ -57,7 +62,6 @@ parseArgs(int argc, char* argv[])
 				printf("	-h = print this message\n");
 				printf("	-l = show directoy listing if missing index file\n");
 				printf("	-p = port on which to listen\n");
-				printf("	-e = max concurrent epoll events\n");
 				printf("	-s = use SSL/TLS\n");
 				printf("Positional paramters:\n");
 				printf("	config_path - default /etc/ogws\n");
@@ -83,58 +87,5 @@ parseArgs(int argc, char* argv[])
 		g.configPath = malloc(len+1);
 		strcpy(g.configPath, argv[optind]);
 		optind++;
-	}
-	if (access(g.configPath, R_OK) == -1) {
-		perror("config path not valid:");
-		exit(1);
-	}
-
-	//
-	// doc root file path
-	//
-	if (optind >= argc) {
-		strcpy(buffer, "/www/ogws");
-		int len = strlen(buffer);
-		g.docRoot = malloc(len+1);
-		strcpy(g.docRoot, buffer);
-	} else {
-		int len = strlen(argv[optind]);
-		g.docRoot = malloc(len+1);
-		strcpy(g.docRoot, argv[optind]);
-		optind++;
-	}
-	if (access(g.docRoot, R_OK) == -1) {
-		perror("doc root not valid:");
-		exit(1);
-	}
-
-	//
-	// log file path
-	//
-	if (optind >= argc) {
-		strcpy(buffer, "/var/log/ogws");
-		int len = strlen(buffer);
-		g.logPath = malloc(len+1);
-		strcpy(g.logPath, buffer);
-	} else {
-		int len = strlen(argv[optind]);
-		g.logPath = malloc(len+1);
-		strcpy(g.logPath, argv[optind]);
-		optind++;
-	}
-	if (access(g.logPath, R_OK) == -1) {
-		perror("doc root not valid:");
-		exit(1);
-	}
-	snprintf(buffer, BUFF_SIZE, "Listening port: %d\nDocument root: %s \nConfig path: %s\nLog path %s\n", g.port, g.docRoot, g.configPath, g.logPath);
-	doDebug(buffer);
-
-	// Temporary - hardcoded cert and key file names
-	if (g.useTLS) {
-		strcpy(g.certFile, "/halsoft.crt");
-		strcpy(g.keyFile, "/halsoft.key");
-	} else {
-		g.certFile[0] = '\0';
-		g.keyFile[0] = '\0';
 	}
 }

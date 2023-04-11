@@ -29,6 +29,7 @@ main(int argc, char *argv[])
 	setlocale(LC_NUMERIC, "");
 	parseArgs(argc, argv);
 	parseConfig();
+	checkConfig();
 	daemonize();
 	parseMimeTypes();
 

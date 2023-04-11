@@ -54,22 +54,14 @@ void openLogFiles()
 {
 	char buffer[BUFF_SIZE];
 	char *p = (char *)&buffer;
-	char ts[TIME_BUF];
-	getTimestamp((char *)&ts, LOG_FILE_FORMAT);
-	strcpy(p, g.logPath);
-	strcat(p, "/access.log.");
-	strcat(p, ts);
-	g.accessFd = open(p, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+	g.accessFd = open(g.accessLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
 	if (g.accessFd == -1) {
 		int e = errno;
 		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
 		doDebug(buffer);
 		exit(1);
 	}
-	strcpy(p, g.logPath);
-	strcat(p, "/error.log.");
-	strcat(p, ts);
-	g.errorFd = open(p, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+	g.errorFd = open(g.errorLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
 	if (g.errorFd == -1) {
 		int e = errno;
 		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
