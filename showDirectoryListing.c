@@ -96,6 +96,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 		free(f);
 	}
 	sendData(sockfd, ssl, footer, strlen(footer));
+	accessLog(sockfd, "GET", 200, path, contentLength);
 	return;
 }
 
