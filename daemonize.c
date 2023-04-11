@@ -35,9 +35,11 @@ daemonize()
 		}
 
 		// save the pid in a file
-		strcpy(p, g.configPath);
-		strcat(p, "/ogws.pid");
-		FILE* fp = fopen(p, "w+");
+		FILE *fp = fopen(g.pidFile, "w+");
+		if (fp == NULL) {
+			perror("pid log not valid:");
+			exit(1);
+		}
 		fprintf(fp, "%d\n", getpid() );
 		fclose(fp);
 
