@@ -14,24 +14,12 @@
 #include "server.h"
 #include "global.h"
 
+void initGlobals();
+
 void
 parseArgs(int argc, char* argv[])
 {
-	g.foreground = 0;
-	g.debug = 0;
-	g.trace = 0;
-	g.useTLS = 0;
-	g.useSendfile = 0;
-	g.dirList = 0;
-	g.port = 8080;
-	g.workerConnections = 64;
-	g.keepaliveTimeout = 65;
-	char configPath[] = "/etc/ogws";
-	g.configPath = (char *)malloc(strlen(configPath)+1);
-	strcpy(g.configPath, configPath);
-	char serverName[] = "_";
-	g.serverName = (char *)malloc(strlen(serverName)+1);
-	strcpy(g.serverName, serverName);
+	initGlobals();
 	int c;
 	while ((c = getopt(argc, argv, "dfhlstp:")) != EOF)
 		switch(c) {
@@ -88,4 +76,44 @@ parseArgs(int argc, char* argv[])
 		strcpy(g.configPath, argv[optind]);
 		optind++;
 	}
+}
+
+/**
+ * Initialize global variables
+ */
+void
+initGlobals() {
+	g.foreground = 0;
+	g.debug = 0;
+	g.trace = 0;
+	g.useTLS = 0;
+	g.useSendfile = 0;
+	g.dirList = 0;
+	g.port = 8080;
+	g.workerConnections = 64;
+	g.keepaliveTimeout = 65;
+	char configPath[] = "/etc/ogws";
+	g.configPath = (char *)malloc(strlen(configPath)+1);
+	strcpy(g.configPath, configPath);
+	char serverName[] = "_";
+	g.serverName = (char *)malloc(strlen(serverName)+1);
+	strcpy(g.serverName, serverName);
+	char indexFile[] = "index.html";
+	g.indexFile = (char *)malloc(strlen(indexFile)+1);
+	strcpy(g.indexFile, indexFile);
+	char docRoot[] = "/var/www/ogws/html";
+	g.docRoot = (char *)malloc(strlen(docRoot)+1);
+	strcpy(g.docRoot, docRoot);
+	char accessLog[] = "/var/log/ogws/access.log";
+	g.accessLog = (char *)malloc(strlen(accessLog)+1);
+	strcpy(g.accessLog, accessLog);
+	g.serverName = NULL;
+	g.certFile = NULL;
+	g.keyFile = NULL;
+	char pidFile[] = "/run/ogws.pid";
+	g.pidFile = (char *)malloc(strlen(pidFile)+1);
+	strcpy(g.pidFile, pidFile);
+	char user[] = "ogws";
+	g.user = (char *)malloc(strlen(user)+1);
+	strcpy(g.user, user);
 }

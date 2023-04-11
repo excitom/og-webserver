@@ -59,11 +59,11 @@ struct globalVars {
 	char *accessLog;
 	char *errorLog;
 	char *serverName;
-	int accessFd;
-	int errorFd;
-	struct _mimeTypes *mimeTypes;
 	char *certFile;
 	char *keyFile;
 	char *pidFile;
 	char *user;
+	int accessFd;
+	int errorFd;
+	struct _mimeTypes *mimeTypes;
 };

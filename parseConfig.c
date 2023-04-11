@@ -36,7 +36,7 @@ typedef struct _keywords {
 
 // specify the pid file location
 char *
-pid(char *p) {
+f_pid(char *p) {
 	_token token = getToken(p);
 	p = token.p;
 	char *pidFile = token.q;
@@ -50,7 +50,7 @@ pid(char *p) {
 
 // specify is the `sendfile` system call should be used
 char *
-sendfile(char *p) {
+f_sendfile(char *p) {
 	_token token = getToken(p);
 	p = token.p;
 	char *sendfile = token.q;
@@ -63,11 +63,11 @@ sendfile(char *p) {
 
 // specify the user name to be used for the server process
 char *
-user(char *p) {
+f_user(char *p) {
 	_token token = getToken(p);
 	p = token.p;
 	char *user = token.q;
-	g.user = (char *)malloc(strlen(user));
+	g.user = (char *)malloc(strlen(user)+1);
 	strcpy(g.user, user);
 	if (g.debug) {
 		fprintf(stderr,"Run as user name %s\n", g.user);
@@ -77,7 +77,7 @@ user(char *p) {
 
 // process the server section
 char *
-_server(char *p) {
+f_server(char *p) {
 	_token token = getSection(p);
 	p = token.p;
 	char *s = token.q;
@@ -94,7 +94,7 @@ _server(char *p) {
 
 // process the http section
 char *
-http(char *p) {
+f_http(char *p) {
 	_token token = getSection(p);
 	p = token.p;
 	char *s = token.q;
@@ -111,11 +111,15 @@ http(char *p) {
 
 // document root
 char *
-root(char *p) {
+f_root(char *p) {
+	if (g.docRoot) {
+		free(g.docRoot);
+		doDebug("Duplicate doc root definition.");
+	}
 	_token token = getToken(p);
 	p = token.p;
 	char *docRoot = token.q;
-	g.docRoot = (char *)malloc(strlen(docRoot));
+	g.docRoot = (char *)malloc(strlen(docRoot)+1);
 	strcpy(g.docRoot, docRoot);
 	if (g.debug) {
 		fprintf(stderr,"Document root %s\n", g.docRoot);
@@ -125,14 +129,15 @@ root(char *p) {
 
 // server name
 char *
-server_name(char *p) {
+f_server_name(char *p) {
 	if (g.serverName) {
 		free(g.serverName);
+		doDebug("Duplicate server name definition.");
 	}
 	_token token = getToken(p);
 	p = token.p;
 	char *serverName = token.q;
-	g.serverName = (char *)malloc(strlen(serverName));
+	g.serverName = (char *)malloc(strlen(serverName)+1);
 	strcpy(g.serverName, serverName);
 	if (g.debug) {
 		fprintf(stderr,"Server Name: %s\n", g.serverName);
@@ -142,11 +147,15 @@ server_name(char *p) {
 
 // index file name
 char *
-indexFile(char *p) {
+f_indexFile(char *p) {
+	if (g.indexFile) {
+		free(g.indexFile);
+		doDebug("Duplicate index file definition.");
+	}
 	_token token = getToken(p);
 	p = token.p;
 	char *indexFile = token.q;
-	g.indexFile = (char *)malloc(strlen(indexFile));
+	g.indexFile = (char *)malloc(strlen(indexFile)+1);
 	strcpy(g.indexFile, indexFile);
 	if (g.debug) {
 		fprintf(stderr,"Index file name %s\n", g.indexFile);
@@ -156,11 +165,15 @@ indexFile(char *p) {
 
 // error log file path
 char *
-error_log(char *p) {
+f_error_log(char *p) {
+	if (g.errorLog) {
+		free(g.errorLog);
+		doDebug("Duplicate error log file definition.");
+	}
 	_token token = getToken(p);
 	p = token.p;
 	char *errorLog = token.q;
-	g.errorLog = (char *)malloc(strlen(errorLog));
+	g.errorLog = (char *)malloc(strlen(errorLog)+1);
 	strcpy(g.errorLog, errorLog);
 	if (g.debug) {
 		fprintf(stderr,"Error log file path %s\n", g.errorLog);
@@ -170,7 +183,11 @@ error_log(char *p) {
 
 // access log file path
 char *
-access_log(char *p) {
+f_access_log(char *p) {
+	if (g.accessLog) {
+		free(g.accessLog);
+		doDebug("Duplicate access log file definition.");
+	}
 	_token token = getToken(p);
 	p = token.p;
 	char *accessLog = token.q;
@@ -187,9 +204,45 @@ access_log(char *p) {
 	return p;
 }
 
+// ssl certificate file
+char *
+f_ssl_certificate(char *p) {
+	if (g.certFile) {
+		free(g.certFile);
+		doDebug("Duplicate cert file definition.");
+	}
+	_token token = getToken(p);
+	p = token.p;
+	char *certFile = token.q;
+	g.certFile = (char *)malloc(strlen(certFile)+1);
+	strcpy(g.certFile, certFile);
+	if (g.debug) {
+		fprintf(stderr,"SSL Cert file path %s\n", g.certFile);
+	}
+	return p;
+}
+
+// ssl certificate key file
+char *
+f_ssl_certificate_key(char *p) {
+	if (g.keyFile) {
+		free(g.keyFile);
+		doDebug("Duplicate cert key file definition.");
+	}
+	_token token = getToken(p);
+	p = token.p;
+	char *keyFile = token.q;
+	g.keyFile = (char *)malloc(strlen(keyFile)+1);
+	strcpy(g.keyFile, keyFile);
+	if (g.debug) {
+		fprintf(stderr,"SSL Cert Key file path %s\n", g.keyFile);
+	}
+	return p;
+}
+
 // listen port
 char *
-_listen(char *p) {
+f_listen(char *p) {
 	_token token = getToken(p);
 	p = token.p;
 	char *port = token.q;
@@ -202,7 +255,7 @@ _listen(char *p) {
 
 // keepalive timeout
 char *
-keepalive_timeout(char *p) {
+f_keepalive_timeout(char *p) {
 	_token token = getToken(p);
 	p = token.p;
 	char *keepaliveTimeout = token.q;
@@ -215,7 +268,7 @@ keepalive_timeout(char *p) {
 
 // max worker connections
 char *
-workerConnections(char *p) {
+f_workerConnections(char *p) {
 	_token token = getToken(p);
 	p = token.p;
 	char *workerConnections = token.q;
@@ -227,7 +280,8 @@ workerConnections(char *p) {
 }
 
 // process the events section
-char *events(char *p) {
+char *
+f_events(char *p) {
 	_token token = getSection(p);
 	p = token.p;
 	char *s = token.q;
@@ -243,26 +297,26 @@ char *events(char *p) {
 }
 
 _keywords keywords[] = {
-	{"pid", 3, pid},
-	{"user", 4, user},
-	{"http", 4, http},
-	{"root", 4, root},
-	{"index", 5, indexFile},
-	{"events", 6, events},
-	{"server", 6, _server},
-	{"listen", 6, _listen},
+	{"pid", 3, f_pid},
+	{"user", 4, f_user},
+	{"http", 4, f_http},
+	{"root", 4, f_root},
+	{"index", 5, f_indexFile},
+	{"events", 6, f_events},
+	{"server", 6, f_server},
+	{"listen", 6, f_listen},
 	//{"location", 8, 1},
-	{"sendfile", 8, sendfile},
-	{"error_log", 9, error_log},
+	{"sendfile", 8, f_sendfile},
+	{"error_log", 9, f_error_log},
 	//{"error_page", 10, 0},
 	//{"log_format", 10, 0},
-	{"access_log", 10, access_log},
-	{"server_name", 11, server_name},
+	{"access_log", 10, f_access_log},
+	{"server_name", 11, f_server_name},
 	//{"default_type", 12, 0},
-	//{"ssl_certificate", 15, 0},
-	{"keepalive_timeout", 17, keepalive_timeout},
-	{"worker_connections", 18, workerConnections},
-	//{"ssl_certificate_key", 19, 0}
+	{"ssl_certificate", 15, f_ssl_certificate},
+	{"keepalive_timeout", 17, f_keepalive_timeout},
+	{"worker_connections", 18, f_workerConnections},
+	{"ssl_certificate_key", 19, f_ssl_certificate_key}
 };
 
 void
