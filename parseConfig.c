@@ -94,12 +94,10 @@ f_server(char *p) {
 	_token token = getSection(p);
 	p = token.p;
 	char *s = token.q;
-	fprintf(stderr,"server section\n");
 	while (*s) {
 		_token token = getToken(s);
 		s = token.p;
 		char *keyword = token.q;
-		fprintf(stderr, "TOKEN %s\n", keyword);
 		s = lookupKeyword(keyword, s);
 	}
 	return p;
@@ -111,12 +109,10 @@ f_http(char *p) {
 	_token token = getSection(p);
 	p = token.p;
 	char *s = token.q;
-	fprintf(stderr,"http section\n");
 	while (*s) {
 		_token token = getToken(s);
 		s = token.p;
 		char *keyword = token.q;
-		fprintf(stderr, "TOKEN %s\n", keyword);
 		s = lookupKeyword(keyword, s);
 	}
 	return p;
@@ -212,7 +208,9 @@ f_access_log(char *p) {
 	while(token.more) {
 		token = getToken(p);
 		p = token.p;
-		fprintf(stderr, "Access log, ignored \"%s\"\n", token.q);
+		if (g.debug) {
+			fprintf(stderr, "Access log, ignored \"%s\"\n", token.q);
+		}
 	}
 	return p;
 }
@@ -298,12 +296,10 @@ f_events(char *p) {
 	_token token = getSection(p);
 	p = token.p;
 	char *s = token.q;
-	fprintf(stderr,"events section\n");
 	while (*s) {
 		_token token = getToken(s);
 		s = token.p;
 		char *keyword = token.q;
-		fprintf(stderr, "TOKEN %s\n", keyword);
 		s = lookupKeyword(keyword, s);
 	}
 	return p;
@@ -366,11 +362,11 @@ parseConfig() {
 		fprintf(stderr, "Config file size: %d\n", size);
 	}
 	removeComments(p);
+	// parse the configuration
 	while (*p) {
 		_token token = getToken(p);
 		p = token.p;
 		char *keyword = token.q;
-		fprintf(stderr, "TOKEN %s\n", keyword);
 		p = lookupKeyword(keyword, p);
 	}
 

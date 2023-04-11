@@ -87,14 +87,14 @@ parseMimeTypes() {
 		}
 	}
 
-	if (g.debug) {
-		fprintf(stderr, "MIME Types:\n");
-		_mimeTypes *mt = g.mimeTypes;
-		while (mt != NULL) {
-			fprintf(stderr, "MIME Type: %s -- Extension: %s\n", mt->mimeType, mt->extension);
-			mt = mt->next;
-		}
-	}
+	//if (g.debug) {
+		//fprintf(stderr, "MIME Types:\n");
+		//_mimeTypes *mt = g.mimeTypes;
+		//while (mt != NULL) {
+			//fprintf(stderr, "MIME Type: %s -- Extension: %s\n", mt->mimeType, mt->extension);
+			//mt = mt->next;
+		//}
+	//}
 
 	// free up the space for the file and file name
 	free(data);
