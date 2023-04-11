@@ -58,4 +58,6 @@ struct globalVars {
 	struct _mimeTypes *mimeTypes;
 	char certFile[256];
 	char keyFile[256];
+	char pidFile[256];
+	char *user;
 };

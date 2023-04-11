@@ -16,36 +16,6 @@
 #include "server.h"
 #include "global.h"
 
-typedef char * (*processKeyword)(char *);
-typedef struct _keywords {
-	char *keyword;
-	int len;
-	int section;
-}_keywords;
-
-_keywords keywords[] = {
-	{"pid", 3, 0},
-	{"user", 4, 0},
-	{"http", 4, 1},
-	{"root", 4, 0},
-	{"index", 5, 0},
-	{"events", 6, 1},
-	{"server", 6, 1},
-	{"listen", 6, 0},
-	{"location", 8, 1},
-	{"sendfile", 8, 0},
-	{"error_log", 9, 0},
-	{"error_page", 10, 0},
-	{"log_format", 10, 0},
-	{"access_log", 10, 0},
-	{"server_name", 11, 0},
-	{"default_type", 12, 0},
-	{"ssl_certificate", 15, 0},
-	{"keepalive_timeout", 17, 0},
-	{"worker_connections", 18, 0},
-	{"ssl_certificate_key", 19, 0}
-};
-
 typedef struct _token {
 	char *p;
 	char *q;
@@ -54,6 +24,61 @@ typedef struct _token {
 void removeComments(char *);
 _token getToken(char *);
 char * lookupKeyword(char *, char *);
+
+typedef char * (*processKeyword)(char *);
+typedef struct _keywords {
+	char *keyword;
+	int len;
+	processKeyword func;
+}_keywords;
+
+// specify the pid file location
+char *pid(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	char *pidFile = token.q;
+	strcpy((char *)&g.pidFile, pidFile);
+	if (g.debug) {
+		fprintf(stderr,"PID file location:  %s\n", g.pidFile);
+	}
+	return p;
+}
+
+// specify the user name to be used for the server process
+char *user(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	char *user = token.q;
+	g.user = (char *)malloc(strlen(user));
+	strcpy(g.user, user);
+	if (g.debug) {
+		fprintf(stderr,"Run as user name %s\n", g.user);
+	}
+	return p;
+}
+
+_keywords keywords[] = {
+	{"pid", 3, pid},
+	{"user", 4, user}
+	//{"http", 4, 1},
+	//{"root", 4, 0},
+	//{"index", 5, 0},
+	//{"events", 6, 1},
+	//{"server", 6, 1},
+	//{"listen", 6, 0},
+	//{"location", 8, 1},
+	//{"sendfile", 8, 0},
+	//{"error_log", 9, 0},
+	//{"error_page", 10, 0},
+	//{"log_format", 10, 0},
+	//{"access_log", 10, 0},
+	//{"server_name", 11, 0},
+	//{"default_type", 12, 0},
+	//{"ssl_certificate", 15, 0},
+	//{"keepalive_timeout", 17, 0},
+	//{"worker_connections", 18, 0},
+	//{"ssl_certificate_key", 19, 0}
+};
 
 void
 parseConfig() {
@@ -159,7 +184,7 @@ lookupKeyword(char *keyword, char *p)
 	for(int i = 0; i < numKeywords; i++) {
 		if (len == keywords[i].len && 
 				(strncmp(keyword, keywords[i].keyword, len) == 0)) {
-			printf("FOUND %s\n", keyword);
+			p = (*keywords[i].func)(p);
 		}
 		// keyword list is sorted by length, no need to keep looking if
 		// remaining keywords are longer than the one we are looking for.
