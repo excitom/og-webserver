@@ -48,6 +48,19 @@ f_pid(char *p) {
 	return p;
 }
 
+// specify option for network trace
+char *
+f_trace(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	char *trace = token.q;
+	g.trace = (strcmp(trace, "on") == 0) ? 1 : 0;
+	if (g.debug) {
+		fprintf(stderr,"Show network trace %d\n", g.autoIndex);
+	}
+	return p;
+}
+
 // specify if directory listing should be allowed
 char *
 f_autoindex(char *p) {
@@ -311,6 +324,7 @@ _keywords keywords[] = {
 	{"http", 4, f_http},
 	{"root", 4, f_root},
 	{"index", 5, f_indexFile},
+	{"trace", 5, f_trace},
 	{"events", 6, f_events},
 	{"server", 6, f_server},
 	{"listen", 6, f_listen},
