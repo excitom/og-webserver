@@ -1,4 +1,4 @@
-void parseArgs(int, char**);
+void parseArgs(int, char**, char *);
 void daemonize();
 int epollCreate();
 int createBindAndListen(int);
@@ -65,6 +65,7 @@ struct globalVars {
 	char *pidFile;
 	char *user;
 	char *signal;
+	char *version;
 	int accessFd;
 	int errorFd;
 	struct _mimeTypes *mimeTypes;

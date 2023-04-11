@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "server.h"
+#include "global.h"
 
 void
 sendErrorResponse( int fd, SSL* ssl, int code, char *msg, char *path )
@@ -38,11 +39,11 @@ sendErrorResponse( int fd, SSL* ssl, int code, char *msg, char *path )
 	char buffer3[BUFF_SIZE];
 	char *responseHeaders = 
 "HTTP/1.1 %d %s\r\n"
-"Server: ogws/0.1\r\n"
+"Server: ogws/%s\r\n"
 "Date: %s\r\n"
 "Content-Type: text/html\r\n";
 
-	int sz3 = snprintf(buffer3, BUFF_SIZE, responseHeaders, code, msg, ts);
+	int sz3 = snprintf(buffer3, BUFF_SIZE, responseHeaders, code, msg, g.version, ts);
 
 	sendData(fd, ssl, buffer3, sz3);
 	sendData(fd, ssl, buffer2, sz2);

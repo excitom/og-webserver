@@ -14,12 +14,12 @@
 #include "server.h"
 #include "global.h"
 
-void initGlobals();
+void initGlobals(char *);
 
 void
-parseArgs(int argc, char* argv[])
+parseArgs(int argc, char* argv[], char *version)
 {
-	initGlobals();
+	initGlobals(version);
 	int c;
 	while ((c = getopt(argc, argv, "dfhtvs:")) != EOF)
 		switch(c) {
@@ -77,7 +77,9 @@ parseArgs(int argc, char* argv[])
  * Initialize global variables
  */
 void
-initGlobals() {
+initGlobals(char *version) {
+	g.version = (char *)malloc(strlen(version)+1);
+	strcpy(g.version, version);
 	g.foreground = 0;
 	g.debug = 0;
 	g.trace = 0;

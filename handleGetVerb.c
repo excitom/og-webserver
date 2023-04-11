@@ -92,12 +92,12 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 	int httpCode = 200;
 	char *responseHeaders = 
 "HTTP/1.1 %d OK\r\n"
-"Server: ogws/0.1\r\n"
+"Server: ogws/%s\r\n"
 "Date: %s\r\n"
 "Content-Type: %s\r\n"
 "Content-Length: %d\r\n\r\n";
 
-	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, ts, mimeType, size);
+	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, g.version, ts, mimeType, size);
 	size_t sent = sendData(sockfd, ssl, buffer, sz);
 	if ((int)sent != sz) {
 		doDebug("Problem sending response headers");

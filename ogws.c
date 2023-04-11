@@ -32,12 +32,12 @@ int
 main(int argc, char *argv[])
 {
 	setlocale(LC_NUMERIC, "");
-	parseArgs(argc, argv);
+	parseArgs(argc, argv, version);
 	if (g.showVersion) {
 		printf("ogws web server version: %s\n", version);
 		exit(0);
 	}
-	parseConfig();
+	parseConfig(version);
 	checkConfig();
 	// check if a signal should be sent
 	if (g.signal != NULL) {
