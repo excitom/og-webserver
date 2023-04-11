@@ -72,7 +72,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 	if (fd == -1) {
 		// if the path is a directory, and the index file is not present,
 		// do we want to show a directory listing?
-		if (S_ISDIR(sb.st_mode) && g.dirList) {
+		if (S_ISDIR(sb.st_mode) && g.autoIndex) {
 			showDirectoryListing(sockfd, ssl, path);
 		} else {
 			snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", fullPath, strerror(errno));

@@ -69,10 +69,6 @@ daemonize()
 		dup2(2,  1);
 		close(fd);
 	}
-	//
-	// Open the web server log and error log files
-	//
-	openLogFiles();
 
 	// close stdin
 	close(0);

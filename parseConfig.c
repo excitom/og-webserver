@@ -48,7 +48,20 @@ f_pid(char *p) {
 	return p;
 }
 
-// specify is the `sendfile` system call should be used
+// specify if directory listing should be allowed
+char *
+f_autoindex(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	char *autoIndex = token.q;
+	g.autoIndex = (strcmp(autoIndex, "on") == 0) ? 1 : 0;
+	if (g.debug) {
+		fprintf(stderr,"Allow directory listing %d\n", g.autoIndex);
+	}
+	return p;
+}
+
+// specify if the `sendfile` system call should be used
 char *
 f_sendfile(char *p) {
 	_token token = getToken(p);
@@ -308,6 +321,7 @@ _keywords keywords[] = {
 	//{"location", 8, 1},
 	{"sendfile", 8, f_sendfile},
 	{"error_log", 9, f_error_log},
+	{"autoindex", 9, f_autoindex},
 	//{"error_page", 10, 0},
 	//{"log_format", 10, 0},
 	{"access_log", 10, f_access_log},
@@ -495,23 +509,18 @@ checkConfig()
 		exit(1);
 	}
 
-	FILE* fp = fopen(g.accessLog, "w+");
-	if (fp == NULL) {
+	g.accessFd = open(g.accessLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+	if (g.accessFd == -1) {
 		perror("access log not valid:");
 		exit(1);
-	} else {
-		fclose(fp);
 	}
-
-	fp = fopen(g.errorLog, "w+");
-	if (fp == NULL) {
+	g.errorFd = open(g.errorLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+	if (g.errorFd == -1) {
 		perror("error log not valid:");
 		exit(1);
-	} else {
-		fclose(fp);
 	}
 
-	fp = fopen(g.pidFile, "w+");
+	FILE *fp = fopen(g.pidFile, "w+");
 	if (fp == NULL) {
 		perror("pid log not valid:");
 		exit(1);

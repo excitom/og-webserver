@@ -20,7 +20,6 @@ void parseConfig();
 void checkConfig();
 void accessLog(int, char*, int, char*, int);
 void errorLog(int, char*, int, char*, char*);
-void openLogFiles();
 void getMimeType(char*, char*);
 void showDirectoryListing(int, SSL*, char *);
 void server();
@@ -47,7 +46,7 @@ struct globalVars {
 	int debug;
 	int trace;
 	int foreground;
-	int dirList;
+	int autoIndex;
 	int workerConnections;
 	int useTLS;
 	int useSendfile;

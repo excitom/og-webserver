@@ -50,26 +50,6 @@ errorLog(int sockfd, char *verb, int httpCode, char *path, char *msg)
 	write(g.errorFd, buffer, sz);
 }
 
-void openLogFiles()
-{
-	char buffer[BUFF_SIZE];
-	char *p = (char *)&buffer;
-	g.accessFd = open(g.accessLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-	if (g.accessFd == -1) {
-		int e = errno;
-		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
-		doDebug(buffer);
-		exit(1);
-	}
-	g.errorFd = open(g.errorLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-	if (g.errorFd == -1) {
-		int e = errno;
-		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", p, strerror(e));
-		doDebug(buffer);
-		exit(1);
-	}
-}
-
 /**
  * Debug print to stderr
  * Note: Assumes a formatted string input.

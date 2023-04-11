@@ -21,7 +21,7 @@ parseArgs(int argc, char* argv[])
 {
 	initGlobals();
 	int c;
-	while ((c = getopt(argc, argv, "dfhlstp:")) != EOF)
+	while ((c = getopt(argc, argv, "dfht")) != EOF)
 		switch(c) {
 			case 'd':
 				g.debug = 1;
@@ -32,15 +32,6 @@ parseArgs(int argc, char* argv[])
 			case 'f':
 				g.foreground = 1;
 				break;
-			case 's':
-				g.useTLS = 1;
-				break;
-			case 'l':
-				g.dirList = 1;
-				break;
-			case 'p':
-				g.port = atoi(optarg);
-				break;
 			case 'h':
 				printf("Tom's OG web server\n");
 				printf("Options are:\n");
@@ -48,13 +39,8 @@ parseArgs(int argc, char* argv[])
 				printf("	-d = turn on debugging\n");
 				printf("	-t = turn on tracing\n");
 				printf("	-h = print this message\n");
-				printf("	-l = show directoy listing if missing index file\n");
-				printf("	-p = port on which to listen\n");
-				printf("	-s = use SSL/TLS\n");
-				printf("Positional paramters:\n");
+				printf("Positional paramter:\n");
 				printf("	config_path - default /etc/ogws\n");
-				printf("	doc_root_path - default /www/ogws\n");
-				printf("	log_file_path - default /var/log/ogws\n");
 				printf("\n");
 				exit(0);
 			default:
@@ -88,7 +74,7 @@ initGlobals() {
 	g.trace = 0;
 	g.useTLS = 0;
 	g.useSendfile = 0;
-	g.dirList = 0;
+	g.autoIndex = 0;
 	g.port = 8080;
 	g.workerConnections = 64;
 	g.keepaliveTimeout = 65;
