@@ -64,6 +64,7 @@ struct globalVars {
 	char *keyFile;
 	char *pidFile;
 	char *user;
+	char *signal;
 	int accessFd;
 	int errorFd;
 	struct _mimeTypes *mimeTypes;

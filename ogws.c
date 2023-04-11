@@ -14,6 +14,7 @@ char version[] = "0.1.0";
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include<signal.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <locale.h>
@@ -21,6 +22,8 @@ char version[] = "0.1.0";
 
 // global variables
 struct globalVars g;
+
+void sendSignal(void);
 
 /**
  * MAIN function
@@ -36,17 +39,62 @@ main(int argc, char *argv[])
 	}
 	parseConfig();
 	checkConfig();
+	// check if a signal should be sent
+	if (g.signal != NULL) {
+		sendSignal();
+		exit(0);
+	}
 	// exit if only testing the config
 	if (g.testConfig) {
 		printf("Config OK\n");
 		exit(0);
 	}
-	daemonize();
 	parseMimeTypes();
+	daemonize();
 
 	if (g.useTLS) {
 		sslServer();
 	} else {
 		server();
 	}
+}
+
+/**
+ * Send a signal to daemon process
+ */
+#define PID_SIZE 10
+
+void
+sendSignal() {
+	FILE *fp = fopen(g.pidFile, "r");
+	if (fp == NULL) {
+		perror("No daemon process found.");
+		exit(1);
+	}
+	char buff[PID_SIZE];
+	if (fgets((char *)&buff, PID_SIZE, fp) == NULL) {
+		perror("No daemon process found.");
+		exit(1);
+	}
+	fclose(fp);
+	pid_t pid = atoi(buff);
+
+	if (strcmp(g.signal, "stop") == 0) {
+		kill(pid, SIGKILL);
+		return;
+	}
+	else if (strcmp(g.signal, "quit") == 0) {
+		kill(pid, SIGINT);
+		return;
+	}
+	else if (strcmp(g.signal, "reload") == 0) {
+		printf("reload not yet implemented\n");
+		return;
+	}
+	else if (strcmp(g.signal, "reopen") == 0) {
+		printf("reopen not yet implemented\n");
+		return;
+	}
+	printf("Unrecognized signal \"%s\"\n", g.signal);
+	return;
 }

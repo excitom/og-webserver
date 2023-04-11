@@ -530,7 +530,7 @@ checkConfig()
 		exit(1);
 	}
 
-	FILE *fp = fopen(g.pidFile, "w+");
+	FILE *fp = fopen(g.pidFile, "r");
 	if (fp == NULL) {
 		perror("pid log not valid:");
 		exit(1);

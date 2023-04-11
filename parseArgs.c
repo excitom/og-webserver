@@ -21,7 +21,7 @@ parseArgs(int argc, char* argv[])
 {
 	initGlobals();
 	int c;
-	while ((c = getopt(argc, argv, "dfhtv")) != EOF)
+	while ((c = getopt(argc, argv, "dfhtvs:")) != EOF)
 		switch(c) {
 			case 'd':
 				g.debug = 1;
@@ -35,11 +35,16 @@ parseArgs(int argc, char* argv[])
 			case 'v':
 				g.showVersion = 1;
 				break;
+			case 's':
+				g.signal = optarg;
+				break;
 			case 'h':
 				printf("Tom's OG web server\n");
 				printf("Options are:\n");
 				printf("	-f = run in the foreground (else daemon)\n");
 				printf("	-d = turn on debugging\n");
+				printf("	-s = send a signal to the process, options are:\n");
+				printf("	          stop | quit | reload | reopen\n");
 				printf("	-t = test the configuration\n");
 				printf("	-h = print this message\n");
 				printf("	-v = show version\n");
@@ -102,6 +107,7 @@ initGlobals() {
 	g.serverName = NULL;
 	g.certFile = NULL;
 	g.keyFile = NULL;
+	g.signal = NULL;
 	char pidFile[] = "/run/ogws.pid";
 	g.pidFile = (char *)malloc(strlen(pidFile)+1);
 	strcpy(g.pidFile, pidFile);
