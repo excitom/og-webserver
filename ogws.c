@@ -8,6 +8,8 @@
  * (c) Tom Lang 2/2023
  */
 
+char version[] = "0.1.0";
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +30,10 @@ main(int argc, char *argv[])
 {
 	setlocale(LC_NUMERIC, "");
 	parseArgs(argc, argv);
+	if (g.showVersion) {
+		printf("ogws web server version: %s\n", version);
+		exit(0);
+	}
 	parseConfig();
 	checkConfig();
 	// exit if only testing the config

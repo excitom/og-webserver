@@ -50,6 +50,7 @@ struct globalVars {
 	int autoIndex;
 	int workerConnections;
 	int useTLS;
+	int showVersion;
 	int useSendfile;
 	int keepaliveTimeout;
 	unsigned short port;

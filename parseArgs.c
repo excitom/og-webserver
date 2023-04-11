@@ -21,7 +21,7 @@ parseArgs(int argc, char* argv[])
 {
 	initGlobals();
 	int c;
-	while ((c = getopt(argc, argv, "dfht")) != EOF)
+	while ((c = getopt(argc, argv, "dfhtv")) != EOF)
 		switch(c) {
 			case 'd':
 				g.debug = 1;
@@ -32,6 +32,9 @@ parseArgs(int argc, char* argv[])
 			case 'f':
 				g.foreground = 1;
 				break;
+			case 'v':
+				g.showVersion = 1;
+				break;
 			case 'h':
 				printf("Tom's OG web server\n");
 				printf("Options are:\n");
@@ -39,6 +42,7 @@ parseArgs(int argc, char* argv[])
 				printf("	-d = turn on debugging\n");
 				printf("	-t = test the configuration\n");
 				printf("	-h = print this message\n");
+				printf("	-v = show version\n");
 				printf("Positional paramter:\n");
 				printf("	config_path - default /etc/ogws\n");
 				printf("\n");
@@ -74,6 +78,7 @@ initGlobals() {
 	g.trace = 0;
 	g.testConfig = 0;
 	g.useTLS = 0;
+	g.showVersion = 0;
 	g.useSendfile = 0;
 	g.autoIndex = 0;
 	g.port = 8080;
