@@ -110,6 +110,7 @@ initGlobals(char *version) {
 	g.certFile = NULL;
 	g.keyFile = NULL;
 	g.signal = NULL;
+	g.servers = NULL;
 	char pidFile[] = "/run/ogws.pid";
 	g.pidFile = (char *)malloc(strlen(pidFile)+1);
 	strcpy(g.pidFile, pidFile);

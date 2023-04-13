@@ -1,3 +1,5 @@
+#include "serverlist.h"
+
 void parseArgs(int, char**, char *);
 void daemonize();
 int epollCreate();
@@ -66,6 +68,7 @@ struct globalVars {
 	char *user;
 	char *signal;
 	char *version;
+	_server *servers;
 	int accessFd;
 	int errorFd;
 	struct _mimeTypes *mimeTypes;

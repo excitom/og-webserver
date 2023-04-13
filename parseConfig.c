@@ -66,10 +66,15 @@ char *
 f_autoindex(char *p) {
 	_token token = getToken(p);
 	p = token.p;
-	char *autoIndex = token.q;
-	g.autoIndex = (strcmp(autoIndex, "on") == 0) ? 1 : 0;
-	if (g.debug) {
-		fprintf(stderr,"Allow directory listing %d\n", g.autoIndex);
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'autoindex' directive outside a 'server' block, ignored\n");
+	} else {
+		char *autoIndex = token.q;
+		server->autoIndex = (strcmp(autoIndex, "on") == 0) ? 1 : 0;
+		if (g.debug) {
+			fprintf(stderr,"Auto index %d\n", server->autoIndex);
+		}
 	}
 	return p;
 }
@@ -104,6 +109,10 @@ f_user(char *p) {
 // process the server section
 char *
 f_server(char *p) {
+	_server *server = (_server *)malloc(sizeof(_server));
+	server->next = g.servers;
+	server->port = g.port;	// default listen port
+	g.servers = server;
 	_token token = getSection(p);
 	p = token.p;
 	char *s = token.q;
@@ -134,17 +143,18 @@ f_http(char *p) {
 // document root
 char *
 f_root(char *p) {
-	if (g.docRoot) {
-		free(g.docRoot);
-		doDebug("Duplicate doc root definition.");
-	}
 	_token token = getToken(p);
 	p = token.p;
-	char *docRoot = token.q;
-	g.docRoot = (char *)malloc(strlen(docRoot)+1);
-	strcpy(g.docRoot, docRoot);
-	if (g.debug) {
-		fprintf(stderr,"Document root %s\n", g.docRoot);
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'root' directive outside a 'server' block, ignored\n");
+	} else {
+		char *docRoot = token.q;
+		server->docRoot = (char *)malloc(strlen(docRoot)+1);
+		strcpy(server->docRoot, docRoot);
+		if (g.debug) {
+			fprintf(stderr,"Document root %s\n", server->docRoot);
+		}
 	}
 	return p;
 }
@@ -152,17 +162,18 @@ f_root(char *p) {
 // server name
 char *
 f_server_name(char *p) {
-	if (g.serverName) {
-		free(g.serverName);
-		doDebug("Duplicate server name definition.");
-	}
 	_token token = getToken(p);
 	p = token.p;
 	char *serverName = token.q;
-	g.serverName = (char *)malloc(strlen(serverName)+1);
-	strcpy(g.serverName, serverName);
-	if (g.debug) {
-		fprintf(stderr,"Server Name: %s\n", g.serverName);
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'server_name' directive outside a 'server' block, ignored\n");
+	} else {
+		server->serverName = (char *)malloc(strlen(serverName)+1);
+		strcpy(server->serverName, serverName);
+		if (g.debug) {
+			fprintf(stderr,"server name: %s\n", server->serverName);
+		}
 	}
 	return p;
 }
@@ -270,9 +281,14 @@ f_listen(char *p) {
 	_token token = getToken(p);
 	p = token.p;
 	char *port = token.q;
-	g.port = atoi(port);
-	if (g.debug) {
-		fprintf(stderr,"Listen on port: %d\n", g.port);
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'listen' directive outside a 'server' block, ignored\n");
+	} else {
+		server->port = atoi(port);
+		if (g.debug) {
+			fprintf(stderr,"Listen on port: %d\n", g.port);
+		}
 	}
 	return p;
 }
