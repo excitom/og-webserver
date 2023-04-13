@@ -59,6 +59,7 @@ doDebug(char* buffer) {
 	if (!g.debug) {
 		return;
 	}
+	fprintf(stderr, "PID: %d - ", getpid());
 	fputs(buffer, stderr);
 	if (strchr(buffer, '\n') == NULL) {
 		fputc('\n', stderr);
