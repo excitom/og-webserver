@@ -52,6 +52,25 @@ main(int argc, char *argv[])
 	parseMimeTypes();
 	daemonize();
 
+	int pcount = g.workerProcesses;
+	while(pcount) {
+		if (pcount > 1) {
+			pid_t pid = fork();
+			if (pid <0) {
+				perror("Can't fork");
+				exit(1);
+			}
+			if (pid == 0) {
+				break;
+			}
+		}
+		pcount--;
+	}
+
+	if (g.debug) {
+		pid_t pid = getpid();
+		fprintf(stderr, "Server Starting, process: %d\n", pid);
+	}
 	if (g.useTLS) {
 		sslServer();
 	} else {

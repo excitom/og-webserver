@@ -306,6 +306,19 @@ f_keepalive_timeout(char *p) {
 	return p;
 }
 
+// max worker processes
+char *
+f_workerProcesses(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	char *workerProcesses = token.q;
+	g.workerProcesses = atoi(workerProcesses);
+	if (g.debug) {
+		fprintf(stderr,"Max worker processes %d\n", g.workerProcesses);
+	}
+	return p;
+}
+
 // max worker connections
 char *
 f_workerConnections(char *p) {
@@ -354,6 +367,7 @@ _keywords keywords[] = {
 	{"server_name", 11, f_server_name},
 	//{"default_type", 12, 0},
 	{"ssl_certificate", 15, f_ssl_certificate},
+	{"worker_processes", 16, f_workerProcesses},
 	{"keepalive_timeout", 17, f_keepalive_timeout},
 	{"worker_connections", 18, f_workerConnections},
 	{"ssl_certificate_key", 19, f_ssl_certificate_key}

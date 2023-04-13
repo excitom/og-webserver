@@ -199,7 +199,7 @@ createBindAndListen(int port)
 	}
 
 	int on = 1;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) {
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on))) {
 		snprintf(buffer, BUFF_SIZE, "Could not set socket %d option for reusability: %m\n", sockfd);
 		doDebug(buffer);
 		close(sockfd);

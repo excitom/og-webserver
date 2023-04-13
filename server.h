@@ -51,6 +51,7 @@ struct globalVars {
 	int foreground;
 	int autoIndex;
 	int workerConnections;
+	int workerProcesses;
 	int useTLS;
 	int showVersion;
 	int useSendfile;

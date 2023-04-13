@@ -26,7 +26,7 @@ DBGDIR = debug
 DBGEXE = $(DBGDIR)/$(EXE)
 DBGOBJS = $(addprefix $(DBGDIR)/, $(OBJS))
 DBGCFLAGS = -O0 -DDBG -g
-SSLFLAGS = -ldl -lpthread -lssl -lcrypto
+SSLFLAGS = -L/usr/local/lib -L /usr/local/lib64 -ldl -lpthread -lssl -lcrypto
 
 debug: $(DBGEXE)
 

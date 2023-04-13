@@ -90,6 +90,7 @@ initGlobals(char *version) {
 	g.autoIndex = 0;
 	g.port = 8080;
 	g.workerConnections = 64;
+	g.workerProcesses = 2;
 	g.keepaliveTimeout = 65;
 	char configPath[] = "/etc/ogws";
 	g.configPath = (char *)malloc(strlen(configPath)+1);
@@ -100,7 +101,8 @@ initGlobals(char *version) {
 	char indexFile[] = "index.html";
 	g.indexFile = (char *)malloc(strlen(indexFile)+1);
 	strcpy(g.indexFile, indexFile);
-	char docRoot[] = "/var/www/ogws/html";
+	//char docRoot[] = "/var/www/ogws/html";
+	char docRoot[] = "/var/www/ishmail-web/html";
 	g.docRoot = (char *)malloc(strlen(docRoot)+1);
 	strcpy(g.docRoot, docRoot);
 	char accessLog[] = "/var/log/ogws/access.log";
