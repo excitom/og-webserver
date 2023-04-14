@@ -12,7 +12,8 @@ SRCS = ogws.c \
 	  daemonize.c \
 	  showDirectoryListing.c \
 	  server.c \
-	  sslServer.c
+	  sslServer.c \
+	  socket.c
 
 OBJS = $(SRCS:.c=.o)
 EXE = ogws

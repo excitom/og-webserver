@@ -34,6 +34,8 @@ typedef struct _keywords {
 	processKeyword func;
 }_keywords;
 
+// The following `f_` functions implement the config file keywords
+
 // specify the pid file location
 char *
 f_pid(char *p) {
