@@ -1,5 +1,13 @@
 /**
  * Turn the web server process into a daemon
+ * - set the user name and group name
+ * - disassociate from the original process
+ * - create new session and process group
+ * - move off any mounted file system
+ * - create a debug/trace file
+ * - redirect stdout and stderr to the debug file
+ * - close stdin
+ * - save the process id in a file
  *
  * (c) Tom Lang 2/2023
  */
@@ -18,9 +26,6 @@
 void
 daemonize()
 {
-	//
-	// redirect stdout and stderr unless in interactive debug mode
-	//
 	if (!g.foreground) {
 		if (g.user != NULL) {
 			struct passwd *pwd = getpwnam(g.user);;
