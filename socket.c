@@ -19,6 +19,8 @@
 #include "server.h"
 #include "global.h"
 
+char buffer[BUFF_SIZE];
+
 /**
  * Create a socket for listening, bind it to an address and port,
  * and start listening.
@@ -30,18 +32,15 @@ createBindAndListen(int port)
 {
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
-		snprintf(buffer, BUFF_SIZE, "Could not create new socket: %m\n");
-		doDebug(buffer);
+		fprintf(stderr, "Could not create new socket: %m\n");
 		exit(1);
 	}
-	snprintf(buffer, BUFF_SIZE, "New socket created with sockfd %d\n", sockfd);
-	doDebug(buffer);
+	fprintf(stderr, "New socket created with sockfd %d\n", sockfd);
 
 	// use blocking I/O for TLS until for now
 	if (!g.useTLS) {
 		if (fcntl(sockfd, F_SETFL, O_NONBLOCK)) {
-			snprintf(buffer, BUFF_SIZE, "Could not make the socket non-blocking: %m\n");
-			doDebug(buffer);
+			fprintf(stderr, "Could not make the socket non-blocking: %m\n");
 			close(sockfd);
 			exit(1);
 		}
@@ -49,8 +48,7 @@ createBindAndListen(int port)
 
 	int on = 1;
 	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on))) {
-		snprintf(buffer, BUFF_SIZE, "Could not set socket %d option for reusability: %m\n", sockfd);
-		doDebug(buffer);
+		fprintf(stderr, "Could not set socket %d option for reusability: %m\n", sockfd);
 		close(sockfd);
 		exit(1);
 	}
@@ -62,8 +60,7 @@ createBindAndListen(int port)
 	bindaddr.sin_port = htons(port);
 
 	if (bind(sockfd, (struct sockaddr *) &bindaddr, sizeof(struct sockaddr_in)) < 0) {
-		snprintf(buffer, BUFF_SIZE, "Could not bind socket %d to address 'INADDR_ANY' and port %u: %m", sockfd, port);
-		doDebug(buffer);
+		fprintf(stderr, "Could not bind socket %d to address 'INADDR_ANY' and port %u: %m", sockfd, port);
 		close(sockfd);
 		exit(1);
 	} else {
@@ -95,7 +92,6 @@ recvData(int fd, char* ptr, int nbytes)
 		if (errno != EINTR) {
 			snprintf(buffer, BUFF_SIZE, "Receive from socket %d failed: %m\n", fd);
 			doDebug(buffer);
-			fdCount--;
 			shutdown(fd, SHUT_RDWR);
 			close(fd);
 			return(0);

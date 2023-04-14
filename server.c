@@ -25,7 +25,6 @@
 
 char buff[BUFF_SIZE];
 char* buffer = (char *)&buff;
-int fdCount = 1;
 
 void
 server()
@@ -47,8 +46,7 @@ server()
 	// Main event loop
 	//
 	while(1) {
-		snprintf(buffer, BUFF_SIZE, "Starting epoll_wait on %d fds\n", fdCount);
-		doDebug(buffer);
+		doDebug("Starting epoll_wait");
 
 		int rval;
 		struct epoll_event epoll_events[g.workerConnections];
@@ -57,8 +55,7 @@ server()
 		//
 		while ((rval = epoll_wait(epollfd, epoll_events, g.workerConnections, -1)) < 0) {
 			if ((rval < 0) && (errno != EINTR)) {
-				snprintf(buffer, BUFF_SIZE, "EPoll on %d fds failed: %m\n", fdCount);
-				doDebug(buffer);
+				doDebug("epoll_wait failed");
 				cleanup(sockfd);
 			}
 		}
@@ -77,7 +74,7 @@ server()
 			//
 			if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) {
 				if (fd == sockfd) {
-					snprintf(buffer, BUFF_SIZE, "EPoll on %d fds failed: %m\n", fdCount);
+					doDebug("epoll_wait failed");
 					doDebug(buffer);
 					cleanup(sockfd);
 				} else {
@@ -131,7 +128,6 @@ server()
 						cleanup(sockfd);	  
 					}
 
-					fdCount++;
 				} else {
 					//
 					// Process the incoming data from a socket
@@ -141,7 +137,6 @@ server()
 					// not handling "keep alive" yet
 					shutdown(fd, SHUT_RDWR);
 					close(fd);
-					fdCount--;
 				}
 			} // End, process an event
 		} // End, loop over returned events
