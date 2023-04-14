@@ -137,16 +137,14 @@ configureContext(SSL_CTX *ctx)
 {
 	/* Set the key and cert */
 	char *path = malloc(256);
-	strcpy(path, g.configPath);
-	strcat(path, g.certFile);
+	strcpy(path, g.certFile);
 	if (SSL_CTX_use_certificate_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
 		fprintf(stderr, "CERT %s\n", path);
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}
 
-	strcpy(path, g.configPath);
-	strcat(path, g.keyFile);
+	strcpy(path, g.keyFile);
 	if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0 ) {
 		fprintf(stderr, "KEY %s\n", path);
 		ERR_print_errors_fp(stderr);
