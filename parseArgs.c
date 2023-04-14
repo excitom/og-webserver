@@ -84,7 +84,7 @@ initGlobals(char *version) {
 	g.debug = 0;
 	g.trace = 0;
 	g.testConfig = 0;
-	g.useTLS = 1;
+	g.useTLS = 0;
 	g.showVersion = 0;
 	g.useSendfile = 0;
 	g.autoIndex = 0;
@@ -112,6 +112,8 @@ initGlobals(char *version) {
 	g.keyFile = NULL;
 	g.signal = NULL;
 	g.servers = NULL;
+	g.ports = NULL;
+	g.portCount = 0;
 	char pidFile[] = "/run/ogws.pid";
 	g.pidFile = (char *)malloc(strlen(pidFile)+1);
 	strcpy(g.pidFile, pidFile);

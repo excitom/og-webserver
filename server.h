@@ -24,8 +24,8 @@ void accessLog(int, char*, int, char*, int);
 void errorLog(int, char*, int, char*, char*);
 void getMimeType(char*, char*);
 void showDirectoryListing(int, SSL*, char *);
-void server();
-void sslServer();
+void server(int);
+void tlsServer();
 
 #define FAIL    -1
 #define BUFF_SIZE 4096
@@ -70,6 +70,8 @@ struct globalVars {
 	char *signal;
 	char *version;
 	_server *servers;
+	_ports *ports;
+	int portCount;
 	int accessFd;
 	int errorFd;
 	struct _mimeTypes *mimeTypes;

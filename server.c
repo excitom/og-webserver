@@ -27,10 +27,10 @@ char buff[BUFF_SIZE];
 char* buffer = (char *)&buff;
 
 void
-server()
+server(int port)
 {
 	int epollfd = epollCreate();
-	int sockfd = createBindAndListen(g.port);
+	int sockfd = createBindAndListen(port);
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.u64 = 0LL;

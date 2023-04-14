@@ -17,6 +17,7 @@ char version[] = "0.1.0";
 #include<signal.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <locale.h>
 #include "server.h"
 
@@ -24,6 +25,7 @@ char version[] = "0.1.0";
 struct globalVars g;
 
 void sendSignal(void);
+void startProcesses(void);
 
 /**
  * MAIN function
@@ -51,33 +53,41 @@ main(int argc, char *argv[])
 	}
 	parseMimeTypes();
 	daemonize();
-
-	int pcount = g.workerProcesses;
-	while(pcount) {
-		if (pcount > 1) {
-			pid_t pid = fork();
-			if (pid <0) {
-				perror("Can't fork");
-				exit(1);
-			}
-			if (pid == 0) {
-				break;
-			}
-		}
-		pcount--;
-	}
-
-	if (g.debug) {
-		pid_t pid = getpid();
-		fprintf(stderr, "Server Starting, process: %d\n", pid);
-	}
-	if (g.useTLS) {
-		sslServer();
-	} else {
-		server();
-	}
+	startProcesses();
 }
 
+/**
+ * Start at least 1 process per port on which we are listening.
+ * The processes per port is controlled by `worker_processes` directive.
+ */
+void
+startProcesses()
+{
+	// total processes needed
+	int pcount = g.workerProcesses * g.portCount;
+	pcount = 1; // debug
+	// already have 1, start pcount-1 more.
+	// all the processes will call server() or tlsServer()
+	while(--pcount) {
+		pid_t pid = fork();
+		if (pid <0) {
+			perror("Can't fork");
+			exit(1);
+		}
+		if (pid == 0) {
+			if (g.debug) {
+				pid_t pid = getpid();
+				fprintf(stderr, "Server Starting, process: %d\n", pid);
+			}
+			break;
+		}
+	}
+	if (g.useTLS) {
+		tlsServer();
+	} else {
+		server(g.port);
+	}
+}
 /**
  * Send a signal to daemon process
  */

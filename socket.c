@@ -19,8 +19,6 @@
 #include "server.h"
 #include "global.h"
 
-char buffer[BUFF_SIZE];
-
 /**
  * Create a socket for listening, bind it to an address and port,
  * and start listening.
@@ -30,6 +28,9 @@ char buffer[BUFF_SIZE];
 int
 createBindAndListen(int port)
 {
+	char buff[BUFF_SIZE];
+	char* buffer = (char *)&buff;
+
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
 		fprintf(stderr, "Could not create new socket: %m\n");
@@ -90,8 +91,7 @@ recvData(int fd, char* ptr, int nbytes)
 	int received = 0;
 	while ((n = recv(fd, p, nbytes, 0)) < 0) {
 		if (errno != EINTR) {
-			snprintf(buffer, BUFF_SIZE, "Receive from socket %d failed: %m\n", fd);
-			doDebug(buffer);
+			fprintf(stderr, "Receive from socket %d failed: %m\n", fd);
 			shutdown(fd, SHUT_RDWR);
 			close(fd);
 			return(0);
@@ -130,8 +130,7 @@ sendData(int fd, SSL *ssl, char* ptr, int nbytes)
 				ptr   += nsent;
 			}
 			else if (!((int)nsent == -1 && errno != EINTR)) {
-				snprintf(buffer, BUFF_SIZE, "Send to socket %d failed: %m\n", fd);
-				doDebug(buffer);
+				fprintf(stderr, "Send to socket %d failed: %m\n", fd);
 			}
 		}
 	}

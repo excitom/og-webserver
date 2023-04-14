@@ -26,18 +26,19 @@
 void
 daemonize()
 {
+	//if (g.user != NULL) {
+		//struct passwd *pwd = getpwnam(g.user);;
+		//if (setgid(pwd->pw_gid) == -1) {
+			//perror("Can't set GID");
+			//exit(1);
+		//}
+		//if (setuid(pwd->pw_uid) == -1) {
+			//perror("Can't set UID");
+			//exit(1);
+		//}
+	//}
+
 	if (!g.foreground) {
-		if (g.user != NULL) {
-			struct passwd *pwd = getpwnam(g.user);;
-			if (setgid(pwd->pw_gid) == -1) {
-				perror("Can't set GID");
-				exit(1);
-			}
-			if (setuid(pwd->pw_uid) == -1) {
-				perror("Can't set UID");
-				exit(1);
-			}
-		}
 		pid_t pid;
 
 		// create new process

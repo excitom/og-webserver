@@ -1,5 +1,5 @@
 /**
- * SSL Web Server
+ * SSL/TLS Web Server
  *
  * Note: My original design uses `epoll` and asynchronous socket I/O
  * but I was having trouble getting that to work with SSL, so I 
@@ -49,7 +49,7 @@ int  threadCount = 0;
  * The SSL server
  */
 void
-sslServer()
+tlsServer()
 {
 	SSL_CTX *ctx = createContext();
 	configureContext(ctx);

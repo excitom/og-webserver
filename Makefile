@@ -12,7 +12,7 @@ SRCS = ogws.c \
 	  daemonize.c \
 	  showDirectoryListing.c \
 	  server.c \
-	  sslServer.c \
+	  tlsServer.c \
 	  socket.c
 
 OBJS = $(SRCS:.c=.o)

@@ -26,6 +26,8 @@ void removeComments(char *);
 _token getToken(char *);
 _token getSection(char *);
 char * lookupKeyword(char *, char *);
+int portOk(_server *);
+void addPort(_server *);
 
 typedef char * (*processKeyword)(char *);
 typedef struct _keywords {
@@ -241,7 +243,7 @@ f_access_log(char *p) {
 	return p;
 }
 
-// ssl certificate file
+// ssl/tls certificate file
 char *
 f_ssl_certificate(char *p) {
 	if (g.certFile) {
@@ -259,7 +261,7 @@ f_ssl_certificate(char *p) {
 	return p;
 }
 
-// ssl certificate key file
+// ssl/tls certificate key file
 char *
 f_ssl_certificate_key(char *p) {
 	if (g.keyFile) {
@@ -569,4 +571,49 @@ checkConfig()
 	} else {
 		fclose(fp);
 	}
+
+	_server *server = g.servers;
+	while(server != NULL) {
+		if (!portOk(server)) {
+			exit(1);
+		}
+		server = server->next;
+	}
+}
+
+/**
+ * return 1 = ok, 0 = not ok
+ */
+int
+portOk(_server *server) {
+	_ports *port = g.ports;
+	while(port != NULL) {
+		if (port->portnum == server->port) {
+			if (port->tls != server->tls) {
+				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", port->portnum);
+			
+				return 0;
+			}
+			return 1;
+		}
+		port = port->next;
+	}
+	// unique port/tls combination
+	addPort(server);
+	return 1;
+}
+
+void
+addPort(_server *server) {
+	_ports *port = (_ports *)malloc(sizeof(_ports));
+	if (port == NULL) {
+		perror("Out of memory");
+		exit(1);
+	}
+	port->portnum = server->port;
+	port->tls = server->tls;
+	port->next = g.ports;
+	g.ports = port;
+	g.portCount++;
+	return;
 }

@@ -6,6 +6,12 @@
 #define LOCATION_EXACT 0
 #define LOCATION_REGEX 1
 
+typedef struct _ports {
+	int portnum;
+	int tls;
+	struct _ports *next;
+}_ports;
+
 typedef struct _location {
 	struct _location *next;
 	int match;
@@ -21,5 +27,8 @@ typedef struct _server {
 	char *docRoot;
 	short autoIndex;
 	int port;
+	int tls;
+	char *certFile;
+	char *keyFile;
 	_location *locations;
 }_server;
