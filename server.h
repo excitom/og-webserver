@@ -3,20 +3,20 @@
 void parseArgs(int, char**, char *);
 void daemonize();
 int epollCreate();
-int createBindAndListen(int);
+int createBindAndListen(int, int);
 void cleanup(int);
 void doTrace (char, char*, int);
 void doDebug (char*);
 #include <openssl/ssl.h>
 void processInput(int, SSL*);
-void configureContext(SSL_CTX*);
+void configureContext(SSL_CTX*, int port);
 SSL_CTX *createContext();
 void ShowCerts(SSL*);
 int sendData(int, SSL*, char*, int);
 int recvData(int, char*, int);
 void getTimestamp(char*, int);
 void sendErrorResponse(int, SSL*,int, char*, char*);
-void handleGetVerb(int, SSL*, char*, char*, char*);
+void handleGetVerb(int, SSL*, _server*, char*, char*);
 void parseMimeTypes();
 void parseConfig();
 void checkConfig();
@@ -52,11 +52,9 @@ struct globalVars {
 	int autoIndex;
 	int workerConnections;
 	int workerProcesses;
-	int useTLS;
 	int showVersion;
 	int useSendfile;
 	int keepaliveTimeout;
-	unsigned short port;
 	char *configPath;
 	char *indexFile;
 	char *accessLog;

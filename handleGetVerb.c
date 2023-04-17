@@ -21,15 +21,12 @@
 #include "server.h"
 #include "global.h"
 
-_server *getServerForHost(char *);
-
 void
-handleGetVerb(int sockfd, SSL *ssl, char *host, char *path, char *queryString)
+handleGetVerb(int sockfd, SSL *ssl, _server *server, char *path, char *queryString)
 {
 	if (queryString != NULL) {
 		doDebug("Query string ignored, not yet implemented.");
 	}
-	_server *server = getServerForHost(host);
 
 	// todo: disallow ../ in the path
 	int size = strlen(server->docRoot) + strlen(path);
@@ -108,7 +105,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *host, char *path, char *queryString)
 	}
 
 	off_t offset = 0;
-	if (g.useTLS) {
+	if (server->tls) {
 		//sent = SSL_sendfile(ssl, fd, offset, size, 0);
 		char *p = malloc(size);
 		read(fd, p, size);
@@ -151,32 +148,4 @@ getMimeType(char *name, char *mimeType)
 		}
 	}
 	return;
-}
-
-/**
- * Find the server information based on the hostname
- */
-_server *
-getServerForHost(char *host)
-{
-	char *p = strchr(host, ':');
-	int port = g.defaultServer->port;
-	if (p) {
-		port = atoi(p+1);
-		*p = '\0';
-	} 
-	_server *server = g.servers;
-	size_t hostLen = strlen(host);
-	while(server != NULL) {
-		if ((hostLen == strlen(server->serverName)) 
-				&& (strcmp(host, server->serverName) == 0)
-				&& (server->port == port)) {
-			break;
-		}
-		server = server->next;
-	}
-	if (server == NULL) {
-		server = g.defaultServer;
-	}
-	return server;
 }

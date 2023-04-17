@@ -84,11 +84,9 @@ initGlobals(char *version) {
 	g.debug = 0;
 	g.trace = 0;
 	g.testConfig = 0;
-	g.useTLS = 0;
 	g.showVersion = 0;
 	g.useSendfile = 0;
 	g.autoIndex = 0;
-	g.port = 8080;
 	g.workerConnections = 64;
 	g.workerProcesses = 1;
 	g.keepaliveTimeout = 65;

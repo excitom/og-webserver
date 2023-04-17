@@ -49,11 +49,12 @@ int  threadCount = 0;
  * The SSL server
  */
 void
-tlsServer()
+tlsServer(int port)
 {
 	SSL_CTX *ctx = createContext();
-	configureContext(ctx);
-	int sockfd = createBindAndListen(g.port);
+	configureContext(ctx, port);
+	int isTLS = 1;
+	int sockfd = createBindAndListen(isTLS, port);
 	_thread *threadList = NULL;
 	while(1) {
 		struct sockaddr_in addr;
@@ -131,22 +132,33 @@ createContext()
 
 /**
  * Configure SSL
+ *
+ * Note: The server is currently supporting multiple virtual hosts only
+ * if they use different ports. SNI (Server Name Indication) support 
+ * is TBD.
  */
 void
-configureContext(SSL_CTX *ctx)
+configureContext(SSL_CTX *ctx, int port)
 {
+	_server *server = g.servers;
+	while (server) {
+		if (server->port == port) {
+			break;
+		}
+	}
+	if (server == NULL) {
+		doDebug("Port not found, shouldn't happen");
+		exit(EXIT_FAILURE);
+	}
 	/* Set the key and cert */
-	char *path = malloc(256);
-	strcpy(path, g.certFile);
-	if (SSL_CTX_use_certificate_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
-		fprintf(stderr, "CERT %s\n", path);
+	if (SSL_CTX_use_certificate_file(ctx, server->certFile, SSL_FILETYPE_PEM) <= 0) {
+		fprintf(stderr, "CERT %s\n", server->certFile);
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}
 
-	strcpy(path, g.keyFile);
-	if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0 ) {
-		fprintf(stderr, "KEY %s\n", path);
+	if (SSL_CTX_use_PrivateKey_file(ctx, server->keyFile, SSL_FILETYPE_PEM) <= 0 ) {
+		fprintf(stderr, "KEY %s\n", server->keyFile);
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}

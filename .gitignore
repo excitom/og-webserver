@@ -57,6 +57,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 # test files
-list
+list*
 cacert.pem
 

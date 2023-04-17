@@ -26,7 +26,7 @@
  * Returns: socket file descriptor
  */
 int
-createBindAndListen(int port)
+createBindAndListen(int isTLS, int port)
 {
 	char buff[BUFF_SIZE];
 	char* buffer = (char *)&buff;
@@ -39,7 +39,7 @@ createBindAndListen(int port)
 	fprintf(stderr, "New socket created with sockfd %d\n", sockfd);
 
 	// use blocking I/O for TLS until for now
-	if (!g.useTLS) {
+	if (!isTLS) {
 		if (fcntl(sockfd, F_SETFL, O_NONBLOCK)) {
 			fprintf(stderr, "Could not make the socket non-blocking: %m\n");
 			close(sockfd);
@@ -113,7 +113,7 @@ sendData(int fd, SSL *ssl, char* ptr, int nbytes)
 {
 	doTrace( 'S', ptr, nbytes);
 	size_t nsent;
-	if (g.useTLS) {
+	if (ssl) {
 		if (SSL_write_ex(ssl, ptr, nbytes, &nsent) == 0) {
 			if (g.debug) {
 				ERR_print_errors_fp(stderr);

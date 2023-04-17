@@ -30,7 +30,8 @@ void
 server(int port)
 {
 	int epollfd = epollCreate();
-	int sockfd = createBindAndListen(port);
+	int isTLS = 0;
+	int sockfd = createBindAndListen(isTLS, port);
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.u64 = 0LL;

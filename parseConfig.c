@@ -115,7 +115,7 @@ char *
 f_server(char *p) {
 	_server *server = (_server *)malloc(sizeof(_server));
 	server->next = g.servers;
-	server->port = g.port;	// default listen port
+	server->port = g.defaultServer->port;	// default listen port
 	server->tls = 0;
 	g.servers = server;
 	_token token = getSection(p);
@@ -247,17 +247,31 @@ f_access_log(char *p) {
 // ssl/tls certificate file
 char *
 f_ssl_certificate(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	char *q = token.q;
+	if (*q == '"') {
+		q++;
+	}
+	char *certFile = q;
+	q = strchr(certFile, '"');
+	if (q != NULL) {
+		*q = '\0';
+	}
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'ssl_certificate' directive outside a 'server' block, ignored\n");
+	} else {
+		server->certFile = (char *)malloc(strlen(certFile)+1);
+		strcpy(server->certFile, certFile);
+		if (g.debug) {
+			fprintf(stderr,"cert file: %s\n", server->certFile);
+		}
+	}
+	return p;
 	if (g.certFile) {
 		free(g.certFile);
 		doDebug("Duplicate cert file definition.");
-	}
-	_token token = getToken(p);
-	p = token.p;
-	char *certFile = token.q;
-	g.certFile = (char *)malloc(strlen(certFile)+1);
-	strcpy(g.certFile, certFile);
-	if (g.debug) {
-		fprintf(stderr,"SSL Cert file path %s\n", g.certFile);
 	}
 	return p;
 }
@@ -265,17 +279,26 @@ f_ssl_certificate(char *p) {
 // ssl/tls certificate key file
 char *
 f_ssl_certificate_key(char *p) {
-	if (g.keyFile) {
-		free(g.keyFile);
-		doDebug("Duplicate cert key file definition.");
-	}
 	_token token = getToken(p);
 	p = token.p;
-	char *keyFile = token.q;
-	g.keyFile = (char *)malloc(strlen(keyFile)+1);
-	strcpy(g.keyFile, keyFile);
-	if (g.debug) {
-		fprintf(stderr,"SSL Cert Key file path %s\n", g.keyFile);
+	char *q = token.q;
+	if (*q == '"') {
+		q++;
+	}
+	char *keyFile = q;
+	q = strchr(keyFile, '"');
+	if (q != NULL) {
+		*q = '\0';
+	}
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'ssl_certificate_key' directive outside a 'server' block, ignored\n");
+	} else {
+		server->keyFile = (char *)malloc(strlen(keyFile)+1);
+		strcpy(server->keyFile, keyFile);
+		if (g.debug) {
+			fprintf(stderr,"cert key file: %s\n", server->keyFile);
+		}
 	}
 	return p;
 }
@@ -292,7 +315,7 @@ f_listen(char *p) {
 	} else {
 		server->port = atoi(port);
 		if (g.debug) {
-			fprintf(stderr,"Listen on port: %d\n", g.port);
+			fprintf(stderr,"Listen on port: %d\n", server->port);
 		}
 	}
 	server->tls = 0;

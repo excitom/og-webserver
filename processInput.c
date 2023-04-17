@@ -20,6 +20,8 @@
 #include "server.h"
 #include "global.h"
 
+_server *getServerForHost(char *);
+
 void
 processInput(int fd, SSL *ssl) {
 	char *host = NULL;
@@ -31,7 +33,7 @@ processInput(int fd, SSL *ssl) {
 	char outbuff[BUFF_SIZE];
 
 	size_t received;
-	if (g.useTLS) {
+	if (ssl) {
 		SSL_read_ex(ssl, (void *)&inbuff, BUFF_SIZE, &received);
 	} else {
 		received = recvData(fd, (char *)&inbuff, BUFF_SIZE);
@@ -93,8 +95,37 @@ processInput(int fd, SSL *ssl) {
 			sendErrorResponse(fd, ssl, 405, "Method Not Allowed", path);
 			return;
 		}
-		handleGetVerb(fd, ssl, host, path, queryString);
+		_server *server = getServerForHost(host);
+		handleGetVerb(fd, ssl, server, path, queryString);
 	}
 
 	return;
+}
+
+/**
+ * Find the server information based on the hostname
+ */
+_server *
+getServerForHost(char *host)
+{
+	char *p = strchr(host, ':');
+	int port = g.defaultServer->port;
+	if (p) {
+		port = atoi(p+1);
+		*p = '\0';
+	} 
+	_server *server = g.servers;
+	size_t hostLen = strlen(host);
+	while(server != NULL) {
+		if ((hostLen == strlen(server->serverName)) 
+				&& (strcmp(host, server->serverName) == 0)
+				&& (server->port == port)) {
+			break;
+		}
+		server = server->next;
+	}
+	if (server == NULL) {
+		server = g.defaultServer;
+	}
+	return server;
 }
