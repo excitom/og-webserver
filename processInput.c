@@ -93,7 +93,7 @@ processInput(int fd, SSL *ssl) {
 			sendErrorResponse(fd, ssl, 405, "Method Not Allowed", path);
 			return;
 		}
-		handleGetVerb(fd, ssl, path, queryString);
+		handleGetVerb(fd, ssl, host, path, queryString);
 	}
 
 	return;

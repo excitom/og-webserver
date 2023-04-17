@@ -116,6 +116,7 @@ f_server(char *p) {
 	_server *server = (_server *)malloc(sizeof(_server));
 	server->next = g.servers;
 	server->port = g.port;	// default listen port
+	server->tls = 0;
 	g.servers = server;
 	_token token = getSection(p);
 	p = token.p;
@@ -292,6 +293,16 @@ f_listen(char *p) {
 		server->port = atoi(port);
 		if (g.debug) {
 			fprintf(stderr,"Listen on port: %d\n", g.port);
+		}
+	}
+	server->tls = 0;
+	if (token.more) {
+		token = getToken(p);
+		p = token.p;
+		if (strcmp(token.q, "ssl") == 0) {
+			server->tls = 1;
+		} else {
+			doDebug("Unknown `listen` token ignored");
 		}
 	}
 	return p;
@@ -548,8 +559,14 @@ checkConfig()
 		exit(1);
 	}
 
-	if (access(g.docRoot, R_OK) == -1) {
-		perror("doc root not valid:");
+	for(_server *s = g.servers; s != NULL; s = s->next) {
+		if (access(s->docRoot, R_OK) == -1) {
+			perror("doc root not valid:");
+			exit(1);
+		}
+	}
+	if (access(g.defaultServer->docRoot, R_OK) == -1) {
+		perror("default doc root not valid:");
 		exit(1);
 	}
 
@@ -588,9 +605,9 @@ int
 portOk(_server *server) {
 	_ports *port = g.ports;
 	while(port != NULL) {
-		if (port->portnum == server->port) {
-			if (port->tls != server->tls) {
-				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", port->portnum);
+		if (port->portNum == server->port) {
+			if (port->useTLS != server->tls) {
+				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", port->portNum);
 			
 				return 0;
 			}
@@ -610,8 +627,8 @@ addPort(_server *server) {
 		perror("Out of memory");
 		exit(1);
 	}
-	port->portnum = server->port;
-	port->tls = server->tls;
+	port->portNum = server->port;
+	port->useTLS = server->tls;
 	port->next = g.ports;
 	g.ports = port;
 	g.portCount++;

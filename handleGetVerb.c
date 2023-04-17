@@ -21,14 +21,18 @@
 #include "server.h"
 #include "global.h"
 
+_server *getServerForHost(char *);
+
 void
-handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
+handleGetVerb(int sockfd, SSL *ssl, char *host, char *path, char *queryString)
 {
 	if (queryString != NULL) {
 		doDebug("Query string ignored, not yet implemented.");
 	}
+	_server *server = getServerForHost(host);
+
 	// todo: disallow ../ in the path
-	int size = strlen(g.docRoot) + strlen(path);
+	int size = strlen(server->docRoot) + strlen(path);
 	int maxLen = 255;
 	if (size > maxLen) {
 		doDebug("URI too long");
@@ -42,7 +46,7 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 
 	char fullPath[300];		// plenty of room to tack on index.html, if needed
 	char buffer[BUFF_SIZE];
-	strcpy(fullPath, g.docRoot);
+	strcpy(fullPath, server->docRoot);
 	strcat(fullPath, path);
 
 	struct stat sb;
@@ -72,8 +76,8 @@ handleGetVerb(int sockfd, SSL *ssl, char *path, char *queryString)
 	if (fd == -1) {
 		// if the path is a directory, and the index file is not present,
 		// do we want to show a directory listing?
-		if (S_ISDIR(sb.st_mode) && g.autoIndex) {
-			showDirectoryListing(sockfd, ssl, path);
+		if (S_ISDIR(sb.st_mode) && server->autoIndex) {
+			showDirectoryListing(sockfd, ssl, server, path);
 		} else {
 			snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", fullPath, strerror(errno));
 			doDebug(buffer);
@@ -147,4 +151,32 @@ getMimeType(char *name, char *mimeType)
 		}
 	}
 	return;
+}
+
+/**
+ * Find the server information based on the hostname
+ */
+_server *
+getServerForHost(char *host)
+{
+	char *p = strchr(host, ':');
+	int port = g.defaultServer->port;
+	if (p) {
+		port = atoi(p+1);
+		*p = '\0';
+	} 
+	_server *server = g.servers;
+	size_t hostLen = strlen(host);
+	while(server != NULL) {
+		if ((hostLen == strlen(server->serverName)) 
+				&& (strcmp(host, server->serverName) == 0)
+				&& (server->port == port)) {
+			break;
+		}
+		server = server->next;
+	}
+	if (server == NULL) {
+		server = g.defaultServer;
+	}
+	return server;
 }

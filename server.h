@@ -16,14 +16,14 @@ int sendData(int, SSL*, char*, int);
 int recvData(int, char*, int);
 void getTimestamp(char*, int);
 void sendErrorResponse(int, SSL*,int, char*, char*);
-void handleGetVerb(int, SSL*, char*, char*);
+void handleGetVerb(int, SSL*, char*, char*, char*);
 void parseMimeTypes();
 void parseConfig();
 void checkConfig();
 void accessLog(int, char*, int, char*, int);
 void errorLog(int, char*, int, char*, char*);
 void getMimeType(char*, char*);
-void showDirectoryListing(int, SSL*, char *);
+void showDirectoryListing(int, SSL*, _server *, char *);
 void server(int);
 void tlsServer();
 
@@ -59,7 +59,6 @@ struct globalVars {
 	unsigned short port;
 	char *configPath;
 	char *indexFile;
-	char *docRoot;
 	char *accessLog;
 	char *errorLog;
 	char *serverName;
@@ -70,6 +69,7 @@ struct globalVars {
 	char *signal;
 	char *version;
 	_server *servers;
+	_server *defaultServer;
 	_ports *ports;
 	int portCount;
 	int accessFd;

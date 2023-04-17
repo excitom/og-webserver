@@ -56,6 +56,12 @@ main(int argc, char *argv[])
 	startProcesses();
 }
 
+typedef struct _procs {
+	struct _procs *next;
+	int port;
+	int useTLS;
+}_procs;
+
 /**
  * Start at least 1 process per port on which we are listening.
  * The processes per port is controlled by `worker_processes` directive.
@@ -65,9 +71,22 @@ startProcesses()
 {
 	// total processes needed
 	int pcount = g.workerProcesses * g.portCount;
-	pcount = 1; // debug
+
+	// figure out what ports to assign to the processes
+	_procs *plist = NULL;
+	for (_ports *port = g.ports; port != NULL; port = port->next) {
+		for (int i = 0; i <= g.workerProcesses; i++) {
+			_procs *p = (_procs *)malloc(sizeof(_procs));
+			p->port = port->portNum;
+			p->useTLS = port->useTLS;
+			p->next = plist;
+			plist = p;
+		}
+	}
+	
 	// already have 1, start pcount-1 more.
 	// all the processes will call server() or tlsServer()
+	_procs *p = plist;
 	while(--pcount) {
 		pid_t pid = fork();
 		if (pid <0) {
@@ -77,15 +96,16 @@ startProcesses()
 		if (pid == 0) {
 			if (g.debug) {
 				pid_t pid = getpid();
-				fprintf(stderr, "Server Starting, process: %d\n", pid);
+				fprintf(stderr, "Server Starting, process: %d for port %d\n", pid, p->port);
 			}
 			break;
 		}
+		p = p->next;
 	}
-	if (g.useTLS) {
-		tlsServer();
+	if (p->useTLS) {
+		tlsServer(p->port);
 	} else {
-		server(g.port);
+		server(p->port);
 	}
 }
 /**

@@ -30,13 +30,13 @@ typedef struct _fragment {
 	char *fragment;
 } _fragment;
 _fragment *fragments = NULL;
-void addFragment(char *,char *);
+void addFragment(_server *,char *,char *);
 
 /**
  * Show a listing of files in a directory 
  */
 void
-showDirectoryListing(int sockfd, SSL *ssl, char *path)
+showDirectoryListing(int sockfd, SSL *ssl, _server * server, char *path)
 {
 	DIR *dp;
 	struct dirent *ep;
@@ -48,7 +48,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 	if (path[size-1] != '/') {
 		strcat(path, "/");
 	}
-	strcpy(fullPath, g.docRoot);
+	strcpy(fullPath, server->docRoot);
 	strcat(fullPath, path);
 	dp = opendir (fullPath);
 	if (dp == NULL) {
@@ -56,7 +56,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
 		sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
 	}
 	while ((ep = readdir(dp)) != NULL) {
-		addFragment(path, ep->d_name);
+		addFragment(server, path, ep->d_name);
 	}
 	closedir(dp);
 	char *header =	"<html><head>"
@@ -104,7 +104,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *path)
  * allocate and chain a new HTML fragment struct
  */
 void
-addFragment(char *dirPath, char *fileName)
+addFragment(_server *server, char *dirPath, char *fileName)
 {
 	if (fileName[0] == '.' && fileName[1] == '\0') {
 		return;		// skip dot entry
@@ -127,7 +127,7 @@ addFragment(char *dirPath, char *fileName)
 	//
 	char buffer[BUFF_SIZE];
 	char *fullPath = (char *)&buffer;
-	strcpy(fullPath, g.docRoot);
+	strcpy(fullPath, server->docRoot);
 	strcat(fullPath, dirPath);
 	strcat(fullPath, fileName);
 	struct stat sb;

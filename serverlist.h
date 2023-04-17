@@ -7,8 +7,8 @@
 #define LOCATION_REGEX 1
 
 typedef struct _ports {
-	int portnum;
-	int tls;
+	int portNum;
+	int useTLS;
 	struct _ports *next;
 }_ports;
 
