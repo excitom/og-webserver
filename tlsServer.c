@@ -26,6 +26,8 @@
 #include "server.h"
 #include "global.h"
 
+int isRetryable(SSL *, int);
+
 // main thread function
 void *processRequest( void *);
 
@@ -92,11 +94,18 @@ processRequest(void *param)
 	_request *r = (_request *)param;
 	SSL *ssl = SSL_new(r->ctx);
 	SSL_set_fd(ssl, r->clientfd);
-	if ( SSL_accept(ssl) == FAIL ) {	 /* do SSL-protocol accept */
-		ERR_print_errors_fp(stderr);
-		perror("Accept failed");
-	} else {
-		processInput(r->clientfd, ssl);
+	while (1) {
+		int i = SSL_accept(ssl);
+		if (i <= 0) {
+			if (!isRetryable(ssl, i)) {
+				ERR_print_errors_fp(stderr);
+				perror("Accept failed");
+				break;
+			}
+		} else {
+			processInput(r->clientfd, ssl);
+			break;
+		}
 	}
 	shutdown(r->clientfd, SHUT_RDWR);
 	close(r->clientfd);
@@ -187,4 +196,15 @@ void showCerts(SSL* ssl) {
 	}
 	else
 		printf("No certificates.\n");
+}
+
+int
+isRetryable(SSL *con, int i)
+{
+    int err = SSL_get_error(con, i);
+
+    /* If it's not a fatal error, it must be retryable */
+    return (err != SSL_ERROR_SSL)
+           && (err != SSL_ERROR_SYSCALL)
+           && (err != SSL_ERROR_ZERO_RETURN);
 }
