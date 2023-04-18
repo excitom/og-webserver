@@ -12,13 +12,14 @@ typedef struct _ports {
 	struct _ports *next;
 }_ports;
 
+#define EXACT_MATCH 0
+#define REGEX_MATCH 1
+#define PREFIX_MATCH 2
 typedef struct _location {
 	struct _location *next;
 	int match;
-		// 0 = exact match
-		// 1 = regex match
-	char *loction;
-	char *root;		// NULL means inherit from the server
+	char *location;
+	char *target;		// NULL means inherit from the server
 }_location;
 
 typedef struct _server {

@@ -312,11 +312,11 @@ f_listen(char *p) {
 	_server *server = g.servers;
 	if (server == NULL) {
 		fprintf(stderr, "'listen' directive outside a 'server' block, ignored\n");
-	} else {
-		server->port = atoi(port);
-		if (g.debug) {
-			fprintf(stderr,"Listen on port: %d\n", server->port);
-		}
+		return p;
+	}
+	server->port = atoi(port);
+	if (g.debug) {
+		fprintf(stderr,"Listen on port: %d\n", server->port);
 	}
 	server->tls = 0;
 	if (token.more) {
@@ -327,6 +327,97 @@ f_listen(char *p) {
 		} else {
 			doDebug("Unknown `listen` token ignored");
 		}
+	}
+	return p;
+}
+
+// location directive
+char *
+f_location(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	char *tok = token.q;
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'location' directive outside a 'server' block, ignored\n");
+		return p;
+	}
+	_location *loc = (_location *)malloc(sizeof(_location));
+	// A location starting with a slash implies a prefix operator.
+	// Otherwise this token is an operator and a location token follows.
+	if (*tok == '/') {
+		loc->match = PREFIX_MATCH;
+		loc->location = (char *)malloc(strlen(tok)+1);
+		strcpy(loc->location, tok);
+		if (g.debug) {
+			fprintf(stderr,"Location prefix match: %s\n", loc->location);
+		}
+		loc->next = server->locations;
+		server->locations = loc;
+		loc->target = NULL;
+	} else {
+		if (!token.more) {
+			doDebug("Location match missing the location, ignored");
+			free(loc);
+			return p;
+		}
+		if(*tok == '=') {
+			loc->match = EXACT_MATCH;
+		} else if (*tok == '~') {
+			loc->match = REGEX_MATCH;
+		} else {
+			doDebug("Unrecognized location match, ignored");
+			free(loc);
+			return p;
+		}
+		token = getToken(p);
+		loc->location = (char *)malloc(strlen(token.q)+1);
+		strcpy(loc->location, token.q);
+		if (g.debug) {
+			if (loc->match == EXACT_MATCH) {
+				fprintf(stderr,"Location exact match: %s\n", loc->location);
+			} else {
+				fprintf(stderr,"Location regex match: %s\n", loc->location);
+			}
+		}
+		p = token.p;
+		loc->next = server->locations;
+		server->locations = loc;
+		loc->target = NULL;
+	}
+	// Location match tokens should be followed by a section
+	// containing the location target.
+	token = getSection(p);
+	p = token.p;
+	char *s = token.q;
+	while (*s) {
+		_token token = getToken(s);
+		s = token.p;
+		char *keyword = token.q;
+		s = lookupKeyword(keyword, s);
+	}
+	return p;
+}
+
+// proxy_pass directive
+char *
+f_proxy_pass(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'proxy_pass' directive outside a 'server' block, ignored\n");
+		return p;
+	}
+	_location *loc = server->locations;
+	if (loc == NULL) {
+		fprintf(stderr, "'proxy_pass' directive outside a 'location' block, ignored\n");
+		return p;
+	}
+	loc->target = (char *)malloc(strlen(token.q)+1);
+	strcpy(loc->target, token.q);
+	if (g.debug) {
+		fprintf(stderr,"Proxy pass: %s\n", loc->target);
 	}
 	return p;
 }
@@ -395,10 +486,11 @@ _keywords keywords[] = {
 	{"events", 6, f_events},
 	{"server", 6, f_server},
 	{"listen", 6, f_listen},
-	//{"location", 8, 1},
 	{"sendfile", 8, f_sendfile},
+	{"location", 8, f_location},
 	{"error_log", 9, f_error_log},
 	{"autoindex", 9, f_autoindex},
+	{"proxy_pass", 10, f_proxy_pass},
 	//{"error_page", 10, 0},
 	//{"log_format", 10, 0},
 	{"access_log", 10, f_access_log},
