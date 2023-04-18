@@ -39,6 +39,11 @@ getDocRoot(_server *server, char *path)
 			t.target = loc->target;
 			t.type = loc->type;
 			return t;
+		} else if ((loc->match == EXACT_MATCH)
+				&& (strncmp(path, loc->location, strlen(loc->location)) == 0)) {
+			t.target = loc->target;
+			t.type = loc->type;
+			return t;
 		}
 	}
 	if (server->docRoot == NULL) {
