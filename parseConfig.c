@@ -343,6 +343,7 @@ f_location(char *p) {
 		return p;
 	}
 	_location *loc = (_location *)malloc(sizeof(_location));
+	loc->type = TYPE_DOC_ROOT;	// default
 	// A location starting with a slash implies a prefix operator.
 	// Otherwise this token is an operator and a location token follows.
 	if (*tok == '/') {
@@ -414,6 +415,7 @@ f_proxy_pass(char *p) {
 		fprintf(stderr, "'proxy_pass' directive outside a 'location' block, ignored\n");
 		return p;
 	}
+	loc->type = TYPE_PROXY_PASS;
 	loc->target = (char *)malloc(strlen(token.q)+1);
 	strcpy(loc->target, token.q);
 	if (g.debug) {

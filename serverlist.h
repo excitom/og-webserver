@@ -12,11 +12,14 @@ typedef struct _ports {
 	struct _ports *next;
 }_ports;
 
+#define TYPE_PROXY_PASS 0
+#define TYPE_DOC_ROOT 1
 #define EXACT_MATCH 0
 #define REGEX_MATCH 1
 #define PREFIX_MATCH 2
 typedef struct _location {
 	struct _location *next;
+	int type;
 	int match;
 	char *location;
 	char *target;		// NULL means inherit from the server
@@ -33,3 +36,8 @@ typedef struct _server {
 	char *keyFile;
 	_location *locations;
 }_server;
+
+typedef struct _target {
+	char *target;
+	int type;
+}_target;

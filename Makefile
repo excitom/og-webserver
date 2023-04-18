@@ -5,6 +5,8 @@ SRCS = ogws.c \
 	  processInput.c \
 	  sendErrorResponse.c \
 	  handleGetVerb.c \
+	  handleProxyPass.c \
+	  getDocRoot.c \
 	  parseMimeTypes.c \
 	  parseArgs.c \
 	  parseConfig.c \

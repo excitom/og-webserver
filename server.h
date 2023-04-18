@@ -26,6 +26,8 @@ void getMimeType(char*, char*);
 void showDirectoryListing(int, SSL*, _server *, char *);
 void server(int);
 void tlsServer();
+_target getDocRoot(_server *, char *);
+void handleProxyPass(char *, char *, char *);
 
 #define FAIL    -1
 #define BUFF_SIZE 4096

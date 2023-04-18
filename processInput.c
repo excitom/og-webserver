@@ -31,12 +31,13 @@ processInput(int fd, SSL *ssl) {
 	char *p;
 	char inbuff[BUFF_SIZE];
 	char outbuff[BUFF_SIZE];
+	char *input = (char *)&inbuff;
 
 	size_t received;
 	if (ssl) {
-		SSL_read_ex(ssl, (void *)&inbuff, BUFF_SIZE, &received);
+		SSL_read_ex(ssl, (void *)input, BUFF_SIZE, &received);
 	} else {
-		received = recvData(fd, (char *)&inbuff, BUFF_SIZE);
+		received = recvData(fd, input, BUFF_SIZE);
 	}
 
 	snprintf(outbuff, BUFF_SIZE, "RECEIVED %d BYTES\n", (int)received);
@@ -47,16 +48,19 @@ processInput(int fd, SSL *ssl) {
 		sendErrorResponse(fd, ssl, 400, "Bad Request", "No data");
 		return;
 	} else {
+		// Save all the headers in case of `proxy_pass`
+		char *headers = (char *)malloc(strlen(input)+1);
+		strcpy(headers, input);
 		// Expected format:
 		// verb path HTTP/1.1\r\n
 		// Host: nn.nn.nn.nn:pp\r\n
 		// ... other headers we are ignoring for now
-		//
-		verb = (char *)&inbuff;
+		verb = input;
 		p = strchr(verb, ' ');
 		if (!p) {
 			doDebug("Bad data");
 			sendErrorResponse(fd, ssl, 400, "Bad Request", "Bad data");
+			free(headers);
 			return;
 		}
 		*p++ = '\0';
@@ -78,6 +82,7 @@ processInput(int fd, SSL *ssl) {
 				path = "/";
 			}
 			sendErrorResponse(fd, ssl, 400, "Bad Request", path);
+			free(headers);
 			return;
 		}
 
@@ -93,12 +98,39 @@ processInput(int fd, SSL *ssl) {
 		//
 		if (strcmp(verb, "GET") != 0) {
 			sendErrorResponse(fd, ssl, 405, "Method Not Allowed", path);
+			free(headers);
 			return;
 		}
 		_server *server = getServerForHost(host);
-		handleGetVerb(fd, ssl, server, path, queryString);
-	}
+		_target t = getDocRoot(server, path);
 
+		// check for proxy_pass
+		if (t.type == TYPE_PROXY_PASS) {
+			handleProxyPass(headers, path, t.target);
+			free(headers);
+			return;
+		}
+		free(headers);	// no longer need a copy of the headers
+		char *docRoot = t.target;
+
+		// todo: disallow ../ in the path
+		int size = strlen(docRoot) + strlen(path);
+		int maxLen = 255;
+		if (size > maxLen) {
+			doDebug("URI too long");
+			char truncated[maxLen+5];
+			strncpy(truncated, path, maxLen);
+			truncated[maxLen] = '\0';
+			strcat(truncated, "...");
+			sendErrorResponse(fd, ssl, 414, "URI too long", truncated);
+			return;
+		}
+
+		char fullPath[300];		// plenty of room to tack on index.html, if needed
+		strcpy(fullPath, docRoot);
+		strcat(fullPath, path);
+		handleGetVerb(fd, ssl, server, fullPath, queryString);
+	}
 	return;
 }
 
