@@ -127,7 +127,6 @@ f_server(char *p) {
 		char *keyword = token.q;
 		s = lookupKeyword(keyword, s);
 	}
-	printf("=========\nname: %s\nroot %s\n", server->serverName, server->docRoot);
 	return p;
 }
 
@@ -375,13 +374,6 @@ f_location(char *p) {
 		token = getToken(p);
 		loc->location = (char *)malloc(strlen(token.q)+1);
 		strcpy(loc->location, token.q);
-		if (g.debug) {
-			if (loc->match == EXACT_MATCH) {
-				fprintf(stderr,"Location exact match: %s\ntarget: %s\n", loc->location, loc->target);
-			} else {
-				fprintf(stderr,"Location regex match: %s\ntarget: %s\n", loc->location, loc->target);
-			}
-		}
 		p = token.p;
 		loc->next = server->locations;
 		server->locations = loc;
@@ -591,7 +583,6 @@ getToken(char *p)
 	token.p = p;
 	token.q = q;
 	if (*p == '\0') {
-		printf("NULL TOKEN\n");
 		return token;
 	}
 	while(*p) {
@@ -605,7 +596,6 @@ getToken(char *p)
 	}
 	*p++ = '\0';
 	token.p = p;
-	printf("TOKEN: %s\n", q);
 	return token;
 }
 
@@ -636,7 +626,6 @@ getSection(char *p)
 				_token token;
 				token.p = p;
 				token.q = q;
-				printf("----- SECTION: %s\nremaining: %s", q, p);
 				return token;
 			}
 		}

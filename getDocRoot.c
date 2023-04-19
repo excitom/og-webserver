@@ -45,6 +45,7 @@ getDocRoot(_server *server, char *path)
 			t.type = loc->type;
 			return t;
 		}
+		loc = loc->next;
 	}
 	if (server->docRoot == NULL) {
 		t.type = TYPE_DOC_ROOT;
