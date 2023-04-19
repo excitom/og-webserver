@@ -655,6 +655,7 @@ lookupKeyword(char *keyword, char *p)
 		if (len == keywords[i].len && 
 				(strncmp(keyword, keywords[i].keyword, len) == 0)) {
 			p = (*keywords[i].func)(p);
+			break;
 		}
 		// keyword list is sorted by length, no need to keep looking if
 		// remaining keywords are longer than the one we are looking for.
