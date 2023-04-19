@@ -127,6 +127,7 @@ f_server(char *p) {
 		char *keyword = token.q;
 		s = lookupKeyword(keyword, s);
 	}
+	printf("=========\nname: %s\nroot %s\n", server->serverName, server->docRoot);
 	return p;
 }
 
@@ -355,7 +356,7 @@ f_location(char *p) {
 		}
 		loc->next = server->locations;
 		server->locations = loc;
-		loc->target = NULL;
+		loc->target = NULL;	// until the following token is parsed
 	} else {
 		if (!token.more) {
 			doDebug("Location match missing the location, ignored");
@@ -376,9 +377,9 @@ f_location(char *p) {
 		strcpy(loc->location, token.q);
 		if (g.debug) {
 			if (loc->match == EXACT_MATCH) {
-				fprintf(stderr,"Location exact match: %s\n", loc->location);
+				fprintf(stderr,"Location exact match: %s\ntarget: %s\n", loc->location, loc->target);
 			} else {
-				fprintf(stderr,"Location regex match: %s\n", loc->location);
+				fprintf(stderr,"Location regex match: %s\ntarget: %s\n", loc->location, loc->target);
 			}
 		}
 		p = token.p;
@@ -577,6 +578,7 @@ removeComments(char *p)
 _token
 getToken(char *p)
 {
+	// ignore leading whitespace
 	while(*p) {
 		if (*p != ' ' && *p != '\t' && *p != '\n') {
 			break;
@@ -585,19 +587,25 @@ getToken(char *p)
 	}
 	char *q = p;
 	_token token;
-	token.more = 1; //default: more than one parameter
+	token.more = 0;
+	token.p = p;
+	token.q = q;
+	if (*p == '\0') {
+		printf("NULL TOKEN\n");
+		return token;
+	}
 	while(*p) {
 		if (*p == ' ' || *p == '\t' || *p == ';' || *p == '\n') {
 			break;
 		}
 		p++;
 	}
-	if (*p == ';') {
-		token.more = 0;
+	if (*p != ';') {
+		token.more = 1;
 	}
 	*p++ = '\0';
 	token.p = p;
-	token.q = q;
+	printf("TOKEN: %s\n", q);
 	return token;
 }
 
@@ -608,16 +616,17 @@ getToken(char *p)
 _token
 getSection(char *p)
 {
+	// ignore leading whitespace
 	while(*p) {
 		if (*p != ' ' && *p != '\t' && *p != '\n') {
 			break;
 		}
 		p++;
 	}
-	char *q = p;
 	if (*p != '{') {
 		fprintf(stderr, "Invalid config file\n");
 	}
+	char *q = ++p;
 	int nest = 1;
 	while(*p) {
 		if (*p == '}') {
@@ -627,6 +636,7 @@ getSection(char *p)
 				_token token;
 				token.p = p;
 				token.q = q;
+				printf("----- SECTION: %s\nremaining: %s", q, p);
 				return token;
 			}
 		}
@@ -639,6 +649,7 @@ getSection(char *p)
 	token.p = p;
 	token.q = q;
 	token.more = 0;
+	doDebug("Section not cloed with a `}`");
 	return token;
 }
 
