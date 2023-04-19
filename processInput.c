@@ -126,10 +126,7 @@ processInput(int fd, SSL *ssl) {
 			return;
 		}
 
-		char fullPath[300];		// plenty of room to tack on index.html, if needed
-		strcpy(fullPath, docRoot);
-		strcat(fullPath, path);
-		handleGetVerb(fd, ssl, server, fullPath, queryString);
+		handleGetVerb(fd, ssl, server, docRoot, path, queryString);
 	}
 	return;
 }

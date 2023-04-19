@@ -22,49 +22,64 @@
 #include "global.h"
 
 void
-handleGetVerb(int sockfd, SSL *ssl, _server *server, char *path, char *queryString)
+handleGetVerb(int sockfd, SSL *ssl, _server *server, char *docRoot, char *path, char *queryString)
 {
 	if (queryString != NULL) {
 		doDebug("Query string ignored, not yet implemented.");
 	}
+	char fullPath[300];
+	strcpy(fullPath, docRoot);
+	strcat(fullPath, path);
 	struct stat sb;
-	if (stat(path, &sb) == -1) {
+	if (stat(fullPath, &sb) == -1) {
 		int e = errno;
 		if (g.debug) {
-			fprintf(stderr, "%s: file stat failed: %s\n", path, strerror(e));
+			fprintf(stderr, "%s: file stat failed: %s\n", fullPath, strerror(e));
 		}
 		sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
 		return;
 	}
 
 	// if the path pointing to a directory?
+	int fd;
 	if (S_ISDIR(sb.st_mode)) {
-		if (path[strlen(path)-1] != '/') {
-			strcat(path, "/");
+		if (fullPath[strlen(fullPath)-1] != '/') {
+			strcat(fullPath, "/");
 		}
 		// default to the index file if not specified
-		strcat(path, "index.html");
+		char indexPath[300];
+		strcpy(indexPath, fullPath);
+		strcat(indexPath, g.indexFile);
+		fd = open(indexPath, O_RDONLY);
+		if (fd == -1) {
+			// if the path is a directory, and the index file is not present,
+			// do we want to show a directory listing?
+			if (server->autoIndex) {
+				showDirectoryListing(sockfd, ssl, docRoot, path);
+			} else {
+				if (g.debug) {
+					fprintf(stderr, "%s: file open failed: %s\n", fullPath, strerror(errno));
+				}
+				sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
+			}
+			return;
+		}
+	} else {
+		// not a directory
+		fd = open(fullPath, O_RDONLY);
+		if (fd == -1) {
+			if (g.debug) {
+				fprintf(stderr, "%s: file open failed: %s\n", fullPath, strerror(errno));
+			}
+			sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
+			return;
+		}
 	}
 
 	// guess the mime type by the extension, if any
 	char mt[256];
 	char *mimeType = (char *)&mt;
-	getMimeType(path, mimeType);
-
-	int fd = open(path, O_RDONLY);
-	if (fd == -1) {
-		// if the path is a directory, and the index file is not present,
-		// do we want to show a directory listing?
-		if (S_ISDIR(sb.st_mode) && server->autoIndex) {
-			showDirectoryListing(sockfd, ssl, server, path);
-		} else {
-			if (g.debug) {
-				fprintf(stderr, "%s: file open failed: %s\n", path, strerror(errno));
-			}
-			sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
-		}
-		return;
-	}
+	getMimeType(fullPath, mimeType);
 
 	// get the content length
 	int size = lseek(fd, 0, SEEK_END);
