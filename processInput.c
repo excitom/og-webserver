@@ -32,8 +32,8 @@ processInput(int fd, SSL *ssl) {
 	char inbuff[BUFF_SIZE];
 	char outbuff[BUFF_SIZE];
 	char *input = (char *)&inbuff;
-
 	size_t received;
+	memset(input, 0, BUFF_SIZE);
 	if (ssl) {
 		SSL_read_ex(ssl, (void *)input, BUFF_SIZE, &received);
 	} else {
