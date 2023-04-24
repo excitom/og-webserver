@@ -37,8 +37,3 @@ typedef struct _server {
 	char *keyFile;
 	_location *locations;
 }_server;
-
-typedef struct _target {
-	char *target;
-	int type;
-}_target;

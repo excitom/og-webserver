@@ -20,41 +20,33 @@
 
 int regexMatch(char *, char *);
 
-_target
-getDocRoot(_server *server, char *path)
+void
+getDocRoot(_server *server, char *path, _location *loc)
 {
-	_target t;
-	_location *loc = server->locations;
+	loc = server->locations;
 	size_t pathLen = strlen(path);
 	while (loc != NULL) {
 		if ((loc->match == EXACT_MATCH)
 				&& (pathLen == strlen(loc->location))
 				&& (strcmp(path, loc->location) == 0)) {
-			_target t;
-			t.target = loc->target;
-			t.type = loc->type;
-			return t;
+			return;
 		} else if ((loc->match == REGEX_MATCH)
 				&& (regexMatch(loc->location, path))) {
-			t.target = loc->target;
-			t.type = loc->type;
-			return t;
+			return;
 		} else if ((loc->match == PREFIX_MATCH)
 				&& (strncmp(path, loc->location, strlen(loc->location)) == 0)) {
-			t.target = loc->target;
-			t.type = loc->type;
-			return t;
+			return;
 		}
 		loc = loc->next;
 	}
 	if (server->docRoot == NULL) {
-		t.type = TYPE_DOC_ROOT;
-		t.target = g.defaultServer->docRoot;
+		loc->type = TYPE_DOC_ROOT;
+		loc->target = g.defaultServer->docRoot;
 	} else {
-		t.type = TYPE_DOC_ROOT;
-		t.target = server->docRoot;
+		loc->type = TYPE_DOC_ROOT;
+		loc->target = server->docRoot;
 	}
-	return t;
+	return;
 }
 
 /**

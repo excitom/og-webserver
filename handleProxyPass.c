@@ -18,10 +18,22 @@
 #include "global.h"
 
 void
-handleProxyPass(char *headers, char *path, char *target)
+handleProxyPass(int fd, char *headers, char *path, _location *loc)
 {
-	printf("PROXY PASS %s\nPATH %s\nTARGET %s\n", headers, path, target);
-	char *hostname;
-	unsigned short port;
-
+	if (g.debug) {
+		fprintf(stderr, "PROXY_PASS to: %s\n", path);
+	}
+	int upstream = socket(AF_INET, SOCK_STREAM, 0);
+	connect(upstream, (struct sockaddr *)loc->passTo, sizeof(loc->passTo));
+	sendData(upstream, NULL, headers, strlen(headers));
+	char buffer[BUFF_SIZE];
+	size_t bytes = BUFF_SIZE;
+	do {
+		bytes = recvData(upstream, (char *)&buffer, bytes);
+		sendData(fd, NULL, (char *)&buffer, bytes);
+		if (bytes == 0) {
+			break;
+		}
+	} while(bytes == BUFF_SIZE);
+	return;
 }
