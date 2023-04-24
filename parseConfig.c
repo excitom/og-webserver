@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <sys/types.h>
 #include "server.h"
 #include "global.h"
@@ -356,6 +357,7 @@ f_location(char *p) {
 		loc->next = server->locations;
 		server->locations = loc;
 		loc->target = NULL;	// until the following token is parsed
+		loc->passTo = NULL; 
 	} else {
 		if (!token.more) {
 			doDebug("Location match missing the location, ignored");
@@ -409,11 +411,33 @@ f_proxy_pass(char *p) {
 		return p;
 	}
 	loc->type = TYPE_PROXY_PASS;
-	loc->target = (char *)malloc(strlen(token.q)+1);
-	strcpy(loc->target, token.q);
+	char *hn = strstr(token.q, "://");
+	if (hn) {
+		hn += 3;
+	}
+	char *pn = strchr(hn, ':');
+	unsigned short port;
+	if (pn) {
+		*pn++ = '\0';
+		port = (unsigned short)atoi(pn);
+	}else {
+		port = 80;
+	}
+	loc->target = (char *)malloc(strlen(hn)+1);
+	strcpy(loc->target, hn);
 	if (g.debug) {
 		fprintf(stderr,"Proxy pass: %s\n", loc->target);
 	}
+	struct sockaddr_in *passTo = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+	loc->passTo = passTo;
+	struct hostent *hostName = gethostbyname(hn);
+	if (hostName == (struct hostent *)0) {
+		doDebug("gethostbyname failed");
+		exit(1);
+	}
+	passTo->sin_family = AF_INET;
+	passTo->sin_port = htons(port);
+	passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
 	return p;
 }
 

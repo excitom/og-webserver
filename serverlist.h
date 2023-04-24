@@ -23,6 +23,7 @@ typedef struct _location {
 	int match;
 	char *location;
 	char *target;		// NULL means inherit from the server
+	struct sockaddr_in *passTo;		// for proxy_pass locations
 }_location;
 
 typedef struct _server {

@@ -21,4 +21,7 @@ void
 handleProxyPass(char *headers, char *path, char *target)
 {
 	printf("PROXY PASS %s\nPATH %s\nTARGET %s\n", headers, path, target);
+	char *hostname;
+	unsigned short port;
+
 }
