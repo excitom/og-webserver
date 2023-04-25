@@ -26,7 +26,7 @@ void getMimeType(char*, char*);
 void showDirectoryListing(int, SSL*, char *, char *);
 void server(int);
 void tlsServer();
-void getDocRoot(_server *, char *, _location *);
+_location *getDocRoot(_server *, char *);
 void handleProxyPass(int, char *, char *, _location *);
 
 #define FAIL    -1

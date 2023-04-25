@@ -29,6 +29,7 @@ _token getSection(char *);
 char * lookupKeyword(char *, char *);
 int portOk(_server *);
 void addPort(_server *);
+int locationSet(_server *);
 
 typedef char * (*processKeyword)(char *);
 typedef struct _keywords {
@@ -429,6 +430,7 @@ f_proxy_pass(char *p) {
 		fprintf(stderr,"Proxy pass: %s\n", loc->target);
 	}
 	struct sockaddr_in *passTo = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+	memset(passTo, 0, sizeof(struct sockaddr_in));
 	loc->passTo = passTo;
 	struct hostent *hostName = gethostbyname(hn);
 	if (hostName == (struct hostent *)0) {
@@ -734,6 +736,11 @@ checkConfig()
 	_server *server = g.servers;
 	while(server != NULL) {
 		if (!portOk(server)) {
+			doDebug("no port set for a server.");
+			exit(1);
+		}
+		if (!locationSet(server)) {
+			doDebug("server does not have a location.");
 			exit(1);
 		}
 		server = server->next;
@@ -744,7 +751,8 @@ checkConfig()
  * return 1 = ok, 0 = not ok
  */
 int
-portOk(_server *server) {
+portOk(_server *server)
+{
 	_ports *port = g.ports;
 	while(port != NULL) {
 		if (port->portNum == server->port) {
@@ -763,7 +771,8 @@ portOk(_server *server) {
 }
 
 void
-addPort(_server *server) {
+addPort(_server *server)
+{
 	_ports *port = (_ports *)malloc(sizeof(_ports));
 	if (port == NULL) {
 		perror("Out of memory");
@@ -775,4 +784,33 @@ addPort(_server *server) {
 	g.ports = port;
 	g.portCount++;
 	return;
+}
+
+int
+locationSet(_server *server)
+{
+	int ok = 1;		// TODO: implement better checking logic
+	while(server) {
+		if (!server->locations) {
+			// add a default location
+			_location *loc = (_location *)malloc(sizeof(_location));
+			loc->type = TYPE_DOC_ROOT;	// default
+			loc->match = PREFIX_MATCH;
+			char tok[] = "/";
+			loc->location = (char *)malloc(strlen(tok)+1);
+			strcpy(loc->location, tok);
+			loc->passTo = NULL; 
+			if (server->docRoot == NULL) {
+				loc->type = TYPE_DOC_ROOT;
+				loc->target = g.defaultServer->docRoot;
+			} else {
+				loc->type = TYPE_DOC_ROOT;
+				loc->target = server->docRoot;
+			}
+			loc->next = server->locations;
+			server->locations = loc;
+		}
+		server = server->next;
+	}
+	return ok;
 }

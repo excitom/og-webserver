@@ -24,7 +24,16 @@ handleProxyPass(int fd, char *headers, char *path, _location *loc)
 		fprintf(stderr, "PROXY_PASS to: %s\n", path);
 	}
 	int upstream = socket(AF_INET, SOCK_STREAM, 0);
-	connect(upstream, (struct sockaddr *)loc->passTo, sizeof(loc->passTo));
+	if (upstream < 0) {
+		doDebug("upstream socket failed.");
+		doDebug(strerror(errno));
+		return;
+	}
+	if (connect(upstream, (struct sockaddr *)loc->passTo, sizeof(loc->passTo)) < 0) {
+		doDebug("upstream connect failed.");
+		doDebug(strerror(errno));
+		return;
+	}
 	sendData(upstream, NULL, headers, strlen(headers));
 	char buffer[BUFF_SIZE];
 	size_t bytes = BUFF_SIZE;

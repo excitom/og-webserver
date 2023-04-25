@@ -102,17 +102,20 @@ processInput(int fd, SSL *ssl) {
 			return;
 		}
 		_server *server = getServerForHost(host);
-		_location loc;
-		getDocRoot(server, path, &loc);
+		_location *loc = getDocRoot(server, path);
+		if (!loc) {
+			doDebug("No doc root.");
+			return;
+		}
 
 		// check for proxy_pass
-		if (loc.type == TYPE_PROXY_PASS) {
-			handleProxyPass(fd, headers, path, &loc);
+		if (loc->type == TYPE_PROXY_PASS) {
+			handleProxyPass(fd, headers, path, loc);
 			free(headers);
 			return;
 		}
 		free(headers);	// no longer need a copy of the headers
-		char *docRoot = loc.target;
+		char *docRoot = loc->target;
 
 		// todo: disallow ../ in the path
 		int size = strlen(docRoot) + strlen(path);
