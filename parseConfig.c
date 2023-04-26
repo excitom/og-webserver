@@ -791,7 +791,18 @@ locationSet(_server *server)
 {
 	int ok = 1;		// TODO: implement better checking logic
 	while(server) {
-		if (!server->locations) {
+		int needsDefaultRoot = 1;
+		_location *loc = server->locations;
+		if (loc) {
+			if (loc->type == TYPE_DOC_ROOT &&
+					loc->match == PREFIX_MATCH &&
+					strcmp(loc->location, "/") == 0) {
+				needsDefaultRoot = 0;
+				break;
+			}
+			loc = loc->next;
+		}
+		if (needsDefaultRoot) {
 			// add a default location
 			_location *loc = (_location *)malloc(sizeof(_location));
 			loc->type = TYPE_DOC_ROOT;	// default
@@ -800,15 +811,25 @@ locationSet(_server *server)
 			loc->location = (char *)malloc(strlen(tok)+1);
 			strcpy(loc->location, tok);
 			loc->passTo = NULL; 
+			loc->type = TYPE_DOC_ROOT;
 			if (server->docRoot == NULL) {
-				loc->type = TYPE_DOC_ROOT;
 				loc->target = g.defaultServer->docRoot;
 			} else {
-				loc->type = TYPE_DOC_ROOT;
 				loc->target = server->docRoot;
 			}
-			loc->next = server->locations;
-			server->locations = loc;
+			// add the default prefix match as the last in the chain
+			_location *prev = NULL;
+			_location *l = server->locations;
+			while(l) {
+				prev = l;
+				l = l->next;
+			}
+			if (prev) {
+				prev->next = loc;
+			} else {
+				server->locations = loc;
+			}
+			loc->next = NULL;
 		}
 		server = server->next;
 	}
