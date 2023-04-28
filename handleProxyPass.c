@@ -34,6 +34,7 @@ handleProxyPass(int fd, char *headers, _location *loc)
     if (connect(upstream, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		doDebug("upstream connect failed.");
 		doDebug(strerror(errno));
+		close(upstream);
 		return;
     }
 	// change trailing \r\n\r\n to \r\n in order to
@@ -55,5 +56,7 @@ handleProxyPass(int fd, char *headers, _location *loc)
 			break;
 		}
 	} while(bytes == BUFF_SIZE);
+	shutdown(upstream, SHUT_RDWR);
+	close(upstream);
 	return;
 }
