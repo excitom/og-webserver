@@ -124,6 +124,7 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, char *docRoot, char *path, 
 	}
 
 	accessLog(sockfd, "GET", httpCode, path, size);
+	close(fd);
 	return;
 }
 
