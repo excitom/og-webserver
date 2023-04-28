@@ -31,18 +31,6 @@ int isRetryable(SSL *, int);
 // main thread function
 void *processRequest( void *);
 
-// thread parameters
-typedef struct _request {
-	int clientfd;
-	SSL_CTX *ctx;
-}_request;
-
-// list of active threads
-typedef struct _thread {
-	struct _thread *next;
-	pthread_t thread;
-}_thread;
-
 // thread safe counter
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 int  threadCount = 0;
@@ -57,27 +45,15 @@ tlsServer(int port)
 	configureContext(ctx, port);
 	int isTLS = 1;
 	int sockfd = createBindAndListen(isTLS, port);
-	_thread *threadList = NULL;
 	while(1) {
 		struct sockaddr_in addr;
 		socklen_t len = sizeof(addr);
 		int clientfd = accept(sockfd, (struct sockaddr*)&addr, &len);
-		_request request;
-		request.clientfd = clientfd;
-		request.ctx = ctx;
+		_clientConnection *client = queueClientConnection(clientfd, addr, ctx);
 		pthread_t thread;
-		pthread_create(&thread, NULL, processRequest, (void *)&request);
-		_thread *t = (_thread*)malloc(sizeof(_thread));
-		t->next = threadList;
-		threadList = t;
-		t->thread = thread;
+		pthread_create(&thread, NULL, processRequest, (void *)client);
 	}
-	close(sockfd);
-	SSL_CTX_free(ctx);
-	while(threadList != NULL) {
-		pthread_join(threadList->thread, NULL);
-		threadList = threadList->next;
-	}
+	cleanup(sockfd);
 }
 
 /**
@@ -91,9 +67,9 @@ processRequest(void *param)
 	threadCount++;
 	printf("Thread Count: %d\n", threadCount);
 	pthread_mutex_unlock(&mutex1);
-	_request *r = (_request *)param;
-	SSL *ssl = SSL_new(r->ctx);
-	SSL_set_fd(ssl, r->clientfd);
+	_clientConnection *c = (_clientConnection *)param;
+	SSL *ssl = SSL_new(c->ctx);
+	SSL_set_fd(ssl, c->fd);
 	while (1) {
 		int i = SSL_accept(ssl);
 		if (i <= 0) {
@@ -103,12 +79,11 @@ processRequest(void *param)
 				break;
 			}
 		} else {
-			processInput(r->clientfd, ssl);
+			processInput(c->fd, ssl);
 			break;
 		}
 	}
-	shutdown(r->clientfd, SHUT_RDWR);
-	close(r->clientfd);
+	cleanup(c->fd);
 	pthread_mutex_lock(&mutex1);
 	threadCount--;
 	printf("Thread exiting, count: %d\n", threadCount);

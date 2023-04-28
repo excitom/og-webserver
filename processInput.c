@@ -110,7 +110,7 @@ processInput(int fd, SSL *ssl) {
 
 		// check for proxy_pass
 		if (loc->type == TYPE_PROXY_PASS) {
-			handleProxyPass(fd, headers, path, loc);
+			handleProxyPass(fd, headers, loc);
 			free(headers);
 			return;
 		}

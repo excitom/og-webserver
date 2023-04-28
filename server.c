@@ -41,6 +41,7 @@ server(int port)
 		snprintf(buffer, BUFF_SIZE, "Couldn't add server socket %d to epoll set: %m\n", sockfd);
 		doDebug(buffer);
 		cleanup(sockfd);	  
+		exit(1);
 	}
 
 	//
@@ -58,6 +59,7 @@ server(int port)
 			if ((rval < 0) && (errno != EINTR)) {
 				doDebug("epoll_wait failed");
 				cleanup(sockfd);
+				return;
 			}
 		}
 
@@ -78,11 +80,11 @@ server(int port)
 					doDebug("epoll_wait failed");
 					doDebug(buffer);
 					cleanup(sockfd);
+					exit(1);
 				} else {
 					snprintf(buffer, BUFF_SIZE, "Closing socket with sockfd %d\n", fd);
 					doDebug(buffer);
-					shutdown(fd, SHUT_RDWR);
-					close(fd);
+					cleanup(fd);
 					continue;
 				}
 			}
@@ -102,19 +104,10 @@ server(int port)
 							snprintf(buffer, BUFF_SIZE, "Accept on socket %d failed: %m\n", sockfd);
 							doDebug(buffer);
 							cleanup(sockfd);
+							return;
 						}
 					}
-
-					if (g.debug) {
-						char ipinput[INET_ADDRSTRLEN];
-						if (inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, ipinput, INET_ADDRSTRLEN) != NULL) {
-							snprintf(buffer, BUFF_SIZE, "Accepted connection from %s:%u, assigned new sockfd %d\n", ipinput, ntohs(peeraddr.sin_port), clientsfd);
-							doDebug(buffer);
-						} else {
-							snprintf(buffer, BUFF_SIZE, "Failed to convert address from binary to text form: %m\n");
-							doDebug(buffer);
-						}
-					}
+					queueClientConnection(clientsfd, peeraddr, NULL);
 
 					//
 					// Add a new event to listen for
@@ -127,6 +120,7 @@ server(int port)
 						snprintf(buffer, BUFF_SIZE, "Couldn't add client socket %d to epoll set: %m\n", clientsfd);
 						doDebug(buffer);
 						cleanup(sockfd);	  
+						exit(1);
 					}
 
 				} else {
@@ -136,8 +130,7 @@ server(int port)
 					processInput(fd, NULL);
 
 					// not handling "keep alive" yet
-					shutdown(fd, SHUT_RDWR);
-					close(fd);
+					cleanup(fd);
 				}
 			} // End, process an event
 		} // End, loop over returned events

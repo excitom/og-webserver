@@ -1,4 +1,5 @@
 #include "serverlist.h"
+#include "clients.h"
 
 void parseArgs(int, char**, char *);
 void daemonize();
@@ -9,6 +10,8 @@ void doTrace (char, char*, int);
 void doDebug (char*);
 #include <openssl/ssl.h>
 void processInput(int, SSL*);
+_clientConnection *queueClientConnection(int fd, struct sockaddr_in, SSL_CTX *ctx);
+_clientConnection *getClient(int);
 void configureContext(SSL_CTX*, int port);
 SSL_CTX *createContext();
 void ShowCerts(SSL*);
@@ -27,7 +30,7 @@ void showDirectoryListing(int, SSL*, char *, char *);
 void server(int);
 void tlsServer();
 _location *getDocRoot(_server *, char *);
-void handleProxyPass(int, char *, char *, _location *);
+void handleProxyPass(int, char *, _location *);
 
 #define FAIL    -1
 #define BUFF_SIZE 4096
@@ -71,6 +74,7 @@ struct globalVars {
 	_server *servers;
 	_server *defaultServer;
 	_ports *ports;
+	_clientConnection *clients;
 	int portCount;
 	int accessFd;
 	int errorFd;

@@ -138,13 +138,85 @@ sendData(int fd, SSL *ssl, char* ptr, int nbytes)
 	return nsent;
 }
 
-/*
- * Cleanp listening socket and exit
+/**
+ * Keep track of client connections
+ */
+_clientConnection *
+queueClientConnection(int fd, struct sockaddr_in addr, SSL_CTX *ctx)
+{
+	_clientConnection *client = (_clientConnection *)malloc(sizeof(_clientConnection));
+	client->fd = fd;
+	client->ctx = ctx;
+	char ip[INET_ADDRSTRLEN];
+	if (inet_ntop(AF_INET, &addr.sin_addr.s_addr, ip, INET_ADDRSTRLEN) != NULL) {
+		char buffer[BUFF_SIZE];
+		snprintf(buffer, BUFF_SIZE, "Accepted connection from %s:%u, assigned new sockfd %d\n", ip, ntohs(addr.sin_port), fd);
+		doDebug(buffer);
+		strncpy(client->ip, ip, INET_ADDRSTRLEN);
+	} else {
+		perror("Failed to convert address from binary to text form");
+		exit(1);
+	}
+	_clientConnection *c = g.clients;
+	client->next = c;
+	g.clients = client;
+	return client;
+}
+
+/**
+ * Cleanup listening socket
  */
 void
-cleanup(int sockfd)
+cleanup(int fd)
 {
-	shutdown(sockfd, SHUT_RDWR);
-	close(sockfd);
-	exit(0);
+	_clientConnection *c = g.clients;
+	_clientConnection *prev = NULL;
+	printf("Looking for fd %d\n", fd);
+	while(c) {
+		printf("Check fd %d\n", c->fd);
+		if (c->fd == fd) {
+			if (prev) {
+				printf("Prev fd %d\n", prev->fd);
+				prev->next = c->next;
+			} else {
+				printf("Remove last fd\n");
+				g.clients = c->next;
+			}
+			break;
+		}
+		prev = c;
+		c = c->next;
+	}
+	if (c == NULL) {
+		doDebug("Missing client connection!");
+		exit(1);
+	}
+	if (c->ctx) {
+		SSL_CTX_free(c->ctx);
+	}
+	printf("CLEANUP  %d\n", fd);
+	shutdown(fd, SHUT_RDWR);
+	close(fd);
+	free(c);
+	return;
+}
+
+/**
+ * Find client connection info for socket
+ */
+_clientConnection *
+getClient(int fd)
+{
+	_clientConnection *c = g.clients;
+	while(c) {
+		if (c->fd == fd) {
+			break;
+		}
+		c = c->next;
+	}
+	if (c ==NULL) {
+		doDebug("Missing client connection!");
+		exit(1);
+	}
+	return c;
 }
