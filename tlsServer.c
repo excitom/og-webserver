@@ -129,6 +129,7 @@ configureContext(SSL_CTX *ctx, int port)
 		if (server->port == port) {
 			break;
 		}
+		server = server->next;
 	}
 	if (server == NULL) {
 		doDebug("Port not found, shouldn't happen");
