@@ -171,15 +171,11 @@ cleanup(int fd)
 {
 	_clientConnection *c = g.clients;
 	_clientConnection *prev = NULL;
-	printf("Looking for fd %d\n", fd);
 	while(c) {
-		printf("Check fd %d\n", c->fd);
 		if (c->fd == fd) {
 			if (prev) {
-				printf("Prev fd %d\n", prev->fd);
 				prev->next = c->next;
 			} else {
-				printf("Remove last fd\n");
 				g.clients = c->next;
 			}
 			break;
@@ -194,7 +190,6 @@ cleanup(int fd)
 	if (c->ctx) {
 		SSL_CTX_free(c->ctx);
 	}
-	printf("CLEANUP  %d\n", fd);
 	shutdown(fd, SHUT_RDWR);
 	close(fd);
 	free(c);
