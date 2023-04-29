@@ -396,6 +396,58 @@ f_location(char *p) {
 	return p;
 }
 
+// try_files directive
+//
+// note: only one variation is currently supported:
+// try_files $uri $uri/ <target>
+//
+char *
+f_try_files(char *p) {
+	_token token = getToken(p);
+	p = token.p;
+	char *tok = token.q;
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'try_files' directive outside a 'server' block, ignored\n");
+		return p;
+	}
+	_location *loc = server->locations;
+	if (loc == NULL) {
+		fprintf(stderr, "'try_files' directive outside a 'location' block, ignored\n");
+		return p;
+	}
+	loc->type = TYPE_TRY_FILES;
+	loc->match = PREFIX_MATCH;
+	if (strcmp(tok, "$uri") != 0) {
+		fprintf(stderr, "'try_files' wrong format 1, ignored\n");
+		return p;
+	}
+	if (!token.more) {
+		fprintf(stderr, "'try_files' wrong format 2, ignored\n");
+		return p;
+	}
+	token = getToken(p);
+	p = token.p;
+	tok = token.q;
+	if (strcmp(tok, "$uri/") != 0) {
+		fprintf(stderr, "'try_files' wrong format 3, ignored\n");
+		return p;
+	}
+	if (!token.more) {
+		fprintf(stderr, "'try_files' wrong format 4, ignored\n");
+		return p;
+	}
+	token = getToken(p);
+	p = token.p;
+	tok = token.q;
+	loc->target = (char *)malloc(strlen(tok)+1);
+	strcpy(loc->target, tok);
+	if (g.debug) {
+		fprintf(stderr,"Try_files: %s\n", loc->target);
+	}
+	return p;
+}
+
 // proxy_pass directive
 char *
 f_proxy_pass(char *p) {
@@ -509,6 +561,7 @@ _keywords keywords[] = {
 	{"listen", 6, f_listen},
 	{"sendfile", 8, f_sendfile},
 	{"location", 8, f_location},
+	{"try_files", 9, f_try_files},
 	{"error_log", 9, f_error_log},
 	{"autoindex", 9, f_autoindex},
 	{"proxy_pass", 10, f_proxy_pass},

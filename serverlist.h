@@ -14,6 +14,7 @@ typedef struct _ports {
 
 #define TYPE_PROXY_PASS 0
 #define TYPE_DOC_ROOT 1
+#define TYPE_TRY_FILES 2
 #define EXACT_MATCH 0
 #define REGEX_MATCH 1
 #define PREFIX_MATCH 2
