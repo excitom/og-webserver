@@ -92,15 +92,6 @@ processInput(int fd, SSL *ssl) {
 			*p++ = '\0';
 			queryString = p;
 		}
-
-		//
-		// Only support the GET verb at this time
-		//
-		if (strcmp(verb, "GET") != 0) {
-			sendErrorResponse(fd, ssl, 405, "Method Not Allowed", path);
-			free(headers);
-			return;
-		}
 		_server *server = getServerForHost(host);
 		_location *loc = getDocRoot(server, path);
 		if (!loc) {
@@ -108,7 +99,9 @@ processInput(int fd, SSL *ssl) {
 			return;
 		}
 
+		//
 		// check for proxy_pass
+		//
 		if (loc->type == TYPE_PROXY_PASS) {
 			handleProxyPass(fd, headers, loc);
 			free(headers);
@@ -116,6 +109,16 @@ processInput(int fd, SSL *ssl) {
 		}
 		free(headers);	// no longer need a copy of the headers
 		char *docRoot = loc->target;
+
+		//
+		// Only support the GET verb at this time
+		// (except for proxy_pass
+		//
+		if (strcmp(verb, "GET") != 0) {
+			sendErrorResponse(fd, ssl, 405, "Method Not Allowed", path);
+			free(headers);
+			return;
+		}
 
 		// todo: disallow ../ in the path
 		int size = strlen(docRoot) + strlen(path);
