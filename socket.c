@@ -91,6 +91,9 @@ recvData(int fd, char* ptr, int nbytes)
 	int received = 0;
 	memset(ptr, 0, nbytes);
 	while ((n = recv(fd, p, nbytes, 0)) < 0) {
+		if (errno == EAGAIN) {
+			return 0;
+		}
 		if (errno != EINTR) {
 			fprintf(stderr, "Receive from socket %d failed: %m\n", fd);
 			shutdown(fd, SHUT_RDWR);

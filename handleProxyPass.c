@@ -37,24 +37,38 @@ handleProxyPass(int fd, char *headers, _location *loc)
 		close(upstream);
 		return;
     }
-	// change trailing \r\n\r\n to \r\n in order to
-	// add the `X-Forwarded-For` header
-	char *r = strrchr(headers, '\r');
-	*r = '\0';
+	// change the \r\n\r\n which marks the end of the headers to
+	// \r\n in order to add the `X-Forwarded-For` header
+	char *r = strstr(headers, "\r\n\r\n");
+	char *body = NULL;
+	if (r) {
+		r += 2;
+		*r = '\0';
+		body = r + 2;
+	}
 	sendData(upstream, NULL, headers, strlen(headers));
 	char buffer[BUFF_SIZE];
-	strcpy((char *)&buffer, "X-Forwarded-For: ");
-	_clientConnection *c = getClient(fd);
-	strcat((char *)&buffer, c->ip);
-	strcat((char *)&buffer, "\r\n\r\n");
-	sendData(upstream, NULL, buffer, strlen(buffer));
+	if (r) {
+		strcpy((char *)&buffer, "X-Forwarded-For: ");
+		_clientConnection *c = getClient(fd);
+		strcat((char *)&buffer, c->ip);
+		strcat((char *)&buffer, "\r\n\r\n");
+		sendData(upstream, NULL, buffer, strlen(buffer));
+	}
+	if (body && strlen(body)) {
+		sendData(upstream, NULL, body, strlen(body));
+	}
+	//
+	// receive the upstream's response and
+	// forward it to the client
+	//
 	size_t bytes = BUFF_SIZE;
 	do {
-		bytes = recvData(upstream, (char *)&buffer, bytes);
-		sendData(fd, NULL, (char *)&buffer, bytes);
+		bytes = recvData(upstream, buffer, BUFF_SIZE);
 		if (bytes == 0) {
 			break;
 		}
+		sendData(fd, NULL, (char *)&buffer, bytes);
 	} while(bytes == BUFF_SIZE);
 	shutdown(upstream, SHUT_RDWR);
 	close(upstream);
