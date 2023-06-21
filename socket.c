@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/sendfile.h>
 #include <arpa/inet.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -139,6 +140,34 @@ sendData(int fd, SSL *ssl, char* ptr, int nbytes)
 		}
 	}
 	return nsent;
+}
+
+/**
+ * Copy a file to a socket
+ */
+void
+sendFile(int sockfd, int fd, SSL* ssl, size_t size)
+{
+	off_t offset = 0;
+	size_t sent;
+	if (ssl) {
+		//sent = SSL_sendfile(ssl, fd, offset, size, 0);
+		char *p = malloc(size);
+		read(fd, p, size);
+		if (SSL_write_ex(ssl, p, size, &sent) == 0) {
+			if (g.debug) {
+				ERR_print_errors_fp(stderr);
+			}
+		}
+		free(p);
+	} else {
+		sent = sendfile(sockfd, fd, &offset, size);
+	}
+	if (sent != size) {
+		if (g.debug) {
+			fprintf(stderr, "Problem sending response body: SIZE %d SENT %d\n", (int)size, (int)sent);
+		}
+	}
 }
 
 /**

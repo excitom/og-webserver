@@ -17,6 +17,7 @@ SSL_CTX *createContext();
 void ShowCerts(SSL*);
 int sendData(int, SSL*, char*, int);
 int recvData(int, char*, int);
+void sendFile(int sockfd, int fd, SSL* ssl, size_t size);
 void getTimestamp(char*, int);
 void sendErrorResponse(int, SSL*,int, char*, char*);
 void handleGetVerb(int, SSL*, _server*, char *,char*, char*);

@@ -13,7 +13,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -82,7 +81,7 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, char *docRoot, char *path, 
 	getMimeType(fullPath, mimeType);
 
 	// get the content length
-	int size = lseek(fd, 0, SEEK_END);
+	size_t size = lseek(fd, 0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
 	char ts[TIME_BUF];
@@ -97,32 +96,12 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, char *docRoot, char *path, 
 "Content-Length: %d\r\n\r\n";
 
 	char buffer[BUFF_SIZE];
-	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, g.version, ts, mimeType, size);
+	size_t sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, g.version, ts, mimeType, size);
 	size_t sent = sendData(sockfd, ssl, buffer, sz);
-	if ((int)sent != sz) {
+	if (sent != sz) {
 		doDebug("Problem sending response headers");
 	}
-
-	off_t offset = 0;
-	if (server->tls) {
-		//sent = SSL_sendfile(ssl, fd, offset, size, 0);
-		char *p = malloc(size);
-		read(fd, p, size);
-		if (SSL_write_ex(ssl, p, size, &sent) == 0) {
-			if (g.debug) {
-				ERR_print_errors_fp(stderr);
-			}
-		}
-		free(p);
-	} else {
-		sent = sendfile(sockfd, fd, &offset, size);
-	}
-	if ((int)sent != size) {
-		if (g.debug) {
-			fprintf(stderr, "Problem sending response body: SIZE %d SENT %d\n", size, (int)sent);
-		}
-	}
-
+	sendFile(sockfd, fd, ssl, size);
 	accessLog(sockfd, "GET", httpCode, path, size);
 	close(fd);
 	return;
