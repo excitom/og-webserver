@@ -43,7 +43,7 @@ tlsServer(int port)
 {
 	SSL_CTX *ctx = createContext();
 	configureContext(ctx, port);
-	int isTLS = 1;
+	const int isTLS = 1;
 	int sockfd = createBindAndListen(isTLS, port);
 	while(1) {
 		struct sockaddr_in addr;

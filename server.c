@@ -30,7 +30,7 @@ void
 server(int port)
 {
 	int epollfd = epollCreate();
-	int isTLS = 0;
+	const int isTLS = 0;
 	int sockfd = createBindAndListen(isTLS, port);
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
@@ -146,7 +146,7 @@ int
 epollCreate()
 {
 
-	int pollsize = 1;   // deprecated parameter, but must be > 0
+	const int pollsize = 1;   // deprecated parameter, but must be > 0
 	int epollfd = epoll_create(pollsize);
 
 	if (epollfd < 0) {

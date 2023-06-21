@@ -549,7 +549,7 @@ f_events(char *p) {
 	return p;
 }
 
-_keywords keywords[] = {
+const _keywords keywords[] = {
 	{"pid", 3, f_pid},
 	{"user", 4, f_user},
 	{"http", 4, f_http},

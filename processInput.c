@@ -122,7 +122,7 @@ processInput(int fd, SSL *ssl) {
 
 		// todo: disallow ../ in the path
 		int size = strlen(docRoot) + strlen(path);
-		int maxLen = 255;
+		const int maxLen = 255;
 		if (size > maxLen) {
 			doDebug("URI too long");
 			char truncated[maxLen+5];
