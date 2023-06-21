@@ -1,5 +1,7 @@
 <img src="html/ogws-logo.png" width="150"/>
+
 # og-webserver
+
 This is an event driven web server implementation using a single process and `epoll` to asynchronously multiplex socket connections.
 
 This is a personal interest project that I am incrementally improving.
