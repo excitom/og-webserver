@@ -47,5 +47,27 @@ $(RELEXE): $(RELOBJS)
 $(RELDIR)/%.o: %.c
 	cc -c $(CFLAGS) $(RELCFLAGS) -o $@ $<
 
+uninstall:
+	rm -f /usr/local/bin/ogws
+	rm -rf /etc/ogws
+	rm -rf /var/www/ogws
+	userdel ogws
+
+install:
+	groupadd ogws
+	useradd -d /var/www/ogws -c "OG Web Server" -M -g ogws -s /sbin/nologin ogws
+	install -o ogws -g ogws -d /etc/ogws
+	install -o ogws -g ogws -m 0644 ogws.conf.sample /etc/ogws/ogws.conf
+	install -o ogws -g ogws -m 0644 mime.types /etc/ogws/mime.types
+	touch /etc/ogws/ogws.pid
+	chown ogws /etc/ogws/ogws.pid
+	chgrp ogws /etc/ogws/ogws.pid
+	chmod 0644 /etc/ogws/ogws.pid
+	install -o ogws -g ogws -d /var/www/ogws
+	install -o ogws -g ogws -m 0755 -d /var/www/ogws/html
+	install -o ogws -g ogws -m 0644 -D html/* /var/www/ogws/html
+	install -o ogws -g ogws -m 0755 release/ogws /usr/local/bin/ogws
+	strip /usr/local/bin/ogws
+
 clean:
 	rm -f $(RELEXE) $(RELOBJS) $(DBGEXE) $(DBGOBJS)

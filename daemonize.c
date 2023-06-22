@@ -26,17 +26,23 @@
 void
 daemonize()
 {
-	//if (g.user != NULL) {
-		//struct passwd *pwd = getpwnam(g.user);;
-		//if (setgid(pwd->pw_gid) == -1) {
-			//perror("Can't set GID");
-			//exit(1);
-		//}
-		//if (setuid(pwd->pw_uid) == -1) {
-			//perror("Can't set UID");
-			//exit(1);
-		//}
-	//}
+	if (!g.debug) {
+		if (getuid() != 0) {
+			perror("Not starting as root user.\n");
+			exit(1);
+		}
+		if (g.user != NULL) {
+			struct passwd *pwd = getpwnam(g.user);;
+			if (setgid(pwd->pw_gid) == -1) {
+				perror("Can't set GID");
+				exit(1);
+			}
+			if (setuid(pwd->pw_uid) == -1) {
+				perror("Can't set UID");
+				exit(1);
+			}
+		}
+	}
 
 	if (!g.foreground) {
 		pid_t pid;

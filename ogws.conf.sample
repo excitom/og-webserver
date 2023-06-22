@@ -1,0 +1,27 @@
+# this is a config file for the og webserver.
+# it follows the conventions of the nginx config file.
+user ogws;
+error_log /var/log/ogws/error.log;
+pid /etc/ogws/ogws.pid;
+trace off;
+worker_processes 4;
+
+events {
+    worker_connections 64;
+}
+
+http {
+    access_log  /var/log/ogws/access.log  main;
+    sendfile            on;
+    keepalive_timeout   65;
+    default_type        application/octet-stream;
+    index  index.html;
+
+    server {
+        listen       8080;
+        server_name  127.0.0.1
+        root         /var/www/ogws/html;
+		autoindex	off;
+    }
+}
+
