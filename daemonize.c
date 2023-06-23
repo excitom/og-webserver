@@ -26,28 +26,22 @@
 void
 daemonize()
 {
-	if (!g.debug) {
-		if (getuid() != 0) {
-			perror("Not starting as root user.\n");
+	// TODO: implement new-style Linux daemon that works with systemd.
+	// This implementation is old-style SystemV/BSD.
+	if (!g.foreground) {
+		// create background process
+		pid_t pid = fork();
+		if (pid == -1) {
 			exit(1);
 		}
-		if (g.user != NULL) {
-			struct passwd *pwd = getpwnam(g.user);;
-			if (setgid(pwd->pw_gid) == -1) {
-				perror("Can't set GID");
-				exit(1);
-			}
-			if (setuid(pwd->pw_uid) == -1) {
-				perror("Can't set UID");
-				exit(1);
-			}
+		else if (pid != 0) {
+			exit (0);
 		}
-	}
-
-	if (!g.foreground) {
-		pid_t pid;
-
-		// create new process
+		// create new session and process group
+		if (setsid ( ) == -1) {
+			exit(1);
+		}
+		// insure disconnected from the tty
 		pid = fork();
 		if (pid == -1) {
 			exit(1);
@@ -55,11 +49,8 @@ daemonize()
 		else if (pid != 0) {
 			exit (0);
 		}
-
-		// create new session and process group
-		if (setsid ( ) == -1) {
-			exit(1);
-		}
+		// reset the file creation mask
+		umask(0);
 
 		// set the working directory to the root directory 
 		// i.e. make sure to move off of a mounted file system

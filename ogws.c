@@ -18,6 +18,7 @@ char version[] = "0.1.0";
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/prctl.h>
 #include <locale.h>
 #include "server.h"
 
@@ -93,9 +94,13 @@ startProcesses()
 			perror("Can't fork");
 			exit(1);
 		}
+		// parent process receives the child pid, child process receives 0
 		if (pid == 0) {
+			if (prctl(PR_SET_PDEATHSIG, SIGTERM)) {
+				perror("Can't link to parent signal");
+				exit(1);
+			}
 			if (g.debug) {
-				pid_t pid = getpid();
 				fprintf(stderr, "Server Starting, process: %d for port %d\n", pid, p->port);
 			}
 			break;

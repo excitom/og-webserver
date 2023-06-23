@@ -51,6 +51,7 @@ uninstall:
 	rm -f /usr/local/bin/ogws
 	rm -rf /etc/ogws
 	rm -rf /var/www/ogws
+	rm -rf /var/log/ogws
 	userdel ogws
 
 install:
@@ -63,11 +64,24 @@ install:
 	chown ogws /etc/ogws/ogws.pid
 	chgrp ogws /etc/ogws/ogws.pid
 	chmod 0644 /etc/ogws/ogws.pid
-	install -o ogws -g ogws -d /var/www/ogws
+	install -o ogws -g ogws -m 0755 -d /var/log/ogws
 	install -o ogws -g ogws -m 0755 -d /var/www/ogws/html
 	install -o ogws -g ogws -m 0644 -D html/* /var/www/ogws/html
-	install -o ogws -g ogws -m 0755 release/ogws /usr/local/bin/ogws
+	install -o ogws -g ogws -m 6755 release/ogws /usr/local/bin/ogws
 	strip /usr/local/bin/ogws
+
+debuginstall:
+	install -o ec2-user -g ec2-user -d /etc/ogws
+	install -o ec2-user -g ec2-user -m 0644 ogws.conf.debug /etc/ogws/ogws.conf
+	install -o ec2-user -g ec2-user -m 0644 mime.types /etc/ogws/mime.types
+	touch /etc/ogws/ogws.pid
+	chown ec2-user /etc/ogws/ogws.pid
+	chgrp ec2-user /etc/ogws/ogws.pid
+	chmod 0644 /etc/ogws/ogws.pid
+	install -o ec2-user -g ec2-user -d /var/log/ogws
+	install -o ec2-user -g ec2-user -d /var/www/ogws/html
+	install -o ec2-user -g ec2-user -D html/* /var/www/ogws/html
+	install -o ec2-user -g ec2-user debug/ogws /usr/local/bin/ogws
 
 clean:
 	rm -f $(RELEXE) $(RELOBJS) $(DBGEXE) $(DBGOBJS)

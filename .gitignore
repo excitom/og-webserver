@@ -59,4 +59,4 @@ dkms.conf
 # test files
 list*
 cacert.pem
-
+ogws.conf.debug
