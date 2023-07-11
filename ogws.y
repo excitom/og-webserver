@@ -39,9 +39,12 @@ void yyerror( const char * );
 %token <str>  SERVERNAME;
 %token <str>  DEFAULTSERVER;
 %token <str>  LOCATION;
+%token <str>  UPSTREAM;
 %token <str>  ROOT;
 %token <str>  PROXYPASS;
+%token <str>  FASTCGIPASS;
 %token <str>  RETURN;
+%token WEIGHT;
 %token <str>  EXPIRES;
 %token <str>  REWRITE;
 %token <str>  ERRORPAGE;
@@ -65,6 +68,7 @@ void yyerror( const char * );
 %token <str>  NAME;
 %token <str>  PREFIXNAME;
 %token <str>  SUFFIXNAME;
+%token <str>  REGEXP;
 %token WILDCARD;
 %%
 config
@@ -148,6 +152,7 @@ http_directive
 	| keepalive_directive
 	| server_names_hash_bucket_size_directive
 	| server_section
+	| upstream_directive
 	;
 index_directive
 	: INDEX index_files index_file EOL
@@ -210,7 +215,7 @@ server_section
 	:
 	SERVER '{' server_directives '}'
 	{printf("Server SECTION\n");}
-	;;
+	;
 server_directives
 	: server_directives server_directive
 	| server_directive
@@ -242,6 +247,24 @@ server_name
 	NAME
 	{printf("Server name: %s\n", $1);}
 	;
+upstream_directive
+	: UPSTREAM NAME '{' upstreams '}'
+	{printf("Upstream to %s\n", $2);}
+	;
+upstreams
+	:
+	upstreams upstream
+	|
+	upstream
+	;
+upstream
+	:
+	SERVER IP PORT WEIGHT LOC_OPERATOR NUMBER EOL
+	{printf("Upstream IP %s port %d weight %d\n", $2, $3, $6);}
+	|
+	SERVER IP PORT EOL
+	{printf("Upstream IP %s port %d\n", $2, $3);}
+	;
 access_log_directive
 	:
 	ACCESSLOG PATH EOL
@@ -271,8 +294,12 @@ autoindex_directive
 	{printf("Auto indexing OFF\n");}
 	;
 location_section
-	: LOCATION LOC_OPERATOR PATH '{' location_directives '}'
+	:
+	LOCATION LOC_OPERATOR PATH '{' location_directives '}'
 	{printf("LOCATION operator %s path %s\n", $2, $3);}
+	|
+	LOCATION REGEXP '{' location_directives '}'
+	{printf("LOCATION REGEXP %s\n", $2);}
 	|
 	LOCATION PATH '{' location_directives '}'
 	{printf("LOCATION implicit prefix match %s\n", $2);}
@@ -284,6 +311,7 @@ location_directives
 location_directive
 	: root_directive
 	| proxy_pass_directive
+	| fastcgi_pass
 	| expires_directive
 	;
 proxy_pass_directive
@@ -295,6 +323,16 @@ proxy_pass_directive
 	{printf("proxy pass to %s\n", $3);}
 	| PROXYPASS protocol IP EOL
 	{printf("proxy pass to IP %s\n", $3);}
+	;
+fastcgi_pass
+	: FASTCGIPASS NAME PORT EOL
+	{printf("fastCGI pass to %s on port %d\n", $2, $3);}
+	| FASTCGIPASS IP PORT EOL
+	{printf("fastCGI pass to %s on port %d\n", $2, $3);}
+	| FASTCGIPASS NAME EOL
+	{printf("fastCGI pass to %s\n", $2);}
+	| FASTCGIPASS IP EOL
+	{printf("fastCGI pass to IP %s\n", $2);}
 	;
 protocol
 	: HTTP1
