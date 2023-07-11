@@ -56,6 +56,12 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+lex.yy.c
+*.output
+*.tab.c
+*.tab.h
+
 # test files
 list*
 cacert.pem
