@@ -40,7 +40,7 @@ main(int argc, char *argv[])
 		printf("ogws web server version: %s\n", version);
 		exit(0);
 	}
-	parseConfig(version);
+	parseConfig();
 	checkConfig();
 	// check if a signal should be sent
 	if (g.signal != NULL) {

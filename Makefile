@@ -1,4 +1,15 @@
 CFLAGS = -Wall -Wextra
+YFLAGS = -d --verbose
+YACC = bison
+LEX = flex
+
+ogws.tab.c: ogws.y
+	$(YACC) $(YFLAGS) ogws.y
+
+lex.yy.c:
+	$(LEX) ogws.l
+
+LEXYACCSRC = ogws.tab.c lex.yy.c
 
 SRCS = ogws.c \
 	  getTimestamp.c \
@@ -15,7 +26,9 @@ SRCS = ogws.c \
 	  showDirectoryListing.c \
 	  server.c \
 	  tlsServer.c \
-	  socket.c
+	  socket.c \
+	  ogws.tab.c \
+	  lex.yy.c
 
 OBJS = $(SRCS:.c=.o)
 EXE = ogws
@@ -31,7 +44,7 @@ DBGOBJS = $(addprefix $(DBGDIR)/, $(OBJS))
 DBGCFLAGS = -O0 -DDBG -g
 SSLFLAGS = -L/usr/local/lib -L /usr/local/lib64 -ldl -lpthread -lssl -lcrypto
 
-debug: $(DBGEXE)
+debug: $(DBGEXE) $(LEXYACCSRC)
 
 $(DBGEXE): $(DBGOBJS)
 	cc $(CFLAGS) $(DBGCFLAGS) -o $(DBGEXE) $^ $(SSLFLAGS)
@@ -39,7 +52,7 @@ $(DBGEXE): $(DBGOBJS)
 $(DBGDIR)/%.o: %.c
 	cc -c $(CFLAGS) $(DBGCFLAGS) -o $@ $<
 
-release: $(RELEXE)
+release: $(RELEXE) $(LEXYACCSRC)
 
 $(RELEXE): $(RELOBJS)
 	cc $(CFLAGS) $(RELCFLAGS) -o $(RELEXE) $^ $(SSLFLAGS)
@@ -85,3 +98,6 @@ debuginstall:
 
 clean:
 	rm -f $(RELEXE) $(RELOBJS) $(DBGEXE) $(DBGOBJS)
+	rm -f lex.yy.*
+	rm -f ogws.tab.*
+	rm -f ogws.output $(LEXYACCSRC)

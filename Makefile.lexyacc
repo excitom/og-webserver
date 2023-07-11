@@ -1,0 +1,31 @@
+YFLAGS = -d --verbose
+
+PROGRAM = ogws
+
+OBJS = ogws.tab.o lex.yy.o
+
+SRCS = ogws.tab.c lex.yy.c 
+
+CC = gcc 
+
+CCFLAGS = -Dstandalone
+
+all: $(PROGRAM)
+
+.c.o: $(SRCS)
+	$(CC) $(CCFLAGS) -c $*.c -o $@ -O
+
+ogws.tab.c: ogws.y
+	bison $(YFLAGS) ogws.y
+
+lex.yy.c: ogws.l 
+	flex ogws.l
+
+ogws: $(OBJS)
+	$(CC) $(OBJS)  -o $@ 
+
+clean:
+	rm -f $(OBJS) core ∗.o $(PROGRAM) 
+	rm -f lex.yy.*
+	rm -f ogws.tab.*
+	rm -f ogws.c

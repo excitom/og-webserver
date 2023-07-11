@@ -385,8 +385,10 @@ listen_pair
 	;
 %%
 extern FILE *yyin;
+#ifdef standalone
 int main( int argc, char **argv )
 {
   yyparse();
   return 0;
 }
+#endif
