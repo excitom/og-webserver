@@ -3,7 +3,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include "parseConfig.h"
 extern int yylex();
+extern FILE *yyin;
 void yyerror( const char * );
 %}
 %define parse.error verbose
@@ -66,6 +68,7 @@ void yyerror( const char * );
 %token <iValue> PORT;
 %token <iValue> NUMBER;
 %token <str>  NAME;
+%token <str>  VARIABLE;
 %token <str>  PREFIXNAME;
 %token <str>  SUFFIXNAME;
 %token <str>  REGEXP;
@@ -73,7 +76,7 @@ void yyerror( const char * );
 %%
 config
 	: main_directives events_section http_section
-	{printf("Complete\n");}
+	{printf("Config file processing complete\n");}
 	;
 main_directives
 	: main_directive main_directives
@@ -92,15 +95,15 @@ main_directive
 user_directive
 	:
 	USER NAME NAME EOL
-	{printf("User Name %s group %s\n", $2, $3);}
+	{f_user($2, $3);}
 	|
 	USER NAME EOL
-	{printf("User Name %s\n", $2);}
+	{f_user($2, NULL);}
 	;
 pid_directive
 	:
 	PID PATH EOL
-	{printf("PID file path %s\n", $2);}
+	{f_pid($2);}
 	;
 include_directive
 	:
@@ -109,14 +112,14 @@ include_directive
 	;
 trace_directive
 	: TRACE ON EOL
-	{printf("Trace ON\n");}
+	{f_trace(1);}
 	|
 	TRACE OFF EOL
-	{printf("Trace OFF\n");}
+	{f_trace(0);}
 	;
 worker_processes_directive
 	: WORKERPROCESSES NUMBER EOL
-	{printf("Worker processes: %d\n", $2);}
+	{f_workerProcesses($2);}
 	;
 worker_rlimit_nofile_directive
 	: WORKERRLIMIT NUMBER EOL
@@ -131,7 +134,7 @@ events_directives
 	;
 events_directive
 	: WORKERCONNECTIONS NUMBER EOL
-	{printf("Worker connections %d\n", $2);}
+	{f_workerConnections($2);}
 	;
 http_section
 	: HTTP '{' http_directives '}'
@@ -170,28 +173,28 @@ index_file
 default_type_directive
 	:
 	DEFAULTTYPE PATH EOL
-	{printf("Default type: %s\n", $2);}
+	{printf("NOT YET IMPLEMENTED: Default type: %s\n", $2);}
 	;
 sendfile_directive
 	:
 	SENDFILE ON EOL
-	{printf("Use sendfile ON\n");}
+	{f_sendfile(1);}
 	|
 	SENDFILE OFF EOL
-	{printf("Use sendfile OFF\n");}
+	{f_sendfile(0);}
 	;
 tcp_nopush_directive
 	:
 	TCPNOPUSH ON EOL
-	{printf("TCP nopush ON\n");}
+	{f_tcpnopush(1);}
 	|
 	TCPNOPUSH OFF EOL
-	{printf("TCP nopush OFF\n");}
+	{f_tcpnopush(0);}
 	;
 keepalive_directive
 	:
 	KEEPALIVETIMEOUT NUMBER EOL
-	{printf("Keepalive Timeout: %d\n", $2);}
+	{f_keepalive_timeout($2);}
 	;
 server_names_hash_bucket_size_directive
 	:
@@ -288,10 +291,10 @@ root_directive
 autoindex_directive
 	:
 	AUTOINDEX ON EOL
-	{printf("Auto indexing ON\n");}
+	{f_autoindex(1);}
 	|
 	AUTOINDEX OFF EOL
-	{printf("Auto indexing OFF\n");}
+	{f_autoindex(0);}
 	;
 location_section
 	:
@@ -313,6 +316,7 @@ location_directive
 	| proxy_pass_directive
 	| fastcgi_pass
 	| expires_directive
+	| try_files_directive
 	;
 proxy_pass_directive
 	: PROXYPASS protocol NAME PORT EOL
@@ -333,6 +337,31 @@ fastcgi_pass
 	{printf("fastCGI pass to %s\n", $2);}
 	| FASTCGIPASS IP EOL
 	{printf("fastCGI pass to IP %s\n", $2);}
+	;
+try_files_directive
+	:
+	TRYFILES try_paths EOL
+	{printf("TRY FILES\n");}
+	;
+try_paths
+	:
+	try_paths PATH
+	{printf("TRY PATH %s\n", $2);}
+	|
+	PATH
+	{printf("TRY PATH %s\n", $1);}
+	|
+	try_paths NAME
+	{printf("TRY NAME %s\n", $2);}
+	|
+	NAME
+	{printf("TRY NAME %s\n", $1);}
+	|
+	try_paths VARIABLE
+	{printf("TRY VARIABLE %s\n", $2);}
+	|
+	VARIABLE
+	{printf("TRY VARIABLE %s\n", $1);}
 	;
 protocol
 	: HTTP1
@@ -384,11 +413,99 @@ listen_pair
 	{printf("Listen to WILDCARD on port %d\n", $2);}
 	;
 %%
-extern FILE *yyin;
 #ifdef standalone
 int main( int argc, char **argv )
 {
   yyparse();
   return 0;
+}
+// config parser stub functions
+void f_pid(char *path) {
+	printf("PID file %s\n", path);
+}
+void f_trace(int flag) {
+	if (flag) {
+		printf("Trace ON\n");
+	} else {
+		printf("Trace OFF\n");
+	}
+}
+void f_autoindex(int flag) {
+	if (flag) {
+		printf("Auto index ON\n");
+	} else {
+		printf("Auto index OFF\n");
+	}
+}
+void f_sendfile(int flag) {
+	if (flag) {
+		printf("Sendfle ON\n");
+	} else {
+		printf("Sendfle OFF\n");
+	}
+}
+void f_tcpnopush(int flag) {
+	if (flag) {
+		printf("TCP no push ON\n");
+	} else {
+		printf("TCP no push OFF\n");
+	}
+}
+void f_user(char *user, char *group) {
+	printf("User name %s\n", user);
+	if (group) {
+		printf("Group name %s\n", group);
+	}
+}
+void f_server() {
+	printf("SERVER section\n");
+}
+void f_http() {
+	printf("HTTP section\n");
+}
+void f_root(char *path) {
+	printf("Document root: %s\n", path);
+}
+void f_server_name(char *name) {
+	printf("Server name: %s\n", name);
+}
+void f_indexFile() {
+	printf("Index file directive\n");
+}
+void f_error_log(char *path) {
+	printf("Error log path %s\n", path);
+}
+void f_access_log(char *path) {
+	printf("Access log path %s\n", path);
+}
+void f_ssl_certificate(char *cert) {
+	printf("SSL cert %s\n", cert);
+}
+void f_ssl_certificate_key(char *key) {
+	printf("SSL key %s\n", key);
+}
+void f_listen() {
+	printf("Listen dirtective\n");
+}
+void f_location() {
+	printf("Location directive\n");
+}
+void f_try_files() {
+	printf("Try files directive\n");
+}
+void f_proxy_pass() {
+	printf("Proxy pass directive\n");
+}
+void f_keepalive_timeout(int timeout) {
+	printf("Keepalive timeout %d\n", timeout);
+}
+void f_workerProcesses(int num) {
+	printf("Worker proceses %d\n", num);
+}
+void f_workerConnections(int num) {
+	printf("Worker connections %d\n", num);
+}
+void f_events() {
+	printf("Events section\n");
 }
 #endif

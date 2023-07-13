@@ -1,0 +1,24 @@
+// config parser functions
+void f_pid(char *);
+void f_trace(int);
+void f_autoindex(int);
+void f_sendfile(int);
+void f_tcpnopush(int);
+void f_user(char *, char *);
+void f_server();
+void f_http();
+void f_root(char *);
+void f_server_name(char *);
+void f_indexFile();
+void f_error_log(char *);
+void f_access_log(char *);
+void f_ssl_certificate(char *);
+void f_ssl_certificate_key(char *);
+void f_listen();
+void f_location();
+void f_try_files();
+void f_proxy_pass();
+void f_keepalive_timeout(int);
+void f_workerProcesses(int);
+void f_workerConnections(int);
+void f_events();

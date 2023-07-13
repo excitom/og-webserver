@@ -87,6 +87,7 @@ initGlobals(char *version) {
 	g.showVersion = 0;
 	g.useSendfile = 0;
 	g.autoIndex = 0;
+	g.tcpNoPush = 0;
 	g.workerConnections = 64;
 	g.workerProcesses = 1;
 	g.keepaliveTimeout = 65;
@@ -126,4 +127,6 @@ initGlobals(char *version) {
 	char user[] = "ogws";
 	g.user = (char *)malloc(strlen(user)+1);
 	strcpy(g.user, user);
+	g.group = (char *)malloc(strlen(user)+1);
+	strcpy(g.group, user);
 }

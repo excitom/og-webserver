@@ -56,6 +56,7 @@ struct globalVars {
 	int testConfig;
 	int foreground;
 	int autoIndex;
+	int tcpNoPush;
 	int workerConnections;
 	int workerProcesses;
 	int showVersion;
@@ -70,6 +71,7 @@ struct globalVars {
 	char *keyFile;
 	char *pidFile;
 	char *user;
+	char *group;
 	char *signal;
 	char *version;
 	_server *servers;
