@@ -1,3 +1,7 @@
+# this is for making a stand-alone version of the lex/yacc code
+# for testing. the resulting executable takes a config file in stdin and
+# writes the parsed results to stdout.
+#
 YFLAGS = -d --verbose
 
 PROGRAM = ogws
