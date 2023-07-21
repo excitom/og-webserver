@@ -3,6 +3,8 @@ YFLAGS = -d --verbose
 YACC = bison
 LEX = flex
 
+%.c: %.y
+
 ogws.tab.c: ogws.y
 	$(YACC) $(YFLAGS) ogws.y
 
@@ -44,7 +46,7 @@ DBGOBJS = $(addprefix $(DBGDIR)/, $(OBJS))
 DBGCFLAGS = -O0 -DDBG -g
 SSLFLAGS = -L/usr/local/lib -L /usr/local/lib64 -ldl -lpthread -lssl -lcrypto
 
-debug: $(DBGEXE) $(LEXYACCSRC)
+debug: $(DBGEXE)
 
 $(DBGEXE): $(DBGOBJS)
 	cc $(CFLAGS) $(DBGCFLAGS) -o $(DBGEXE) $^ $(SSLFLAGS)
@@ -52,7 +54,7 @@ $(DBGEXE): $(DBGOBJS)
 $(DBGDIR)/%.o: %.c
 	cc -c $(CFLAGS) $(DBGCFLAGS) -o $@ $<
 
-release: $(RELEXE) $(LEXYACCSRC)
+release: $(RELEXE) 
 
 $(RELEXE): $(RELOBJS)
 	cc $(CFLAGS) $(RELCFLAGS) -o $(RELEXE) $^ $(SSLFLAGS)
