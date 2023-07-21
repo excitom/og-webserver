@@ -21,6 +21,40 @@ int portOk(_server *);
 void addPort(_server *);
 int locationSet(_server *);
 
+static char *pendingProtocol = NULL;
+static _server *pendingServer = NULL;
+static _location *pendingLocation = NULL;
+
+void
+newPendingServer() {
+	pendingServer = (_server *)malloc(sizeof(_server));
+	pendingServer->next = NULL;
+	pendingServer->port = g.defaultServer->port;
+	pendingServer->tls = 0;
+	pendingServer->autoIndex = 0;
+	pendingServer->certFile = NULL;
+	pendingServer->keyFile = NULL;
+	pendingServer->serverNames = NULL;
+	pendingServer->locations = NULL;
+	pendingServer->accessLog = NULL;
+	pendingServer->errorLog = NULL;
+	return;
+}
+
+void
+newPendingLocation() {
+	pendingLocation = (_location *)malloc(sizeof(_location));
+	pendingLocation->next = pendingLocation;
+	pendingLocation->type = TYPE_DOC_ROOT;
+	pendingLocation->match = EXACT_MATCH;
+	pendingLocation->autoIndex = 0;
+	pendingLocation->location = NULL;
+	pendingLocation->root = NULL;
+	pendingLocation->try_target = NULL;
+	pendingLocation->passTo = NULL;		// for proxy_pass locations
+	return;
+}
+
 // The following `f_` functions implement the config file keywords
 // The functions are called from the lex/yacc generated code as the 
 // config file is parsed.
@@ -50,14 +84,14 @@ f_trace(int trace) {
 // specify if directory listing should be allowed
 void
 f_autoindex(int autoIndex) {
-	g.autoIndex = autoIndex;
-	if (g.debug) {
-		if (autoIndex) {
-			fprintf(stderr,"Directory index ON\n", );
-		} else {
-			fprintf(stderr,"Directory index OFF\n", );
-		}
+	if (pendingLocation == NULL) {
+		newPendingLocation();
 	}
+	pendingLocation->autoIndex = autoIndex;
+	if (g.debug) {
+		fprintf(stderr,"Auto index %s\n", pendingLocation->autoIndex ? "On" : "Off");
+	}
+	return;
 }
 
 // specify if the `sendfile` system call should be used
@@ -108,137 +142,167 @@ f_user(char *user, char *group) {
 }
 
 // process the server section
-char *
-f_server(char *p) {
-	_server *server = (_server *)malloc(sizeof(_server));
-	server->next = g.servers;
-	server->port = g.defaultServer->port;	// default listen port
-	server->tls = 0;
-	g.servers = server;
-	_token token = getSection(p);
-	p = token.p;
-	char *s = token.q;
-	while (*s) {
-		_token token = getToken(s);
-		s = token.p;
-		char *keyword = token.q;
-		s = lookupKeyword(keyword, s);
+void
+f_server() {
+	if (pendingServer == NULL) {
+		fprintf(stderr, "Empty server block, ignored\n");
 	}
-	return p;
+	// if there are pending location directives, apply them
+	// at the server block level
+	if (pendingLocation) {
+		_location *loc = pendingLocation;
+		pendingLocation = loc->next;
+		// put the server default location behind the specific locations, if any
+		if (pendingServer->locations == NULL) {
+			pendingServer->locations = loc;
+		} else {
+			_location *prev = pendingServer->locations;
+			while(prev->next != NULL) {
+				prev = prev->next;
+			}
+			prev->next = loc;
+		}
+		loc->next = NULL;
+	}
+	// pop the pending server stack and chain the server block
+	_server *server = pendingServer;
+	pendingServer = server->next;
+	server->next = g.servers;
+	g.servers = server;
+	return;
 }
 
 // process the http section
-char *
-f_http(char *p) {
-	_token token = getSection(p);
-	p = token.p;
-	char *s = token.q;
-	while (*s) {
-		_token token = getToken(s);
-		s = token.p;
-		char *keyword = token.q;
-		s = lookupKeyword(keyword, s);
+void
+f_http() {
+	if (pendingServer == NULL) {
+		fprintf(stderr, "Missing server block, bad config\n");
 	}
-	return p;
+	// pop the pending server stack and chain the server block
+	_server *server = pendingServer;
+	pendingServer = server->next;
+	server->next = g.servers;
+	g.servers = server;
+	return;
 }
 
 // document root
-char *
-f_root(char *p) {
-	_token token = getToken(p);
-	p = token.p;
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'root' directive outside a 'server' block, ignored\n");
+void
+f_root(char *root) {
+	if (pendingServer == NULL) {
+		newPendingServer();
+	}
+	if (pendingLocation == NULL) {
+		newPendingLocation();
+	} else if(pendingLocation->root != NULL) {
+		newPendingLocation();	// nested roots
+	}
+	pendingLocation->root = root;
+	if (g.debug) {
+		fprintf(stderr,"Document root path %s\n", pendingLocation->root);
+	}
+	return;
+}
+
+// expires directive
+void
+f_expires(char *expires) {
+	if (pendingServer == NULL) {
+		newPendingServer();
+	}
+	if (pendingLocation == NULL) {
+		newPendingLocation();
+	} else if(pendingLocation->root != NULL) {
+		newPendingLocation();	// nested roots
+	}
+	if (strncmp(expires, "off", 3) == 0) {
+		pendingLocation->expires = 0;
 	} else {
-		char *docRoot = token.q;
-		server->docRoot = (char *)malloc(strlen(docRoot)+1);
-		strcpy(server->docRoot, docRoot);
-		if (g.debug) {
-			fprintf(stderr,"Document root %s\n", server->docRoot);
+		// format [0-9]+ or [0-9]+[hms]
+		int len = strlen(expires);
+		int c = expires[len-1]);
+		if (isdigit(c)) {
+			pendingLocation->expires = atoi(expires);
+		} else {
+			int mult = 1;
+			if (c == 'm') {
+				mult *= 60;
+			} else if (c == 'h') {
+				mult *= 60*60;
+			} else {
+				printf("Unknown unit, ignored\n");
+			}
+			expires[len-1] = '\0';
+			pendingLocation->expires = atoi(expires) * mult;
 		}
 	}
-	return p;
+	if (g.debug) {
+		fprintf(stderr,"Expires directive %n\n", pendingLocation->expires);
+	}
+	return;
 }
 
 // server name
-char *
-f_server_name(char *p) {
-	_token token = getToken(p);
-	p = token.p;
-	char *serverName = token.q;
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'server_name' directive outside a 'server' block, ignored\n");
-	} else {
-		server->serverName = (char *)malloc(strlen(serverName)+1);
-		strcpy(server->serverName, serverName);
+void
+f_server_name(char *serverName, int type) {
+	if (pendingServer == NULL) {
+		newPendingServer();
+	}
+	_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+	sn->serverName = serverName;
+	sn->type = type;
+		sn->next = pendingServer->serverNames;
+		pendingServer->serverNames = sn;
 		if (g.debug) {
-			fprintf(stderr,"server name: %s\n", server->serverName);
+			fprintf(stderr,"server name: %s\n", sn->serverName);
 		}
 	}
-	return p;
+	return;
 }
 
 // index file name
-char *
-f_indexFile(char *p) {
-	if (g.indexFile) {
-		free(g.indexFile);
-		doDebug("Duplicate index file definition.");
+void
+f_indexFile(char *indexFile) {
+	if (pendingServer == NULL) {
+		newPendingServer();
 	}
-	_token token = getToken(p);
-	p = token.p;
-	char *indexFile = token.q;
-	g.indexFile = (char *)malloc(strlen(indexFile)+1);
-	strcpy(g.indexFile, indexFile);
+	_index_file *i = (_index_file *)malloc(sizeof(_index_file));
+	i->next = pendingServer->indexFiles;
+	pendingServer->indexFiles = i;
+	i->indexFile = indexFile;
 	if (g.debug) {
-		fprintf(stderr,"Index file name %s\n", g.indexFile);
+		fprintf(stderr, "Index File name: %s\n", indexFile);
 	}
-	return p;
+	return;
 }
 
 // error log file path
-char *
-f_error_log(char *p) {
-	if (g.errorLog) {
-		free(g.errorLog);
-		doDebug("Duplicate error log file definition.");
+void
+f_error_log(char *errorLog) {
+	if (pendingServer == NULL) {
+		newPendingServer();
 	}
-	_token token = getToken(p);
-	p = token.p;
-	char *errorLog = token.q;
-	g.errorLog = (char *)malloc(strlen(errorLog)+1);
-	strcpy(g.errorLog, errorLog);
+	pendingServer->errorLog = errorLog;
 	if (g.debug) {
-		fprintf(stderr,"Error log file path %s\n", g.errorLog);
+		fprintf(stderr,"Error log file path %s\n", pendingServer->errorLog);
 	}
-	return p;
+	return;
 }
 
 // access log file path
-char *
-f_access_log(char *p) {
-	if (g.accessLog) {
-		free(g.accessLog);
-		doDebug("Duplicate access log file definition.");
+void
+f_access_log(char *accessLog, int type) {
+	if (pendingServer == NULL) {
+		newPendingServer();
 	}
-	_token token = getToken(p);
-	p = token.p;
-	char *accessLog = token.q;
-	g.accessLog = (char *)malloc(strlen(accessLog)+1);
-	strcpy(g.accessLog, accessLog);
+	pendingServer->accessLog = accessLog;
 	if (g.debug) {
-		fprintf(stderr,"Access log file path %s\n", g.accessLog);
+		fprintf(stderr,"Access log file path %s\n", pendingServer->accessLog);
 	}
-	while(token.more) {
-		token = getToken(p);
-		p = token.p;
-		if (g.debug) {
-			fprintf(stderr, "Access log, ignored \"%s\"\n", token.q);
-		}
+	if (type) {
+		fprintf("Access log MAIN ignored\n");
 	}
-	return p;
+	return;
 }
 
 // ssl/tls certificate file
@@ -300,116 +364,93 @@ f_ssl_certificate_key(char *p) {
 	return p;
 }
 
-// listen port
-char *
-f_listen(char *p) {
-	_token token = getToken(p);
-	p = token.p;
-	char *port = token.q;
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'listen' directive outside a 'server' block, ignored\n");
-		return p;
+// listen directive
+// 	listen ip_address
+// 	listen ip_address:port
+// 	listen port
+// 	listen localhost
+// 	listen localhost:port
+// 	listen *
+// 	listen *:port
+//
+// 	additional options - defaultserver ssl http2
+void
+f_listen(char *name, int port) {
+	if (pendingServer == NULL) {
+		newPendingServer();
 	}
-	server->port = atoi(port);
-	if (g.debug) {
-		fprintf(stderr,"Listen on port: %d\n", server->port);
+	if (port > 0) {
+		pendingServer->port;
 	}
-	server->tls = 0;
-	if (token.more) {
-		token = getToken(p);
-		p = token.p;
-		if (strcmp(token.q, "ssl") == 0) {
-			server->tls = 1;
-		} else {
-			doDebug("Unknown `listen` token ignored");
-		}
+	if (name != NULL) {
+		pendingServer->listen = name;
 	}
-	return p;
+	return;
+}
+
+void
+f_tls() {
+	if (pendingServer == NULL) {
+		fprintf("SSL directive out of context, ignored\n");
+		return;
+	}
+	pendingServer->tls = 1;
 }
 
 // location directive
-char *
-f_location(char *p) {
-	_token token = getToken(p);
-	p = token.p;
-	char *tok = token.q;
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'location' directive outside a 'server' block, ignored\n");
-		return p;
+void
+f_location(int type, char *match, char *path) {
+	if (pendingServer == NULL) {
+		fprintf(stderr, "Location directive with no server, ignored\n");
+		return;
 	}
-	_location *loc = (_location *)malloc(sizeof(_location));
-	loc->type = TYPE_DOC_ROOT;	// default
-	// A location starting with a slash implies a prefix operator.
-	// Otherwise this token is an operator and a location token follows.
-	if (*tok == '/') {
-		loc->match = PREFIX_MATCH;
-		loc->location = (char *)malloc(strlen(tok)+1);
-		strcpy(loc->location, tok);
-		if (g.debug) {
-			fprintf(stderr,"Location prefix match: %s\n", loc->location);
-		}
-		loc->next = server->locations;
-		server->locations = loc;
-		loc->target = NULL;	// until the following token is parsed
-		loc->passTo = NULL; 
-	} else {
-		if (!token.more) {
-			doDebug("Location match missing the location, ignored");
-			free(loc);
-			return p;
-		}
-		if(*tok == '=') {
-			loc->match = EXACT_MATCH;
-		} else if (*tok == '~') {
-			loc->match = REGEX_MATCH;
-		} else {
-			doDebug("Unrecognized location match, ignored");
-			free(loc);
-			return p;
-		}
-		token = getToken(p);
-		loc->location = (char *)malloc(strlen(token.q)+1);
-		strcpy(loc->location, token.q);
-		p = token.p;
-		loc->next = server->locations;
-		server->locations = loc;
-		loc->target = NULL;
-	}
-	// Location match tokens should be followed by a section
-	// containing the location target.
-	token = getSection(p);
-	p = token.p;
-	char *s = token.q;
-	while (*s) {
-		_token token = getToken(s);
-		s = token.p;
-		char *keyword = token.q;
-		s = lookupKeyword(keyword, s);
-	}
-	return p;
+	// pop the pending location stack and chain the location to the server
+	_locations *loc = pendingLocation;
+	pendingLocation = pendingLocation->next;
+	loc->next = pendingServer->locations;
+	pendingServer->locations = loc;
+	return;
 }
 
-// try_files directive
-//
-// note: only one variation is currently supported:
-// try_files $uri $uri/ <target>
-//
-char *
-f_try_files(char *p) {
-	_token token = getToken(p);
-	p = token.p;
-	char *tok = token.q;
+void
+f_try_target(char *target) {
 	_server *server = g.servers;
 	if (server == NULL) {
 		fprintf(stderr, "'try_files' directive outside a 'server' block, ignored\n");
-		return p;
+		return;
 	}
 	_location *loc = server->locations;
 	if (loc == NULL) {
 		fprintf(stderr, "'try_files' directive outside a 'location' block, ignored\n");
-		return p;
+		return;
+	}
+	loc->type = TYPE_TRY_FILES;
+	_try_target *tt = malloc(sizeof(_try_target));
+	_try_target *prev = loc->try_target;
+	if (prev == NULL) {
+		loc->try_target = tt;
+		tt->next = NULL;
+	} else {
+		while(prev->next) {
+			prev = prev->next;
+		}
+		prev->next = tt;
+		tt->next = NULL;
+	}
+}
+
+// try_files directive
+void
+f_try_files() {
+	_server *server = g.servers;
+	if (server == NULL) {
+		fprintf(stderr, "'try_files' directive outside a 'server' block, ignored\n");
+		return;
+	}
+	_location *loc = server->locations;
+	if (loc == NULL) {
+		fprintf(stderr, "'try_files' directive outside a 'location' block, ignored\n");
+		return;
 	}
 	loc->type = TYPE_TRY_FILES;
 	loc->match = PREFIX_MATCH;
@@ -443,43 +484,29 @@ f_try_files(char *p) {
 	return p;
 }
 
-// proxy_pass directive
-char *
-f_proxy_pass(char *p) {
-	_token token = getToken(p);
-	p = token.p;
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'proxy_pass' directive outside a 'server' block, ignored\n");
-		return p;
+// proxy_pass protocol
+void
+f_protocol(char *protocol) {
+	if (pendingProtocol != NULL) {
+		fprintf(stderr,"Duplicate protocol, ignored\n");
+		return;
 	}
-	_location *loc = server->locations;
-	if (loc == NULL) {
-		fprintf(stderr, "'proxy_pass' directive outside a 'location' block, ignored\n");
-		return p;
-	}
-	loc->type = TYPE_PROXY_PASS;
-	char *hn = strstr(token.q, "://");
-	if (hn) {
-		hn += 3;
-	}
-	char *pn = strchr(hn, ':');
-	unsigned short port;
-	if (pn) {
-		*pn++ = '\0';
-		port = (unsigned short)atoi(pn);
-	}else {
-		port = 80;
-	}
-	loc->target = (char *)malloc(strlen(hn)+1);
-	strcpy(loc->target, hn);
+	pendingProtocol = protocol;
 	if (g.debug) {
-		fprintf(stderr,"Proxy pass: %s\n", loc->target);
+		fprintf(stderr, "Proxy pass to %s protocol\n", pendingProtocol);
+	}
+	return;
+}
+
+// proxy_pass directive
+void
+f_proxy_pass(char *host, int port) {
+	if (pendingLocation == NULL) {
+		newPendingLocation();
 	}
 	struct sockaddr_in *passTo = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 	memset(passTo, 0, sizeof(struct sockaddr_in));
-	loc->passTo = passTo;
-	struct hostent *hostName = gethostbyname(hn);
+	struct hostent *hostName = gethostbyname(host);
 	if (hostName == (struct hostent *)0) {
 		doDebug("gethostbyname failed");
 		exit(1);
@@ -487,7 +514,8 @@ f_proxy_pass(char *p) {
 	passTo->sin_family = AF_INET;
 	passTo->sin_port = htons(port);
 	passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
-	return p;
+	pendingLocation->passTo = passTo;
+	return;
 }
 
 // keepalive timeout

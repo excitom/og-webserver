@@ -4,6 +4,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include "parseConfig.h"
+#ifdef standalone
+#include "serverlist.h"
+#endif
 extern int yylex();
 extern FILE *yyin;
 void yyerror( const char * );
@@ -108,7 +111,7 @@ pid_directive
 include_directive
 	:
 	INCLUDE PATH EOL
-	{printf("Include path: %s\n", $2);}
+	{printf("UNIMPLEMENTED Include path: %s\n", $2);}
 	;
 trace_directive
 	: TRACE ON EOL
@@ -123,7 +126,7 @@ worker_processes_directive
 	;
 worker_rlimit_nofile_directive
 	: WORKERRLIMIT NUMBER EOL
-	{printf("Worker rlimit number of files: %d\n", $2);}
+	{printf("UNIMPLEMENTED Worker rlimit number of files: %d\n", $2);}
 	;
 events_section
 	: EVENTS '{' events_directives '}'
@@ -138,6 +141,7 @@ events_directive
 	;
 http_section
 	: HTTP '{' http_directives '}'
+	{f_http();}
 	;
 http_directives
 	: http_directives http_directive
@@ -168,7 +172,7 @@ index_files
 index_file
 	:
 	NAME
-	{printf("Index file name: %s\n", $1);}
+	{f_indexFile($1);}
 	;
 default_type_directive
 	:
@@ -199,25 +203,25 @@ keepalive_directive
 server_names_hash_bucket_size_directive
 	:
 	HASHBUCKET NUMBER EOL
-	{printf("Server names hash bucket size: %d\n", $2);}
+	{printf("NOT YET IMPLEMENTED Server names hash bucket size: %d\n", $2);}
 	;
 log_format_directive
 	:
 	LOGFORMAT MAIN strings EOL
-	{printf("MAIN log format\n");}
+	{printf("NOT YET IMPLEMENTED MAIN log format\n");}
 	|
 	LOGFORMAT strings EOL
 	;
 strings
 	: strings QUOTEDSTRING
-	{printf("log format part %s\n", $2);}
+	{printf("NOT YET IMPLEMENTED log format part %s\n", $2);}
 	| QUOTEDSTRING
-	{printf("log format part %s\n", $1);}
+	{printf("NOT YET IMPLEMENTED log format part %s\n", $1);}
 	;
 server_section
 	:
 	SERVER '{' server_directives '}'
-	{printf("Server SECTION\n");}
+	{f_server();}
 	;
 server_directives
 	: server_directives server_directive
@@ -242,17 +246,17 @@ server_names
 server_name
 	:
 	PREFIXNAME
-	{printf("Wildcard PREFIX Server name: %s\n", $1);}
+	{f_server_name($1, SERVER_NAME_WILDCARD_PREFIX);}
 	|
 	SUFFIXNAME
-	{printf("Wildcard SUFFIX Server name: %s\n", $1);}
+	{f_server_name($1, SERVER_NAME_WILDCARD_SUFFIX);}
 	|
 	NAME
-	{printf("Server name: %s\n", $1);}
+	{f_server_name($1, SERVER_NAME_EXACT);}
 	;
 upstream_directive
 	: UPSTREAM NAME '{' upstreams '}'
-	{printf("Upstream to %s\n", $2);}
+	{printf("UNIMPLEMENTED Upstream to %s\n", $2);}
 	;
 upstreams
 	:
@@ -263,30 +267,30 @@ upstreams
 upstream
 	:
 	SERVER IP PORT WEIGHT LOC_OPERATOR NUMBER EOL
-	{printf("Upstream IP %s port %d weight %d\n", $2, $3, $6);}
+	{printf("UNIMPLEMENTED Upstream IP %s port %d weight %d\n", $2, $3, $6);}
 	|
 	SERVER IP PORT EOL
-	{printf("Upstream IP %s port %d\n", $2, $3);}
+	{printf("UNIMPLEMENTED Upstream IP %s port %d\n", $2, $3);}
 	;
 access_log_directive
 	:
 	ACCESSLOG PATH EOL
-	{printf("Access log path: %s\n", $2);}
+	{f_access_log($2, 0);}
 	| ACCESSLOG PATH MAIN EOL
-	{printf("Access log path: %s MAIN %s\n", $2, $3);}
+	{f_access_log($2, 1);}
 	;
 error_log_directive
 	:
 	ERRORLOG PATH EOL
-	{printf("Error log path: %s\n", $2);}
+	{f_error_log($2);}
 	;
 root_directive
 	:
 	ROOT PATH EOL
-	{printf("Document root: %s\n", $2);}
+	{f_root($2);}
 	|
 	ROOT NAME EOL
-	{printf("Document root: %s\n", $2);}
+	{f_root($2);}
 	;
 autoindex_directive
 	:
@@ -299,13 +303,13 @@ autoindex_directive
 location_section
 	:
 	LOCATION LOC_OPERATOR PATH '{' location_directives '}'
-	{printf("LOCATION operator %s path %s\n", $2, $3);}
+	{f_location(OPERATOR_MATCH, $2, $3);}
 	|
 	LOCATION REGEXP '{' location_directives '}'
-	{printf("LOCATION REGEXP %s\n", $2);}
+	{f_location(REGEX_MATCH, $2, NULL);}
 	|
 	LOCATION PATH '{' location_directives '}'
-	{printf("LOCATION implicit prefix match %s\n", $2);}
+	{f_location(PREFIX_MATCH, $2, NULL);}
 	;
 location_directives
 	: location_directives location_directive
@@ -320,23 +324,23 @@ location_directive
 	;
 proxy_pass_directive
 	: PROXYPASS protocol NAME PORT EOL
-	{printf("proxy pass to %s on port %d\n", $3, $4);}
+	{f_proxy_pass($3, $4);}
 	| PROXYPASS protocol IP PORT EOL
-	{printf("proxy pass to %s on port %d\n", $3, $4);}
+	{f_proxy_pass($3, $4);}
 	| PROXYPASS protocol NAME EOL
-	{printf("proxy pass to %s\n", $3);}
+	{f_proxy_pass($3, 0);}
 	| PROXYPASS protocol IP EOL
-	{printf("proxy pass to IP %s\n", $3);}
+	{f_proxy_pass($3, 0);}
 	;
 fastcgi_pass
 	: FASTCGIPASS NAME PORT EOL
-	{printf("fastCGI pass to %s on port %d\n", $2, $3);}
+	{printf("UNIMPLEMENTED fastCGI pass to %s on port %d\n", $2, $3);}
 	| FASTCGIPASS IP PORT EOL
-	{printf("fastCGI pass to %s on port %d\n", $2, $3);}
+	{printf("UNIMPLEMENTED fastCGI pass to %s on port %d\n", $2, $3);}
 	| FASTCGIPASS NAME EOL
-	{printf("fastCGI pass to %s\n", $2);}
+	{printf("UNIMPLEMENTED fastCGI pass to %s\n", $2);}
 	| FASTCGIPASS IP EOL
-	{printf("fastCGI pass to IP %s\n", $2);}
+	{printf("UNIMPLEMENTED fastCGI pass to IP %s\n", $2);}
 	;
 try_files_directive
 	:
@@ -346,31 +350,36 @@ try_files_directive
 try_paths
 	:
 	try_paths PATH
-	{printf("TRY PATH %s\n", $2);}
+	{f_try_target($2);}
 	|
 	PATH
-	{printf("TRY PATH %s\n", $1);}
+	{f_try_target($1);}
 	|
 	try_paths NAME
-	{printf("TRY NAME %s\n", $2);}
+	{f_try_target($2);}
 	|
 	NAME
-	{printf("TRY NAME %s\n", $1);}
+	{f_try_target($1);}
 	|
 	try_paths VARIABLE
-	{printf("TRY VARIABLE %s\n", $2);}
+	{f_try_target($2);}
 	|
 	VARIABLE
-	{printf("TRY VARIABLE %s\n", $1);}
+	{f_try_target($1);}
 	;
 protocol
 	: HTTP1
+	{f_protocol("http");}
 	| HTTPS
+	{f_protocol("https");}
 	| HTTP2
+	{f_protocol("http2");}
 	;
 expires_directive
 	: EXPIRES UNITS EOL
-	{printf("Expires %s\n", $2);}
+	{f_expires($2);}
+	| EXPIRES OFF EOL
+	{f_expires("off");}
 	;
 listen_directive
 	: LISTEN listen_options EOL
@@ -381,36 +390,28 @@ listen_options
 	;
 listen_option
 	: NUMBER
-	{printf("Listen on PORT %d\n", $1);}
+	{f_listen(NULL, $1);}
 	| NAME
-	{printf("Listen to %s\n", $1);}
+	{f_listen($1, 0);}
 	| WILDCARD
-	{printf("Listen WILDCARD\n");}
-	| PREFIXNAME
-	{printf("Listen to wildcard %s\n", $1);}
-	| SUFFIXNAME
-	{printf("Listen to wildcard suffix %s\n", $1);}
+	{f_listen("*", 0);}
 	| DEFAULTSERVER
-	{printf("This is the default server\n");}
+	{printf("UNIMPLEMENTED This is the default server\n");}
 	| SSL
-	{printf("This server uses SSL/TLS\n");}
+	{f_tls();}
 	| HTTP2L
-	{printf("This server uses HTTP2\n");}
+	{printf("UNIMPLEMENTED This server uses HTTP2\n");}
 	| REUSEPORT
-	{printf("Reuse port for this server\n");}
+	{printf("UNIMPLEMENTED Reuse port for this server\n");}
 	| listen_pair
 	;
 listen_pair
 	: IP PORT
-	{printf("Listen at %s on port %d\n", $1, $2);}
+	{f_listen($1, $2);}
 	| NAME PORT
-	{printf("Listen to %s on port %d\n", $1, $2);}
-	| PREFIXNAME PORT
-	{printf("Listen to wildcard %s on port %d\n", $1, $2);}
-	| SUFFIXNAME PORT
-	{printf("Listen to wildcard suffix %s on port %d\n", $1, $2);}
+	{f_listen($1, $2);}
 	| WILDCARD PORT
-	{printf("Listen to WILDCARD on port %d\n", $2);}
+	{f_listen("*", $2);}
 	;
 %%
 #ifdef standalone
@@ -419,7 +420,7 @@ int main( int argc, char **argv )
   yyparse();
   return 0;
 }
-// config parser stub functions
+// config parser stub functions for testing in stand alone mode
 void f_pid(char *path) {
 	printf("PID file %s\n", path);
 }
@@ -466,17 +467,20 @@ void f_http() {
 void f_root(char *path) {
 	printf("Document root: %s\n", path);
 }
-void f_server_name(char *name) {
-	printf("Server name: %s\n", name);
+void f_expires(char *expires) {
+	printf("Expires: %s\n", expires);
 }
-void f_indexFile() {
-	printf("Index file directive\n");
+void f_server_name(char *name, int type) {
+	printf("Server name: %s type %d\n", name, type);
+}
+void f_indexFile(char *indexFile) {
+	printf("Index file directive %s\n", indexFile);
 }
 void f_error_log(char *path) {
 	printf("Error log path %s\n", path);
 }
-void f_access_log(char *path) {
-	printf("Access log path %s\n", path);
+void f_access_log(char *path, int type) {
+	printf("Access log path %s type %d\n", path, type);
 }
 void f_ssl_certificate(char *cert) {
 	printf("SSL cert %s\n", cert);
@@ -484,17 +488,44 @@ void f_ssl_certificate(char *cert) {
 void f_ssl_certificate_key(char *key) {
 	printf("SSL key %s\n", key);
 }
-void f_listen() {
-	printf("Listen dirtective\n");
+void f_listen(char *n, int p) {
+	if (p > 0) {
+		printf("Listen on port %d\n", p);
+	}
+	if (n != NULL) {
+		printf("Listen to %s\n", n);
+	}
 }
-void f_location() {
-	printf("Location directive\n");
+void f_tls() {
+	printf("Use TLS/SSL\n");
+}
+
+void f_location(int type, char *match, char *path) {
+	if (type == OPERATOR_MATCH) {
+		printf("Location operator %s match %s\n", match, path);
+	} else if (type == REGEX_MATCH) {
+		printf("Location regex match %s\n", match);
+	} else if (type == PREFIX_MATCH) {
+		printf("Location prefix match %s\n", match);
+	} else {
+		printf("Location : unknown match type\n");
+	}
+}
+void f_try_target(char *target) {
+	printf("Try files target %s\n", target);
 }
 void f_try_files() {
-	printf("Try files directive\n");
+	printf("Try files\n");
 }
-void f_proxy_pass() {
-	printf("Proxy pass directive\n");
+void f_proxy_pass(char *host, int port) {
+	if (port) {
+		printf("Proxy pass to %s:%d\n", host, port);
+	} else {
+		printf("Proxy pass to %s\n", host);
+	}	
+}
+void f_protocol(char *protocol) {
+	printf("Proxy pass tp %s protocol\n", protocol);
 }
 void f_keepalive_timeout(int timeout) {
 	printf("Keepalive timeout %d\n", timeout);

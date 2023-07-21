@@ -55,7 +55,6 @@ struct globalVars {
 	int trace;
 	int testConfig;
 	int foreground;
-	int autoIndex;
 	int tcpNoPush;
 	int workerConnections;
 	int workerProcesses;
@@ -63,12 +62,6 @@ struct globalVars {
 	int useSendfile;
 	int keepaliveTimeout;
 	char *configPath;
-	char *indexFile;
-	char *accessLog;
-	char *errorLog;
-	char *serverName;
-	char *certFile;
-	char *keyFile;
 	char *pidFile;
 	char *user;
 	char *group;
@@ -76,7 +69,6 @@ struct globalVars {
 	char *version;
 	_server *servers;
 	_server *defaultServer;
-	_ports *ports;
 	_clientConnection *clients;
 	int portCount;
 	int accessFd;

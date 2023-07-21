@@ -75,11 +75,11 @@
 
  	// figure out what ports to assign to the processes
  	_procs *plist = NULL;
- 	for (_ports *port = g.ports; port != NULL; port = port->next) {
+	for (_server *server = g.servers; server != NULL; server = server->next) {
  		for (int i = 0; i < g.workerProcesses; i++) {
  			_procs *p = (_procs *)malloc(sizeof(_procs));
- 			p->port = port->portNum;
- 			p->useTLS = port->useTLS;
+ 			p->port = server->port;
+ 			p->useTLS = server->tls;
  			p->next = plist;
  			plist = p;
  		}
