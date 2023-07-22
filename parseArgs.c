@@ -71,6 +71,10 @@ parseArgs(int argc, char* argv[], char *version)
 		strcpy(g.configPath, argv[optind]);
 		optind++;
 	}
+	if (access(g.configPath, R_OK) == -1) {
+		perror("config path not valid:");
+		exit(1);
+	}
 }
 
 /**
@@ -85,41 +89,11 @@ initGlobals(char *version) {
 	g.trace = 0;
 	g.testConfig = 0;
 	g.showVersion = 0;
-	g.useSendfile = 0;
-	g.autoIndex = 0;
-	g.tcpNoPush = 0;
 	g.workerConnections = 64;
 	g.workerProcesses = 1;
-	g.keepaliveTimeout = 65;
-	char configPath[] = "/etc/ogws";
-	g.configPath = (char *)malloc(strlen(configPath)+1);
-	strcpy(g.configPath, configPath);
-	char serverName[] = "_";
-	g.serverName = (char *)malloc(strlen(serverName)+1);
-	strcpy(g.serverName, serverName);
-	char indexFile[] = "index.html";
-	g.indexFile = (char *)malloc(strlen(indexFile)+1);
-	strcpy(g.indexFile, indexFile);
-	g.defaultServer = (_server *)malloc(sizeof(_server));
-	char docRoot[] = "/var/www/ogws/html";
-	g.defaultServer->docRoot = (char *)malloc(strlen(docRoot)+1);
-	strcpy(g.defaultServer->docRoot, docRoot);
-	g.defaultServer->serverName = NULL;
-	g.defaultServer->autoIndex = 0;
-	g.defaultServer->port = 8080;
-	g.defaultServer->tls = 0;
-	g.defaultServer->certFile = NULL;
-	g.defaultServer->keyFile = NULL;
-	g.defaultServer->locations = NULL;
-	char accessLog[] = "/var/log/ogws/access.log";
-	g.accessLog = (char *)malloc(strlen(accessLog)+1);
-	strcpy(g.accessLog, accessLog);
-	g.serverName = NULL;
-	g.certFile = NULL;
-	g.keyFile = NULL;
+	g.sendFile = 0;
 	g.signal = NULL;
 	g.servers = NULL;
-	g.ports = NULL;
 	g.portCount = 0;
 	char pidFile[] = "/run/ogws.pid";
 	g.pidFile = (char *)malloc(strlen(pidFile)+1);

@@ -108,7 +108,6 @@ processInput(int fd, SSL *ssl) {
 			return;
 		}
 		free(headers);	// no longer need a copy of the headers
-		char *docRoot = loc->target;
 
 		//
 		// Only support the GET verb at this time
@@ -121,7 +120,7 @@ processInput(int fd, SSL *ssl) {
 		}
 
 		// todo: disallow ../ in the path
-		int size = strlen(docRoot) + strlen(path);
+		int size = strlen(loc->root) + strlen(path);
 		const int maxLen = 255;
 		if (size > maxLen) {
 			doDebug("URI too long");
@@ -133,7 +132,7 @@ processInput(int fd, SSL *ssl) {
 			return;
 		}
 
-		handleGetVerb(fd, ssl, server, docRoot, path, queryString);
+		handleGetVerb(fd, ssl, server, loc, path, queryString);
 	}
 	return;
 }
@@ -144,24 +143,26 @@ processInput(int fd, SSL *ssl) {
 _server *
 getServerForHost(char *host)
 {
+	_server *server = g.servers;	// default server
 	char *p = strchr(host, ':');
-	int port = g.defaultServer->port;
+	int port = server->port;
 	if (p) {
 		port = atoi(p+1);
 		*p = '\0';
 	} 
-	_server *server = g.servers;
 	size_t hostLen = strlen(host);
 	while(server != NULL) {
-		if ((hostLen == strlen(server->serverName)) 
-				&& (strcmp(host, server->serverName) == 0)
-				&& (server->port == port)) {
-			break;
+		_server_name *sn = server->serverNames;
+		while(sn != NULL) {
+			if ((hostLen == strlen(sn->serverName)) 
+					&& (strcmp(host, sn->serverName) == 0)
+					&& (server->port == port)) {
+				return server;
+			}
+			sn = sn->next;
 		}
 		server = server->next;
 	}
-	if (server == NULL) {
-		server = g.defaultServer;
-	}
-	return server;
+	// no explicit matches, use the default
+	return g.servers;
 }

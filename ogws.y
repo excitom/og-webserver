@@ -79,7 +79,7 @@ void yyerror( const char * );
 %%
 config
 	: main_directives events_section http_section
-	{printf("Config file processing complete\n");}
+	{f_config_complete();}
 	;
 main_directives
 	: main_directive main_directives
@@ -538,5 +538,8 @@ void f_workerConnections(int num) {
 }
 void f_events() {
 	printf("Events section\n");
+}
+void f_config_complete() {
+	printf("Config file processing complete\n");
 }
 #endif

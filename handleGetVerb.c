@@ -21,13 +21,13 @@
 #include "global.h"
 
 void
-handleGetVerb(int sockfd, SSL *ssl, _server *server, char *docRoot, char *path, char *queryString)
+handleGetVerb(int sockfd, SSL *ssl, _server *server, _location *loc, char *path, char *queryString)
 {
 	if (queryString != NULL) {
 		doDebug("Query string ignored, not yet implemented.");
 	}
 	char fullPath[300];
-	strcpy(fullPath, docRoot);
+	strcpy(fullPath, loc->root);
 	strcat(fullPath, path);
 	struct stat sb;
 	if (stat(fullPath, &sb) == -1) {
@@ -46,15 +46,12 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, char *docRoot, char *path, 
 			strcat(fullPath, "/");
 		}
 		// default to the index file if not specified
-		char indexPath[300];
-		strcpy(indexPath, fullPath);
-		strcat(indexPath, g.indexFile);
-		fd = open(indexPath, O_RDONLY);
+		fd = openDefaultIndexFile(server, fullPath);
 		if (fd == -1) {
 			// if the path is a directory, and the index file is not present,
 			// do we want to show a directory listing?
-			if (server->autoIndex) {
-				showDirectoryListing(sockfd, ssl, docRoot, path);
+			if (loc->autoIndex) {
+				showDirectoryListing(sockfd, ssl, loc->root, path);
 			} else {
 				if (g.debug) {
 					fprintf(stderr, "%s: file open failed: %s\n", fullPath, strerror(errno));
@@ -128,4 +125,23 @@ getMimeType(char *name, char *mimeType)
 		}
 	}
 	return;
+}
+
+/**
+ * open the default index file for a directory
+ */
+int
+openDefaultIndexFile(_server *server, char *fullPath) {
+	char indexPath[300];
+	_server_name *sn = server->serverNames;
+	while(sn) {
+		strcpy(indexPath, fullPath);
+		strcat(indexPath, server->indexFiles->indexFile);
+		int fd = open(indexPath, O_RDONLY);
+		if (fd >= 0) {
+			return fd;
+		}
+		sn = sn->next;
+	}
+	return -1;
 }

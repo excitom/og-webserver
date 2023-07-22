@@ -20,7 +20,7 @@ int recvData(int, char*, int);
 void sendFile(int sockfd, int fd, SSL* ssl, size_t size);
 void getTimestamp(char*, int);
 void sendErrorResponse(int, SSL*,int, char*, char*);
-void handleGetVerb(int, SSL*, _server*, char *,char*, char*);
+void handleGetVerb(int, SSL*, _server*, _location *,char*, char*);
 void parseMimeTypes();
 void parseConfig();
 void checkConfig();
@@ -32,6 +32,7 @@ void server(int);
 void tlsServer();
 _location *getDocRoot(_server *, char *);
 void handleProxyPass(int, char *, _location *);
+int openDefaultIndexFile(_server *, char *);
 
 #define FAIL    -1
 #define BUFF_SIZE 4096
@@ -56,6 +57,7 @@ struct globalVars {
 	int testConfig;
 	int foreground;
 	int tcpNoPush;
+	int sendFile;
 	int workerConnections;
 	int workerProcesses;
 	int showVersion;
@@ -68,10 +70,7 @@ struct globalVars {
 	char *signal;
 	char *version;
 	_server *servers;
-	_server *defaultServer;
 	_clientConnection *clients;
 	int portCount;
-	int accessFd;
-	int errorFd;
 	struct _mimeTypes *mimeTypes;
 };

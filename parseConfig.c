@@ -18,8 +18,6 @@
 #include "global.h"
 
 int portOk(_server *);
-void addPort(_server *);
-int locationSet(_server *);
 
 static char *pendingProtocol = NULL;
 static _server *pendingServer = NULL;
@@ -29,9 +27,8 @@ void
 newPendingServer() {
 	pendingServer = (_server *)malloc(sizeof(_server));
 	pendingServer->next = NULL;
-	pendingServer->port = g.defaultServer->port;
+	pendingServer->port = 8080;
 	pendingServer->tls = 0;
-	pendingServer->autoIndex = 0;
 	pendingServer->certFile = NULL;
 	pendingServer->keyFile = NULL;
 	pendingServer->serverNames = NULL;
@@ -46,12 +43,13 @@ newPendingLocation() {
 	pendingLocation = (_location *)malloc(sizeof(_location));
 	pendingLocation->next = pendingLocation;
 	pendingLocation->type = TYPE_DOC_ROOT;
-	pendingLocation->match = EXACT_MATCH;
+	pendingLocation->match = PREFIX_MATCH;
 	pendingLocation->autoIndex = 0;
 	pendingLocation->location = NULL;
 	pendingLocation->root = NULL;
 	pendingLocation->try_target = NULL;
 	pendingLocation->passTo = NULL;		// for proxy_pass locations
+	pendingLocation->expires = 0;
 	return;
 }
 
@@ -74,9 +72,9 @@ f_trace(int trace) {
 	g.trace = trace;
 	if (g.debug) {
 		if (trace) {
-			fprintf(stderr,"Show network trace ON\n", );
+			fprintf(stderr,"Show network trace ON\n");
 		} else {
-			fprintf(stderr,"Show network trace OFF\n", );
+			fprintf(stderr,"Show network trace OFF\n");
 		}
 	}
 }
@@ -100,9 +98,9 @@ f_sendfile(int sendFile) {
 	g.sendFile = sendFile;
 	if (g.debug) {
 		if (sendFile) {
-			fprintf(stderr,"Use sendfile system call ON\n", );
+			fprintf(stderr,"Use sendfile system call ON\n");
 		} else {
-			fprintf(stderr,"Use sendfile system call OFF\n", );
+			fprintf(stderr,"Use sendfile system call OFF\n");
 		}
 	}
 }
@@ -113,9 +111,9 @@ f_tcpnopush(int tcpNoPush) {
 	g.tcpNoPush = tcpNoPush;
 	if (g.debug) {
 		if (tcpNoPush) {
-			fprintf(stderr,"Use `tcp_nopush` option ON\n", );
+			fprintf(stderr,"Use `tcp_nopush` option ON\n");
 		} else {
-			fprintf(stderr,"Use `tcp_nopush` option OFF\n", );
+			fprintf(stderr,"Use `tcp_nopush` option OFF\n");
 		}
 	}
 }
@@ -177,7 +175,41 @@ void
 f_http() {
 	if (pendingServer == NULL) {
 		fprintf(stderr, "Missing server block, bad config\n");
+		exit(1);
 	}
+	if (pendingServer->locations != NULL) {
+		fprintf(stderr, "Location block outside server block, bad config\n");
+		exit(1);
+	}
+	// fill in default server configuration, which is used
+	// if there are no server blocks or the URL does not match
+	// the criteria in any server block.
+	newPendingLocation();
+
+	char docRoot[] = "/var/www/ogws/html";
+    pendingLocation->root = (char *)malloc(strlen(docRoot)+1);
+    strcpy(pendingLocation->root, docRoot);
+	pendingServer->locations = pendingLocation;
+
+	_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+	sn->next = NULL;
+	sn->serverName = "_";
+	sn->type = SERVER_NAME_EXACT;
+	pendingServer->serverNames = sn;
+
+	_index_file *i = (_index_file *)malloc(sizeof(_index_file));
+	i->next = NULL;
+	i->indexFile = "index.html";
+	pendingServer->indexFiles = i;
+
+	char accessLog[] = "/var/log/ogws/access.log";
+	pendingServer->accessLog = (char *)malloc(strlen(accessLog)+1);
+	strcpy(pendingServer->accessLog, accessLog);
+
+	char errorLog[] = "/var/log/ogws/error.log";
+	pendingServer->errorLog = (char *)malloc(strlen(errorLog)+1);
+	strcpy(pendingServer->errorLog, errorLog);
+
 	// pop the pending server stack and chain the server block
 	_server *server = pendingServer;
 	pendingServer = server->next;
@@ -220,7 +252,7 @@ f_expires(char *expires) {
 	} else {
 		// format [0-9]+ or [0-9]+[hms]
 		int len = strlen(expires);
-		int c = expires[len-1]);
+		int c = expires[len-1];
 		if (isdigit(c)) {
 			pendingLocation->expires = atoi(expires);
 		} else {
@@ -237,7 +269,7 @@ f_expires(char *expires) {
 		}
 	}
 	if (g.debug) {
-		fprintf(stderr,"Expires directive %n\n", pendingLocation->expires);
+		fprintf(stderr,"Expires directive %d\n", pendingLocation->expires);
 	}
 	return;
 }
@@ -251,11 +283,10 @@ f_server_name(char *serverName, int type) {
 	_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
 	sn->serverName = serverName;
 	sn->type = type;
-		sn->next = pendingServer->serverNames;
-		pendingServer->serverNames = sn;
-		if (g.debug) {
-			fprintf(stderr,"server name: %s\n", sn->serverName);
-		}
+	sn->next = pendingServer->serverNames;
+	pendingServer->serverNames = sn;
+	if (g.debug) {
+		fprintf(stderr,"server name: %s\n", sn->serverName);
 	}
 	return;
 }
@@ -300,68 +331,45 @@ f_access_log(char *accessLog, int type) {
 		fprintf(stderr,"Access log file path %s\n", pendingServer->accessLog);
 	}
 	if (type) {
-		fprintf("Access log MAIN ignored\n");
+		fprintf(stderr, "Access log MAIN ignored\n");
 	}
 	return;
 }
 
 // ssl/tls certificate file
-char *
-f_ssl_certificate(char *p) {
-	_token token = getToken(p);
-	p = token.p;
-	char *q = token.q;
-	if (*q == '"') {
-		q++;
+void
+f_ssl_certificate(char *certFile) {
+	if (pendingServer == NULL) {
+		newPendingServer();
 	}
-	char *certFile = q;
-	q = strchr(certFile, '"');
-	if (q != NULL) {
-		*q = '\0';
+	if (pendingServer->certFile) {
+		fprintf(stderr, "Duplicate cert file, ignored: %s\n", certFile);
+		free(certFile);
+		return;
 	}
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'ssl_certificate' directive outside a 'server' block, ignored\n");
-	} else {
-		server->certFile = (char *)malloc(strlen(certFile)+1);
-		strcpy(server->certFile, certFile);
-		if (g.debug) {
-			fprintf(stderr,"cert file: %s\n", server->certFile);
-		}
+	pendingServer->certFile = certFile;
+	if (g.debug) {
+		fprintf(stderr,"cert file: %s\n", pendingServer->certFile);
 	}
-	return p;
-	if (g.certFile) {
-		free(g.certFile);
-		doDebug("Duplicate cert file definition.");
-	}
-	return p;
+	return;
 }
 
 // ssl/tls certificate key file
-char *
-f_ssl_certificate_key(char *p) {
-	_token token = getToken(p);
-	p = token.p;
-	char *q = token.q;
-	if (*q == '"') {
-		q++;
+void
+f_ssl_certificate_key(char *keyFile) {
+	if (pendingServer == NULL) {
+		newPendingServer();
 	}
-	char *keyFile = q;
-	q = strchr(keyFile, '"');
-	if (q != NULL) {
-		*q = '\0';
+	if (pendingServer->keyFile) {
+		fprintf(stderr, "Duplicate key file, ignored: %s\n", keyFile);
+		free(keyFile);
+		return;
 	}
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'ssl_certificate_key' directive outside a 'server' block, ignored\n");
-	} else {
-		server->keyFile = (char *)malloc(strlen(keyFile)+1);
-		strcpy(server->keyFile, keyFile);
-		if (g.debug) {
-			fprintf(stderr,"cert key file: %s\n", server->keyFile);
-		}
+	pendingServer->keyFile = keyFile;
+	if (g.debug) {
+		fprintf(stderr,"key file: %s\n", pendingServer->keyFile);
 	}
-	return p;
+	return;
 }
 
 // listen directive
@@ -380,7 +388,7 @@ f_listen(char *name, int port) {
 		newPendingServer();
 	}
 	if (port > 0) {
-		pendingServer->port;
+		pendingServer->port = port;
 	}
 	if (name != NULL) {
 		pendingServer->listen = name;
@@ -391,7 +399,7 @@ f_listen(char *name, int port) {
 void
 f_tls() {
 	if (pendingServer == NULL) {
-		fprintf("SSL directive out of context, ignored\n");
+		fprintf(stderr, "SSL directive out of context, ignored\n");
 		return;
 	}
 	pendingServer->tls = 1;
@@ -399,13 +407,16 @@ f_tls() {
 
 // location directive
 void
-f_location(int type, char *match, char *path) {
+f_location(int type, char *match, char *location) {
 	if (pendingServer == NULL) {
 		fprintf(stderr, "Location directive with no server, ignored\n");
 		return;
 	}
+	_location *loc = pendingLocation;
+	loc->location = location;
+	loc->match = match;
+	loc->type = type;
 	// pop the pending location stack and chain the location to the server
-	_locations *loc = pendingLocation;
 	pendingLocation = pendingLocation->next;
 	loc->next = pendingServer->locations;
 	pendingServer->locations = loc;
@@ -454,34 +465,7 @@ f_try_files() {
 	}
 	loc->type = TYPE_TRY_FILES;
 	loc->match = PREFIX_MATCH;
-	if (strcmp(tok, "$uri") != 0) {
-		fprintf(stderr, "'try_files' wrong format 1, ignored\n");
-		return p;
-	}
-	if (!token.more) {
-		fprintf(stderr, "'try_files' wrong format 2, ignored\n");
-		return p;
-	}
-	token = getToken(p);
-	p = token.p;
-	tok = token.q;
-	if (strcmp(tok, "$uri/") != 0) {
-		fprintf(stderr, "'try_files' wrong format 3, ignored\n");
-		return p;
-	}
-	if (!token.more) {
-		fprintf(stderr, "'try_files' wrong format 4, ignored\n");
-		return p;
-	}
-	token = getToken(p);
-	p = token.p;
-	tok = token.q;
-	loc->target = (char *)malloc(strlen(tok)+1);
-	strcpy(loc->target, tok);
-	if (g.debug) {
-		fprintf(stderr,"Try_files: %s\n", loc->target);
-	}
-	return p;
+	return;
 }
 
 // proxy_pass protocol
@@ -545,6 +529,15 @@ f_workerConnections(nt workerConnections) {
 	}
 }
 
+// config file parse successfully
+void
+f_config_complete() {
+	checkConfig();
+	if (g.debug) {
+		printf(stderr, "Config file parsing complete!\n");
+	}
+}
+
 // interface to generated code from yacc/lex
 extern FILE *yyin;
 int yyparse (void);
@@ -570,35 +563,106 @@ parseConfig() {
  * Check sanity of the configuration
  */
 void
-checkConfig()
-{
-	if (access(g.configPath, R_OK) == -1) {
-		perror("config path not valid:");
-		exit(1);
-	}
-
-	for(_server *s = g.servers; s != NULL; s = s->next) {
-		if (access(s->docRoot, R_OK) == -1) {
+checkDocRoots(_server *s) {
+	for(_location *loc = s->locations; loc != NULL; loc = loc->next) {
+		if (access(loc->root, R_OK) == -1) {
+			fprintf(stderr, "%s: ", loc->root);
 			perror("doc root not valid:");
 			exit(1);
 		}
 	}
-	if (access(g.defaultServer->docRoot, R_OK) == -1) {
-		perror("default doc root not valid:");
-		exit(1);
-	}
+}
 
-	g.accessFd = open(g.accessLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-	if (g.accessFd == -1) {
-		perror("access log not valid:");
+void
+checkServerNames(_server *s) {
+	if (s->serverNames == NULL) {
+		perror("missing server name");
 		exit(1);
 	}
-	g.errorFd = open(g.errorLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-	if (g.errorFd == -1) {
-		perror("error log not valid:");
-		exit(1);
-	}
+}
 
+void
+checkIndexFiles(_server *s) {
+	if (s->indexFiles == NULL) {
+		perror("missing default index file");
+		exit(1);
+	}
+}
+
+void
+checkAccessLogs(_server *s) {
+	if (s->accessLog == NULL) {
+		// use default
+		if (g.servers->accessLog == NULL) {
+			perror("missing access log");
+			exit(1);
+		}
+		s->accessFd = g.servers->accessFd;
+	} else {
+		s->accessFd = open(s->accessLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		if (s->accessFd == -1) {
+			fprintf(stderr, "%s: ", s->accessLog);
+			perror("access log not valid:");
+			exit(1);
+		}
+	}
+}
+
+void
+checkErrorLogs(_server *s) {
+	if (s->errorLog == NULL) {
+		// use default
+		if (g.servers->errorLog == NULL) {
+			perror("missing error log");
+			exit(1);
+		}
+		s->errorFd = g.servers->errorFd;
+	} else {
+		s->errorFd = open(s->errorLog, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		if (s->errorFd == -1) {
+			fprintf(stderr, "%s: ", s->errorLog);
+			perror("error log not valid:");
+			exit(1);
+		}
+	}
+}
+
+void
+checkCertFile(_server *s) {
+	if (access(s->certFile, R_OK) == -1) {
+		fprintf(stderr, "%s: ", s->certFile);
+		perror("certificate file not valid:");
+		exit(1);
+	}
+}
+
+void
+checkKeyFile(_server *s) {
+	if (access(s->keyFile, R_OK) == -1) {
+		fprintf(stderr, "%s: ", s->keyFile);
+		perror("key file not valid:");
+		exit(1);
+	}
+}
+
+void
+checkServers() {
+	for(_server *s = g.servers; s != NULL; s = s->next) {
+		checkDocRoots(s);
+		checkServerNames(s);
+		checkIndexFiles(s);
+		checkAccessLogs(s);
+		checkErrorLogs(s);
+		if (s->tls) {
+			checkCertFile(s);
+			checkKeyFile(s);
+		}
+	}
+}
+
+void
+checkConfig()
+{
 	FILE *fp = fopen(g.pidFile, "r");
 	if (fp == NULL) {
 		perror("pid log not valid:");
@@ -607,18 +671,7 @@ checkConfig()
 		fclose(fp);
 	}
 
-	_server *server = g.servers;
-	while(server != NULL) {
-		if (!portOk(server)) {
-			doDebug("no port set for a server.");
-			exit(1);
-		}
-		if (!locationSet(server)) {
-			doDebug("server does not have a location.");
-			exit(1);
-		}
-		server = server->next;
-	}
+	checkServers();
 }
 
 /**
@@ -642,70 +695,4 @@ portOk(_server *server)
 	// unique port/tls combination
 	addPort(server);
 	return 1;
-}
-
-void
-addPort(_server *server)
-{
-	_ports *port = (_ports *)malloc(sizeof(_ports));
-	if (port == NULL) {
-		perror("Out of memory");
-		exit(1);
-	}
-	port->portNum = server->port;
-	port->useTLS = server->tls;
-	port->next = g.ports;
-	g.ports = port;
-	g.portCount++;
-	return;
-}
-
-int
-locationSet(_server *server)
-{
-	int ok = 1;		// TODO: implement better checking logic
-	while(server) {
-		int needsDefaultRoot = 1;
-		_location *loc = server->locations;
-		if (loc) {
-			if (loc->type == TYPE_DOC_ROOT &&
-					loc->match == PREFIX_MATCH &&
-					strcmp(loc->location, "/") == 0) {
-				needsDefaultRoot = 0;
-				break;
-			}
-			loc = loc->next;
-		}
-		if (needsDefaultRoot) {
-			// add a default location
-			_location *loc = (_location *)malloc(sizeof(_location));
-			loc->type = TYPE_DOC_ROOT;	// default
-			loc->match = PREFIX_MATCH;
-			char tok[] = "/";
-			loc->location = (char *)malloc(strlen(tok)+1);
-			strcpy(loc->location, tok);
-			loc->passTo = NULL; 
-			loc->type = TYPE_DOC_ROOT;
-			if (server->docRoot == NULL) {
-				loc->target = g.defaultServer->docRoot;
-			} else {
-				loc->target = server->docRoot;
-			}
-			// add the default prefix match as the last in the chain
-			_location *prev = NULL;
-			_location *l = server->locations;
-			while(l) {
-				prev = l;
-				l = l->next;
-			}
-			if (prev) {
-				prev->next = loc;
-			} else {
-				server->locations = loc;
-			}
-			loc->next = NULL;
-		}
-		server = server->next;
-	}
-	return ok;
 }

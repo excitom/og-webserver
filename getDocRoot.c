@@ -24,13 +24,8 @@ _location *
 getDocRoot(_server *server, char *path)
 {
 	_location *loc = server->locations;
-	size_t pathLen = strlen(path);
 	while (loc != NULL) {
-		if ((loc->match == EXACT_MATCH)
-				&& (pathLen == strlen(loc->location))
-				&& (strcmp(path, loc->location) == 0)) {
-			return loc;
-		} else if ((loc->match == REGEX_MATCH)
+		if ((loc->match == REGEX_MATCH)
 				&& (regexMatch(loc->location, path))) {
 			return loc;
 		} else if ((loc->match == PREFIX_MATCH)

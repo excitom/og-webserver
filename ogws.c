@@ -41,7 +41,6 @@
  		exit(0);
  	}
  	parseConfig();
- 	checkConfig();
  	// check if a signal should be sent
  	if (g.signal != NULL) {
  		sendSignal();

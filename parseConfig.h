@@ -26,3 +26,4 @@ void f_keepalive_timeout(int);
 void f_workerProcesses(int);
 void f_workerConnections(int);
 void f_events();
+void f_config_complete();

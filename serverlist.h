@@ -26,6 +26,7 @@ typedef struct _location {
 	int autoIndex;
 	_try_target *try_target;
 	struct sockaddr_in *passTo;		// for proxy_pass locations
+	int expires;
 }_location;
 
 #define SERVER_NAME_EXACT 0
@@ -54,4 +55,6 @@ typedef struct _server {
 	_location *locations;
 	char *accessLog;
 	char *errorLog;
+	int accessFd;
+	int errorFd;
 }_server;
