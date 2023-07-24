@@ -28,6 +28,8 @@ demonstrates two completely different approaches to handle requests.
 
 The server can be configured to use multiple processes, to improve scalability.
 
+If you configure both an HTTP and HTTPS virtual host, they will happily coexist using both `epoll` and threads.
+
 ## NGINX-compatible Config File
 
 While designing the way to configure the server I decided to use same directives and format
