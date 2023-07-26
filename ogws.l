@@ -38,24 +38,23 @@ server		{yylval.str = strdup(yytext); return SERVER;}
 listen		{yylval.iValue = atoi(yytext); return LISTEN;}
 return		{yylval.str = strdup(yytext); return RETURN;}
 weight		{return WEIGHT;}
-user		{yylval.str = strdup(yytext); return USER;}
-pid			{yylval.str = strdup(yytext); return PID;}
+trace		{return TRACE;}
+index		{yylval.str = strdup(yytext); return INDEX;}
 http2:\/\/	{yylval.str = strdup(yytext); return HTTP2;}
 http2		{yylval.str = strdup(yytext); return HTTP2L;}
 https:\/\/	{yylval.str = strdup(yytext); return HTTPS;}
 http:\/\/	{yylval.str = strdup(yytext); return HTTP1;}
 http		{yylval.str = strdup(yytext); return HTTP;}
 root		{yylval.str = strdup(yytext); return ROOT;}
-trace		{return TRACE;}
-index		{yylval.str = strdup(yytext); return INDEX;}
 main		{yylval.str = strdup(yytext); return MAIN;}
+user		{yylval.str = strdup(yytext); return USER;}
+pid			{yylval.str = strdup(yytext); return PID;}
 ssl			{yylval.str = strdup(yytext); return SSL;}
-on			{yylval.str = strdup(yytext); return ON;}
 off			{yylval.str = strdup(yytext); return OFF;}
+on			{yylval.str = strdup(yytext); return ON;}
 ;			{yylval.str = strdup(yytext); return EOL;}
-(=|~|~\*|^~)			{yylval.str = strdup(yytext); return LOC_OPERATOR;}
 [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+	{yylval.str = strdup(yytext); return IP;}
-[0-9]+[kmgsd]		{yylval.str = strdup(yytext); return UNITS;}
+[0-9]+[kmgsd]	{yylval.str = strdup(yytext); return UNITS;}
 :[0-9]+			{yylval.iValue = atoi(yytext+1); return PORT;}
 [0-9]+			{yylval.iValue = atoi(yytext); return NUMBER;}
 \*\.[A-Za-z0-9._-]+		{yylval.str = strdup(yytext); return PREFIXNAME;}
@@ -63,8 +62,9 @@ off			{yylval.str = strdup(yytext); return OFF;}
 \$[A-Za-z0-9._-]+		{yylval.str = strdup(yytext); return VARIABLE;}
 [A-Za-z0-9._-]+		{yylval.str = strdup(yytext); return NAME;}
 [A-Za-z0-9._/-]+	{yylval.str = strdup(yytext); return PATH;}
-~.[^{]+		{yylval.str = strdup(yytext); return REGEXP;}
 '[^';]*'		{yylval.str = strdup(yytext); return QUOTEDSTRING;}
+(~|~\*|^~).*/\{	{yylval.str = strdup(yytext); return REGEXP;}
+=			{return EQUAL_OPERATOR;}
 \*			{return WILDCARD;}
 #.*\n
 [ \t\n]

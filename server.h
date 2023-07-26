@@ -69,6 +69,10 @@ struct globalVars {
 	char *group;
 	char *signal;
 	char *version;
+	char *accessLog;
+	char *errorLog;
+	int accessFd;
+	int errorFd;
 	_server *servers;
 	_clientConnection *clients;
 	int portCount;

@@ -3,13 +3,10 @@
  * configurations.
  */
 
-#define LOCATION_EXACT 0
-#define LOCATION_REGEX 1
-
 #define TYPE_PROXY_PASS 0
 #define TYPE_DOC_ROOT 1
 #define TYPE_TRY_FILES 2
-#define OPERATOR_MATCH 0
+#define EQUAL_MATCH 0
 #define REGEX_MATCH 1
 #define PREFIX_MATCH 2
 typedef struct _try_target {
@@ -20,8 +17,7 @@ typedef struct _try_target {
 typedef struct _location {
 	struct _location *next;
 	int type;
-	int match;
-	char *location;
+	char *match;
 	char *root;
 	int autoIndex;
 	_try_target *try_target;
@@ -43,11 +39,16 @@ typedef struct _index_file {
 	char *indexFile;
 }_index_file;
 
+typedef struct _ports {
+	struct _ports *next;
+	int port;
+}_ports;
+
 typedef struct _server {
 	struct _server *next;
 	_server_name *serverNames;
 	_index_file *indexFiles;
-	int port;
+	_ports *ports;
 	int tls;
 	char *listen;
 	char *certFile;

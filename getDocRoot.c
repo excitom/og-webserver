@@ -25,16 +25,20 @@ getDocRoot(_server *server, char *path)
 {
 	_location *loc = server->locations;
 	while (loc != NULL) {
-		if ((loc->match == REGEX_MATCH)
-				&& (regexMatch(loc->location, path))) {
+		if ((loc->type == REGEX_MATCH)
+				&& (regexMatch(loc->match, path))) {
 			return loc;
-		} else if ((loc->match == PREFIX_MATCH)
-				&& (strncmp(path, loc->location, strlen(loc->location)) == 0)) {
+		} else if ((loc->type == PREFIX_MATCH)
+				&& (strncmp(path, loc->match, strlen(loc->match)) == 0)) {
+			return loc;
+		} else if ((loc->type == EQUAL_MATCH)
+				&& (strlen(path) == strlen(loc->match))
+				&& (strcmp(path, loc->match) == 0)) {
 			return loc;
 		}
 		loc = loc->next;
 	}
-	return NULL;;
+	return NULL;
 }
 
 /**

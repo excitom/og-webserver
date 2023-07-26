@@ -25,31 +25,32 @@ static _location *pendingLocation = NULL;
 
 void
 newPendingServer() {
-	pendingServer = (_server *)malloc(sizeof(_server));
-	pendingServer->next = NULL;
-	pendingServer->port = 8080;
-	pendingServer->tls = 0;
-	pendingServer->certFile = NULL;
-	pendingServer->keyFile = NULL;
-	pendingServer->serverNames = NULL;
-	pendingServer->locations = NULL;
-	pendingServer->accessLog = NULL;
-	pendingServer->errorLog = NULL;
+	_server *ps = (_server *)malloc(sizeof(_server));
+	ps->port = 8080;
+	ps->tls = 0;
+	ps->certFile = NULL;
+	ps->keyFile = NULL;
+	ps->serverNames = NULL;
+	ps->locations = NULL;
+	ps->accessLog = NULL;
+	ps->errorLog = NULL;
+	ps->next = pendingServer;
+	pendingServer = ps;
 	return;
 }
 
 void
 newPendingLocation() {
-	pendingLocation = (_location *)malloc(sizeof(_location));
-	pendingLocation->next = pendingLocation;
-	pendingLocation->type = TYPE_DOC_ROOT;
-	pendingLocation->match = PREFIX_MATCH;
-	pendingLocation->autoIndex = 0;
-	pendingLocation->location = NULL;
-	pendingLocation->root = NULL;
-	pendingLocation->try_target = NULL;
-	pendingLocation->passTo = NULL;		// for proxy_pass locations
-	pendingLocation->expires = 0;
+	_location *pl = (_location *)malloc(sizeof(_location));
+	pl->type = TYPE_DOC_ROOT;
+	pl->match = NULL;
+	pl->autoIndex = 0;
+	pl->root = NULL;
+	pl->try_target = NULL;
+	pl->passTo = NULL;		// for proxy_pass locations
+	pl->expires = 0;
+	pl->next = pendingLocation;
+	pendingLocation = pl;
 	return;
 }
 
@@ -187,8 +188,8 @@ f_http() {
 	newPendingLocation();
 
 	char docRoot[] = "/var/www/ogws/html";
-    pendingLocation->root = (char *)malloc(strlen(docRoot)+1);
-    strcpy(pendingLocation->root, docRoot);
+	pendingLocation->root = (char *)malloc(strlen(docRoot)+1);
+	strcpy(pendingLocation->root, docRoot);
 	pendingServer->locations = pendingLocation;
 
 	_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
@@ -407,13 +408,12 @@ f_tls() {
 
 // location directive
 void
-f_location(int type, char *match, char *location) {
+f_location(int type, char *match) {
 	if (pendingServer == NULL) {
 		fprintf(stderr, "Location directive with no server, ignored\n");
 		return;
 	}
 	_location *loc = pendingLocation;
-	loc->location = location;
 	loc->match = match;
 	loc->type = type;
 	// pop the pending location stack and chain the location to the server
@@ -522,7 +522,7 @@ f_workerProcesses(int workerProcesses) {
 
 // max worker connections
 void
-f_workerConnections(nt workerConnections) {
+f_workerConnections(int workerConnections) {
 	g.workerConnections = workerConnections;
 	if (g.debug) {
 		fprintf(stderr,"Max worker connections %d\n", g.workerConnections);
@@ -534,7 +534,7 @@ void
 f_config_complete() {
 	checkConfig();
 	if (g.debug) {
-		printf(stderr, "Config file parsing complete!\n");
+		fprintf(stderr, "Config file parsing complete!\n");
 	}
 }
 
@@ -648,6 +648,9 @@ checkKeyFile(_server *s) {
 void
 checkServers() {
 	for(_server *s = g.servers; s != NULL; s = s->next) {
+		if (!portOk(s)) {
+			exit(1);
+		}
 		checkDocRoots(s);
 		checkServerNames(s);
 		checkIndexFiles(s);
@@ -680,19 +683,18 @@ checkConfig()
 int
 portOk(_server *server)
 {
-	_ports *port = g.ports;
-	while(port != NULL) {
-		if (port->portNum == server->port) {
-			if (port->useTLS != server->tls) {
-				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", port->portNum);
+	_server *s= g.servers;
+	while(s!= NULL) {
+		if (s->port == server->port) {
+			if (s->tls != server->tls) {
+				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", s->port);
 			
 				return 0;
 			}
 			return 1;
 		}
-		port = port->next;
+		s = s->next;
 	}
 	// unique port/tls combination
-	addPort(server);
 	return 1;
 }

@@ -64,7 +64,6 @@ void yyerror( const char * );
 %token ON;
 %token OFF;
 %token <str> MAIN;
-%token <str> LOC_OPERATOR;
 %token EOL;
 %token <str>  IP;
 %token <str>  UNITS;
@@ -74,6 +73,7 @@ void yyerror( const char * );
 %token <str>  VARIABLE;
 %token <str>  PREFIXNAME;
 %token <str>  SUFFIXNAME;
+%token EQUAL_OPERATOR;
 %token <str>  REGEXP;
 %token WILDCARD;
 %%
@@ -266,7 +266,7 @@ upstreams
 	;
 upstream
 	:
-	SERVER IP PORT WEIGHT LOC_OPERATOR NUMBER EOL
+	SERVER IP PORT WEIGHT EQUAL_OPERATOR NUMBER EOL
 	{printf("UNIMPLEMENTED Upstream IP %s port %d weight %d\n", $2, $3, $6);}
 	|
 	SERVER IP PORT EOL
@@ -302,14 +302,14 @@ autoindex_directive
 	;
 location_section
 	:
-	LOCATION LOC_OPERATOR PATH '{' location_directives '}'
-	{f_location(OPERATOR_MATCH, $2, $3);}
+	LOCATION EQUAL_OPERATOR PATH '{' location_directives '}'
+	{f_location(EQUAL_MATCH, $3);}
 	|
 	LOCATION REGEXP '{' location_directives '}'
-	{f_location(REGEX_MATCH, $2, NULL);}
+	{f_location(REGEX_MATCH, $2);}
 	|
 	LOCATION PATH '{' location_directives '}'
-	{f_location(PREFIX_MATCH, $2, NULL);}
+	{f_location(PREFIX_MATCH, $2);}
 	;
 location_directives
 	: location_directives location_directive
@@ -500,9 +500,9 @@ void f_tls() {
 	printf("Use TLS/SSL\n");
 }
 
-void f_location(int type, char *match, char *path) {
-	if (type == OPERATOR_MATCH) {
-		printf("Location operator %s match %s\n", match, path);
+void f_location(int type, char *match) {
+	if (type == EQUAL_MATCH) {
+		printf("Location Exact match %s\n", match);
 	} else if (type == REGEX_MATCH) {
 		printf("Location regex match %s\n", match);
 	} else if (type == PREFIX_MATCH) {

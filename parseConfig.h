@@ -17,7 +17,7 @@ void f_ssl_certificate(char *);
 void f_ssl_certificate_key(char *);
 void f_listen(char *, int);
 void f_tls();
-void f_location(int, char *, char *);
+void f_location(int, char *);
 void f_try_files();
 void f_try_target(char *);
 void f_proxy_pass(char *, int);
