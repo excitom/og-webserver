@@ -59,8 +59,22 @@
  typedef struct _procs {
  	struct _procs *next;
  	int port;
- 	int useTLS;
+ 	int tls;
  }_procs;
+
+_procs *procList = NULL;
+
+int
+uniquePort(int port) {
+	_procs *p = procList;
+	while (p) {
+		if (p->port == port) {
+			return 0;
+		}
+		p = p->next;
+	}
+	return 1;
+}
 
  /**
   * Start at least 1 process per port on which we are listening.
@@ -70,23 +84,26 @@
  startProcesses()
  {
  	// total processes needed
- 	int pcount = g.workerProcesses * g.portCount;
+ 	int pcount = 0;
 
  	// figure out what ports to assign to the processes
- 	_procs *plist = NULL;
 	for (_server *server = g.servers; server != NULL; server = server->next) {
- 		for (int i = 0; i < g.workerProcesses; i++) {
- 			_procs *p = (_procs *)malloc(sizeof(_procs));
- 			p->port = server->port;
- 			p->useTLS = server->tls;
- 			p->next = plist;
- 			plist = p;
+		for (_ports *port = server->ports; port != NULL; port = port->next) {
+			if (uniquePort(port->port)) {
+ 				for (int i = 0; i < g.workerProcesses; i++) {
+ 					_procs *p = (_procs *)malloc(sizeof(_procs));
+ 					p->port = port->port;
+ 					p->tls = server->tls;
+ 					p->next = procList;
+ 					procList = p;
+				}
+			}	
  		}
  	}
 
  	// already have 1 process, start pcount-1 more.
  	// all the processes will call server() or tlsServer()
- 	_procs *p = plist;
+ 	_procs *p = procList;
  	while(--pcount) {
  		pid_t pid = fork();
  		if (pid <0) {
