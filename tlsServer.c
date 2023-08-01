@@ -126,11 +126,16 @@ configureContext(SSL_CTX *ctx, int port)
 {
 	_server *server = g.servers;
 	while (server) {
-		if (server->port == port) {
-			break;
+		_ports *p = server->ports;
+		while (p) {
+			if (p->port == port) {
+				goto found;		// valid use of a `goto` :-)
+			}
+			p = p->next;
 		}
 		server = server->next;
 	}
+found:
 	if (server == NULL) {
 		doDebug("Port not found, shouldn't happen");
 		exit(EXIT_FAILURE);

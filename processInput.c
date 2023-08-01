@@ -140,12 +140,25 @@ processInput(int fd, SSL *ssl) {
 /**
  * Find the server information based on the hostname
  */
+int
+hasPort(int port, _server *server)
+{
+	_ports *p = server->ports;
+	while(p) {
+		if (p->port == port) {
+			return 1;
+		}
+		p = p->next;
+	}
+	return 0;
+}
+
 _server *
 getServerForHost(char *host)
 {
 	_server *server = g.servers;	// default server
 	char *p = strchr(host, ':');
-	int port = server->port;
+	int port = server->ports->port;
 	if (p) {
 		port = atoi(p+1);
 		*p = '\0';
@@ -156,7 +169,7 @@ getServerForHost(char *host)
 		while(sn != NULL) {
 			if ((hostLen == strlen(sn->serverName)) 
 					&& (strcmp(host, sn->serverName) == 0)
-					&& (server->port == port)) {
+					&& (hasPort(port, server))) {
 				return server;
 			}
 			sn = sn->next;

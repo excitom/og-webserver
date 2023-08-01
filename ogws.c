@@ -83,10 +83,8 @@ uniquePort(int port) {
  void
  startProcesses()
  {
- 	// total processes needed
- 	int pcount = 0;
-
  	// figure out what ports to assign to the processes
+	int pcount = 1;
 	for (_server *server = g.servers; server != NULL; server = server->next) {
 		for (_ports *port = server->ports; port != NULL; port = port->next) {
 			if (uniquePort(port->port)) {
@@ -96,6 +94,7 @@ uniquePort(int port) {
  					p->tls = server->tls;
  					p->next = procList;
  					procList = p;
+					pcount++;
 				}
 			}	
  		}
@@ -123,7 +122,7 @@ uniquePort(int port) {
  		}
  		p = p->next;
  	}
- 	if (p->useTLS) {
+ 	if (p->tls) {
  		tlsServer(p->port);
  	} else {
  		server(p->port);

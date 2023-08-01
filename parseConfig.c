@@ -26,7 +26,10 @@ static _location *pendingLocation = NULL;
 void
 newPendingServer() {
 	_server *ps = (_server *)malloc(sizeof(_server));
-	ps->port = 8080;
+	_ports *p = (_ports *)malloc(sizeof(_ports));
+	p->port = 8080;
+	p->next = NULL;
+	ps->ports = p;
 	ps->tls = 0;
 	ps->certFile = NULL;
 	ps->keyFile = NULL;
@@ -389,10 +392,16 @@ f_listen(char *name, int port) {
 		newPendingServer();
 	}
 	if (port > 0) {
-		pendingServer->port = port;
+		_ports *p = (_ports *)malloc(sizeof(_ports));
+		p->port = port;
+		p->next = pendingServer->ports;
+		pendingServer->ports = p;
 	}
 	if (name != NULL) {
-		pendingServer->listen = name;
+		_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+		sn->serverName = name;
+		sn->next = pendingServer->serverNames;
+		pendingServer->serverNames = sn;
 	}
 	return;
 }
@@ -448,6 +457,7 @@ f_try_target(char *target) {
 		prev->next = tt;
 		tt->next = NULL;
 	}
+	tt->target = target;
 }
 
 // try_files directive
@@ -464,7 +474,6 @@ f_try_files() {
 		return;
 	}
 	loc->type = TYPE_TRY_FILES;
-	loc->match = PREFIX_MATCH;
 	return;
 }
 
@@ -678,20 +687,37 @@ checkConfig()
 }
 
 /**
- * return 1 = ok, 0 = not ok
+ * Check for a port defined as TLS for one server and non-TLS for another.
+ * Return 1 = ok, 0 = not ok
  */
+int
+checkPorts(int port, int tls) {
+	_server *s= g.servers;
+	while(s) {
+		_ports *p = s->ports;
+		while(p) {
+			if ((p->port == port)
+				&& (s->tls != tls)) {
+				return 0;
+			}
+			p = p->next;
+		}
+		s = s->next;
+	}
+	return 1;
+}
+
 int
 portOk(_server *server)
 {
 	_server *s= g.servers;
-	while(s!= NULL) {
-		if (s->port == server->port) {
-			if (s->tls != server->tls) {
-				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", s->port);
-			
+	while(s) {
+		_ports *p = server->ports;
+		while(p) {
+			if (checkPorts(p->port, s->tls) == 0) {
+				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", p->port);
 				return 0;
 			}
-			return 1;
 		}
 		s = s->next;
 	}
