@@ -19,42 +19,88 @@
 
 int portOk(_server *);
 
-static char *pendingProtocol = NULL;
-static _server *pendingServer = NULL;
-static _location *pendingLocation = NULL;
+static _logFile *accessLogs = NULL;
+static _logFile *errorLogs = NULL;
+static _index_file *indexFiles = NULL;
+static _server_name *serverNames = NULL;
+static _doc_root *docRoots = NULL;
+static _server *servers = NULL;
+static _port *ports = NULL;
+static _location *locations = NULL;
+static _try_targets tryTargets = NULL;
+static char *certFile = NULL;
+static char *keyFile = NULL;
 
 void
-newPendingServer() {
-	_server *ps = (_server *)malloc(sizeof(_server));
-	_ports *p = (_ports *)malloc(sizeof(_ports));
-	p->port = 8080;
+defaultAccessLog() {
+	_log_file *log = (_log_file *)malloc(sizeof(_log_file));
+	log->path = "/var/log/ogws/access.log";
+	log->next = NULL;
+	accessLogs = log;
+}
+
+void
+defaultErrorLog() {
+	_log_file *log = (_log_file *)malloc(sizeof(_log_file));
+	log->path = "/var/log/ogws/error.log";
+	log->next = NULL;
+	errorLogs = log;
+}
+
+void
+defaultPort() {
+	_port *p = (_port *)malloc(sizeof(_port));
+	p->portNum = 8080;
 	p->next = NULL;
-	ps->ports = p;
-	ps->tls = 0;
-	ps->certFile = NULL;
-	ps->keyFile = NULL;
-	ps->serverNames = NULL;
-	ps->locations = NULL;
-	ps->accessLog = NULL;
-	ps->errorLog = NULL;
-	ps->next = pendingServer;
-	pendingServer = ps;
+	ports = p;
+}
+
+void
+defaultServerName() {
+	_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+	sn->portNum = "*";
+	sn->next = NULL;
+	serverNames = sn;
+}
+
+void
+defaultServer() {
+	_server *server = (_server *)malloc(sizeof(_server));
+	server->ports = NULL;
+	server->tls = 0;
+	server->certFile = NULL;
+	server->keyFile = NULL;
+	server->serverNames = NULL;
+	server->locations = NULL;
+	server->accessLog = NULL;
+	server->errorLog = NULL;
+	server->next = servers;
+	servers = server;
 	return;
 }
 
 void
-newPendingLocation() {
-	_location *pl = (_location *)malloc(sizeof(_location));
-	pl->type = TYPE_DOC_ROOT;
-	pl->match = NULL;
-	pl->autoIndex = 0;
-	pl->root = NULL;
-	pl->try_target = NULL;
-	pl->passTo = NULL;		// for proxy_pass locations
-	pl->expires = 0;
-	pl->next = pendingLocation;
-	pendingLocation = pl;
+defaultLocation() {
+	_location *loc = (_location *)malloc(sizeof(_location));
+	loc->type = TYPE_DOC_ROOT;
+	loc->matchType = PREFIX_MATCH;
+	loc->match = "/";
+	loc->autoIndex = 0;
+	loc->root = "/var/www/ogws";
+	loc->try_target = NULL;
+	loc->passTo = NULL;	
+	loc->expires = 0;
+	loc->next = locations;
+	locations = loc;
 	return;
+}
+
+void 
+defaultIndexFile() {
+	_index_file *index = (_index_file *)malloc(sizeof(_index_file));
+	index->indexFile = "index.html";
+	index->next = NULL;
+	indexFiles = index;
 }
 
 // The following `f_` functions implement the config file keywords
@@ -224,18 +270,13 @@ f_http() {
 
 // document root
 void
-f_root(char *root) {
-	if (pendingServer == NULL) {
-		newPendingServer();
-	}
-	if (pendingLocation == NULL) {
-		newPendingLocation();
-	} else if(pendingLocation->root != NULL) {
-		newPendingLocation();	// nested roots
-	}
-	pendingLocation->root = root;
+f_root(char *path) {
+	_doc_root *r = (_doc_root *)malloc(sizeof(_doc_root));
+	r->path = path;
+	r->next = docRoots;
+	docRoots = r;
 	if (g.debug) {
-		fprintf(stderr,"Document root path %s\n", pendingLocation->root);
+		fprintf(stderr,"Document root path %s\n", r->path);
 	}
 	return;
 }
@@ -279,16 +320,27 @@ f_expires(char *expires) {
 }
 
 // server name
+int dupName(char *name) {
+	_server_name *sn = pendingServer->serverNames;
+	while(sn) {
+		if ((strlen(sn->serverName) == strlen(name))
+			&& (strcmp(sn->serverName, name) == 0)) {
+			return 1;
+		}
+		sn = sn->next;
+	}
+	return 0;
+}
+
 void
 f_server_name(char *serverName, int type) {
-	if (pendingServer == NULL) {
-		newPendingServer();
+	if (!dupName(serverName)) {
+		_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+		sn->serverName = serverName;
+		sn->type = type;
+		sn->next = serverNames;
+		serverNames = sn;
 	}
-	_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
-	sn->serverName = serverName;
-	sn->type = type;
-	sn->next = pendingServer->serverNames;
-	pendingServer->serverNames = sn;
 	if (g.debug) {
 		fprintf(stderr,"server name: %s\n", sn->serverName);
 	}
@@ -298,15 +350,12 @@ f_server_name(char *serverName, int type) {
 // index file name
 void
 f_indexFile(char *indexFile) {
-	if (pendingServer == NULL) {
-		newPendingServer();
-	}
 	_index_file *i = (_index_file *)malloc(sizeof(_index_file));
-	i->next = pendingServer->indexFiles;
-	pendingServer->indexFiles = i;
+	i->next = indexFiles;
+	indexFiles = i;
 	i->indexFile = indexFile;
 	if (g.debug) {
-		fprintf(stderr, "Index File name: %s\n", indexFile);
+		fprintf(stderr, "Index File name: %s\n", i->indexFile);
 	}
 	return;
 }
@@ -314,12 +363,13 @@ f_indexFile(char *indexFile) {
 // error log file path
 void
 f_error_log(char *errorLog) {
-	if (pendingServer == NULL) {
-		newPendingServer();
-	}
-	pendingServer->errorLog = errorLog;
+	_log_file *log = (_log_file *)malloc(sizeof(_log_file));
+	log->path = errorLog;
+	log->fd = -1;
+	log->next = errorLogs;
+	errorLogs = log;
 	if (g.debug) {
-		fprintf(stderr,"Error log file path %s\n", pendingServer->errorLog);
+		fprintf(stderr,"Error log file path %s\n", log->errorLog);
 	}
 	return;
 }
@@ -327,12 +377,14 @@ f_error_log(char *errorLog) {
 // access log file path
 void
 f_access_log(char *accessLog, int type) {
-	if (pendingServer == NULL) {
-		newPendingServer();
-	}
-	pendingServer->accessLog = accessLog;
+	_log_file *log = (_log_file *)malloc(sizeof(_log_file));
+	log->path = accessLog;
+	log->type = type;
+	log->fd = -1;
+	log->next = accessLogs;
+	accessLogs = log;
 	if (g.debug) {
-		fprintf(stderr,"Access log file path %s\n", pendingServer->accessLog);
+		fprintf(stderr,"Access log file path %s\n", log->accessLog);
 	}
 	if (type) {
 		fprintf(stderr, "Access log MAIN ignored\n");
@@ -342,36 +394,30 @@ f_access_log(char *accessLog, int type) {
 
 // ssl/tls certificate file
 void
-f_ssl_certificate(char *certFile) {
-	if (pendingServer == NULL) {
-		newPendingServer();
-	}
-	if (pendingServer->certFile) {
-		fprintf(stderr, "Duplicate cert file, ignored: %s\n", certFile);
-		free(certFile);
+f_ssl_certificate(char *path) {
+	if (certFile) {
+		fprintf(stderr, "Duplicate cert file, ignored: %s\n", path);
+		free(path);
 		return;
 	}
-	pendingServer->certFile = certFile;
+	certFile = path;
 	if (g.debug) {
-		fprintf(stderr,"cert file: %s\n", pendingServer->certFile);
+		fprintf(stderr,"cert file: %s\n", certFile);
 	}
 	return;
 }
 
 // ssl/tls certificate key file
 void
-f_ssl_certificate_key(char *keyFile) {
-	if (pendingServer == NULL) {
-		newPendingServer();
-	}
-	if (pendingServer->keyFile) {
-		fprintf(stderr, "Duplicate key file, ignored: %s\n", keyFile);
-		free(keyFile);
+f_ssl_certificate_key(char *path) {
+	if (keyFile) {
+		fprintf(stderr, "Duplicate key file, ignored: %s\n", path);
+		free(path);
 		return;
 	}
-	pendingServer->keyFile = keyFile;
+	keyFile = path;
 	if (g.debug) {
-		fprintf(stderr,"key file: %s\n", pendingServer->keyFile);
+		fprintf(stderr,"key file: %s\n", keyFile);
 	}
 	return;
 }
@@ -386,22 +432,34 @@ f_ssl_certificate_key(char *keyFile) {
 // 	listen *:port
 //
 // 	additional options - defaultserver ssl http2
+int dupPort(int port) {
+	_ports *p = pendingServer->ports;
+	while(p) {
+		if (p->port == port) {
+			return 1;
+		}
+		p = p->next;
+	}
+	return 0;
+}
+
 void
 f_listen(char *name, int port) {
-	if (pendingServer == NULL) {
-		newPendingServer();
-	}
 	if (port > 0) {
-		_ports *p = (_ports *)malloc(sizeof(_ports));
-		p->port = port;
-		p->next = pendingServer->ports;
-		pendingServer->ports = p;
+		if (!dupPort(port)) {
+			_ports *p = (_ports *)malloc(sizeof(_ports));
+			p->port = port;
+			p->next = ports;
+			ports = p;
+		}
 	}
 	if (name != NULL) {
-		_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
-		sn->serverName = name;
-		sn->next = pendingServer->serverNames;
-		pendingServer->serverNames = sn;
+		if (!dupName(name)) {
+			_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+			sn->serverName = name;
+			sn->next = serverNames;
+			serverNames = sn;
+		}
 	}
 	return;
 }
@@ -418,37 +476,21 @@ f_tls() {
 // location directive
 void
 f_location(int type, char *match) {
-	if (pendingServer == NULL) {
-		fprintf(stderr, "Location directive with no server, ignored\n");
-		return;
-	}
-	_location *loc = pendingLocation;
-	loc->match = match;
+	_location *loc = (_location *)malloc(sizeof(_location));
+	loc->matchType = match;
 	loc->type = type;
-	// pop the pending location stack and chain the location to the server
-	pendingLocation = pendingLocation->next;
-	loc->next = pendingServer->locations;
-	pendingServer->locations = loc;
+	loc->next = locations;
+	locations = loc;
 	return;
 }
 
 void
 f_try_target(char *target) {
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'try_files' directive outside a 'server' block, ignored\n");
-		return;
-	}
-	_location *loc = server->locations;
-	if (loc == NULL) {
-		fprintf(stderr, "'try_files' directive outside a 'location' block, ignored\n");
-		return;
-	}
-	loc->type = TYPE_TRY_FILES;
+	locations->type = TYPE_TRY_FILES;
 	_try_target *tt = malloc(sizeof(_try_target));
-	_try_target *prev = loc->try_target;
+	_try_target *prev = pendingLocation->try_target;
 	if (prev == NULL) {
-		loc->try_target = tt;
+		tryTargets->target = tt;
 		tt->next = NULL;
 	} else {
 		while(prev->next) {
@@ -463,18 +505,7 @@ f_try_target(char *target) {
 // try_files directive
 void
 f_try_files() {
-	_server *server = g.servers;
-	if (server == NULL) {
-		fprintf(stderr, "'try_files' directive outside a 'server' block, ignored\n");
-		return;
-	}
-	_location *loc = server->locations;
-	if (loc == NULL) {
-		fprintf(stderr, "'try_files' directive outside a 'location' block, ignored\n");
-		return;
-	}
-	loc->type = TYPE_TRY_FILES;
-	return;
+	doDebug("try_files directive complete");
 }
 
 // proxy_pass protocol
@@ -553,11 +584,15 @@ int yyparse (void);
 
 void
 parseConfig() {
-	char fn[256];
-	char *fileName = (char *)&fn;
-	strcpy(fileName, g.configPath);
-	strcat(fileName, "/ogws.conf");
-	yyin = fopen(fileName, "r");
+	defaultAccessLog();
+	defaultErrorLog();
+	defaultPort();
+	defaultServerName();
+	defaultServer();
+	defaultLocation();
+	defaultIndexFile();
+
+	yyin = fopen(g.configFile, "r");
 	if (yyin == NULL) {
 		int e = errno;
 		char buffer[BUFF_SIZE];

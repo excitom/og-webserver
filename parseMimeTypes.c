@@ -37,7 +37,9 @@ void
 parseMimeTypes() {
 	g.mimeTypes = NULL;		// start with an empty list
 	char *fileName = malloc(256);
-	strcpy(fileName, g.configPath);
+	strcpy(fileName, g.configFile);
+	char *p = strrchr(fileName, '/');
+	*p = '\0';
 	strcat(fileName, "/mime.types");
 	int fd = open(fileName, O_RDONLY);
 	if (fd == -1) {

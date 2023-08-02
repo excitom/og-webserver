@@ -63,7 +63,7 @@ struct globalVars {
 	int showVersion;
 	int useSendfile;
 	int keepaliveTimeout;
-	char *configPath;
+	char *configFile;
 	char *pidFile;
 	char *user;
 	char *group;

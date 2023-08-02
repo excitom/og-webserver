@@ -3,6 +3,18 @@
  * configurations.
  */
 
+typedef struct _doc_root {
+	struct _doc_root *next;
+	char *path;
+} _doc_root;
+
+typedef struct _log_file {
+	struct _access_log *next;
+	char *path;
+	int fd;
+	int type;
+} _log_file;
+
 #define TYPE_PROXY_PASS 0
 #define TYPE_DOC_ROOT 1
 #define TYPE_TRY_FILES 2
@@ -17,6 +29,7 @@ typedef struct _try_target {
 typedef struct _location {
 	struct _location *next;
 	int type;
+	int matchType;
 	char *match;
 	char *root;
 	int autoIndex;
@@ -39,10 +52,10 @@ typedef struct _index_file {
 	char *indexFile;
 }_index_file;
 
-typedef struct _ports {
+typedef struct _port {
 	struct _ports *next;
-	int port;
-}_ports;
+	int portNum;
+}_port;
 
 typedef struct _server {
 	struct _server *next;

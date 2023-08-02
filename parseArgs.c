@@ -49,7 +49,7 @@ parseArgs(int argc, char* argv[], char *version)
 				printf("	-h = print this message\n");
 				printf("	-v = show version\n");
 				printf("Positional paramter:\n");
-				printf("	config_path - default /etc/ogws\n");
+				printf("	config_file - default /etc/ogws/ogws.conf\n");
 				printf("\n");
 				exit(0);
 			default:
@@ -61,18 +61,18 @@ parseArgs(int argc, char* argv[], char *version)
 	// config file path
 	//
 	if (optind >= argc) {
-		strcpy(buffer, "/etc/ogws");
+		strcpy(buffer, "/etc/ogws/ogws.conf");
 		int len = strlen(buffer);
-		g.configPath = malloc(len+1);
-		strcpy(g.configPath, buffer);
+		g.configFile = malloc(len+1);
+		strcpy(g.configFile, buffer);
 	} else {
 		int len = strlen(argv[optind]);
-		g.configPath = malloc(len+1);
-		strcpy(g.configPath, argv[optind]);
+		g.configFile = malloc(len+1);
+		strcpy(g.configFile, argv[optind]);
 		optind++;
 	}
-	if (access(g.configPath, R_OK) == -1) {
-		perror("config path not valid:");
+	if (access(g.configFile, R_OK) == -1) {
+		perror("config file not valid:");
 		exit(1);
 	}
 }
