@@ -59,6 +59,7 @@
 
  typedef struct _procs {
  	struct _procs *next;
+	_server *server;
  	int portNum;
  	int tls;
  }_procs;
@@ -85,14 +86,15 @@ uniquePort(int portNum) {
  startProcesses()
  {
  	// figure out what ports to assign to the processes
-	int pcount = 1;
+	int pcount = 0;
 	for (_server *server = g.servers; server != NULL; server = server->next) {
 		for (_port *port = server->ports; port != NULL; port = port->next) {
 			if (uniquePort(port->portNum)) {
  				for (int i = 0; i < g.workerProcesses; i++) {
  					_procs *p = (_procs *)malloc(sizeof(_procs));
  					p->portNum = port->portNum;
- 					p->tls = server->tls;
+ 					p->tls = port->tls;
+					p->server = server;
  					p->next = procList;
  					procList = p;
 					pcount++;
@@ -124,9 +126,9 @@ uniquePort(int portNum) {
  		p = p->next;
  	}
  	if (p->tls) {
- 		tlsServer(p->portNum);
+ 		tlsServer(p->portNum, p->server->errorLog->fd);
  	} else {
- 		server(p->portNum);
+ 		server(p->portNum, p->server->errorLog->fd);
  	}
  }
  /**

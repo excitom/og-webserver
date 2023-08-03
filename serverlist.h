@@ -10,9 +10,11 @@ typedef struct _log_file {
 	int type;
 } _log_file;
 
+#define TYPE_UNSET -1
 #define TYPE_PROXY_PASS 0
 #define TYPE_DOC_ROOT 1
 #define TYPE_TRY_FILES 2
+#define UNSET_MATCH -1
 #define EQUAL_MATCH 0
 #define REGEX_MATCH 1
 #define PREFIX_MATCH 2
@@ -53,6 +55,7 @@ typedef struct _index_file {
 typedef struct _port {
 	struct _port *next;
 	int portNum;
+	int tls;
 }_port;
 
 typedef struct _server {

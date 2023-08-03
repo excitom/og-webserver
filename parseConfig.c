@@ -27,7 +27,6 @@ static _location *locations = NULL;
 static _try_target *tryTargets = NULL;
 static char *certFile = NULL;
 static char *keyFile = NULL;
-static int tls = 0;
 static int autoIndex = 0;
 static int protocol = 0;
 
@@ -97,6 +96,7 @@ openLogFiles() {
 			perror("access log not valid:");
 			exit(1);
 		}
+		log = log->next;
 	}
 	log = g.errorLogs;
 	while(log) {
@@ -106,6 +106,7 @@ openLogFiles() {
 			perror("error log not valid:");
 			exit(1);
 		}
+		log = log->next;
 	}
 }
 
@@ -199,51 +200,105 @@ f_server() {
 	server->next = g.servers;
 	g.servers = server;
 	_server_name *sn = serverNames;
-	while(sn) {
-		// pop the server name unless it is the default
-		if (sn->next) {
-			serverNames = sn->next;
-		}
-		sn->next = server->serverNames;
-		server->serverNames = sn;
-		sn = sn->next;
+	if (!sn) {
+		fprintf(stderr, "No server name, bad config\n");
+		exit(1);
 	}
-	_index_file *i = indexFiles;
-	while(i) {
-		// pop the index file name unless it is the default
-		if (i->next) {
-			indexFiles = i->next;
+	// for server names, ports, index file names, locations:
+	// 	  if there is only one item in the list, it is the default
+	// 		copy it to the server
+	// 	  else
+	// 	  	move the list to the server, exclude the default
+	if (!sn->next) {
+		_server_name *copysn = (_server_name *)malloc(sizeof(_server_name));
+		memcpy(copysn, sn, sizeof(_server_name));
+		server->serverNames = copysn;
+	} else {
+		while(sn) {
+			if (!sn->next) {
+				// skip the default
+				break;
+			}
+			serverNames = sn->next;
+			sn->next = server->serverNames;
+			server->serverNames = sn;
+			sn = serverNames;
 		}
-		i->next = server->indexFiles;
-		server->indexFiles = i;
-		i = i->next;
+	}
+	_index_file *ifn = indexFiles;
+	if (!ifn->next) {
+		_index_file *copyifn = (_index_file *)malloc(sizeof(_index_file));
+		memcpy(copyifn, ifn, sizeof(_index_file));
+		server->indexFiles = copyifn;
+	} else {
+		while(ifn) {
+			if (!ifn->next) {
+				// skip the default
+				break;
+			}
+			indexFiles = ifn->next;
+			ifn->next = server->indexFiles;
+			server->indexFiles = ifn;
+			ifn = indexFiles;
+		}
 	}
 	_port *port = ports;
-	while(port) {
-		// pop the port unless it is the default
-		if (port->next) {
+	if (!port->next) {
+		_port *copyport = (_port *)malloc(sizeof(_port));
+		memcpy(copyport, port, sizeof(_port));
+		server->ports = copyport;
+	} else {
+		while(port) {
+			if (!port->next) {
+				// skip the default
+				break;
+			}
 			ports = port->next;
+			port->next = server->ports;
+			server->ports = port;
+			port = ports;
 		}
-		port->next = server->ports;
-		server->ports = port;
-		port = port->next;
 	}
 	_location *loc = locations;
-	while(loc) {
-		// pop the location unless it is the default
-		if (loc->next) {
+	if (!loc->next) {
+		_location *copyloc = (_location *)malloc(sizeof(_location));
+		memcpy(copyloc, loc, sizeof(_location));
+		server->locations = copyloc;
+	} else {
+		while(loc) {
+			if (!loc->next) {
+				// skip the default
+				break;
+			}
 			locations = loc->next;
+			loc->next = server->locations;
+			server->locations = loc;
+			loc = locations;
 		}
-		loc->next = server->locations;
-		server->locations = loc;
+	}
+	// fill in missing fields with defaults
+	_location *defloc = locations;
+	loc = server->locations;
+	while(loc) {
+		if (loc->type < 0) {
+			loc->type = defloc->type;
+		}
+		if (loc->matchType < 0) {
+			loc->matchType = defloc->matchType;
+		}
+		if (!loc->match) {
+			loc->match = defloc->match;
+		}
+		if ((loc->type == TYPE_DOC_ROOT) 
+			&& !loc->root){
+			loc->root = defloc->root;
+		}
 		loc = loc->next;
 	}
-	server->tls = tls;
 	server->autoIndex = autoIndex;
 	server->certFile = certFile;
 	server->keyFile = keyFile;
 	// reset defaults
-	tls = 0;
 	autoIndex = 0;
 	certFile = NULL;
 	keyFile = NULL;
@@ -274,7 +329,6 @@ f_http() {
 	server->ports = port;
 	_location *loc = locations;
 	server->locations = loc;
-	server->tls = 0;
 	server->autoIndex = 0;
 	server->certFile = certFile;
 	server->keyFile = keyFile;
@@ -287,6 +341,13 @@ f_http() {
 void
 f_root(char *root) {
 	_location *loc = (_location *)malloc(sizeof(_location));
+	_location *defloc = locations;
+	// get the default location
+	while (defloc->next) {
+		defloc = defloc->next;
+	}
+	// set defaults
+	memcpy(loc, defloc, sizeof(_location));
 	loc->next = locations;
 	locations = loc;
 	loc->root = root;
@@ -334,6 +395,9 @@ f_expires(char *expires) {
 int dupName(char *name) {
 	_server_name *sn = serverNames;
 	while(sn) {
+		if (!sn->next) {
+			return 0;	// skip the default
+		}
 		if ((strlen(sn->serverName) == strlen(name))
 			&& (strcmp(sn->serverName, name) == 0)) {
 			return 1;
@@ -446,6 +510,9 @@ f_ssl_certificate_key(char *path) {
 int dupPort(int portNum) {
 	_port *p = ports;
 	while(p) {
+		if (!p->next) {
+			return 0;	// skip the default
+		}
 		if (p->portNum == portNum) {
 			return 1;
 		}
@@ -460,6 +527,7 @@ f_listen(char *name, int portNum) {
 		if (!dupPort(portNum)) {
 			_port *p = (_port *)malloc(sizeof(_port));
 			p->portNum = portNum;
+			p->tls = 0;
 			p->next = ports;
 			ports = p;
 		}
@@ -477,7 +545,7 @@ f_listen(char *name, int portNum) {
 
 void
 f_tls() {
-	tls = 1;
+	ports->tls = 1;
 }
 
 // location directive
@@ -741,7 +809,7 @@ checkPorts(int portNum, int tlsFlag) {
 		_port *p = s->ports;
 		while(p) {
 			if ((p->portNum == portNum)
-				&& (s->tls != tlsFlag)) {
+				&& (p->tls != tlsFlag)) {
 				return 0;
 			}
 			p = p->next;
@@ -758,10 +826,11 @@ portOk(_server *server)
 	while(s) {
 		_port *p = server->ports;
 		while(p) {
-			if (checkPorts(p->portNum, s->tls) == 0) {
+			if (checkPorts(p->portNum, p->tls) == 0) {
 				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", p->portNum);
 				return 0;
 			}
+			p = p->next;
 		}
 		s = s->next;
 	}

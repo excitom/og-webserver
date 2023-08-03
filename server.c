@@ -20,6 +20,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <locale.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
@@ -27,7 +28,7 @@ char buff[BUFF_SIZE];
 char* buffer = (char *)&buff;
 
 void
-server(int port)
+server(int port, int errorFd)
 {
 	int epollfd = epollCreate();
 	const int isTLS = 0;
@@ -127,7 +128,7 @@ server(int port)
 					//
 					// Process the incoming data from a socket
 					//
-					processInput(fd, NULL);
+					processInput(fd, errorFd, NULL);
 
 					// not handling "keep alive" yet
 					cleanup(fd);

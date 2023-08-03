@@ -7,6 +7,7 @@
 
 typedef struct _clientConnection {
 	int fd;
+	int errorFd;
 	char ip[INET_ADDRSTRLEN];
 	SSL_CTX *ctx;
 	struct _clientConnection *next;

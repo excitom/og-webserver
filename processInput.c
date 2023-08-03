@@ -24,7 +24,7 @@
 _server *getServerForHost(char *);
 
 void
-processInput(int fd, SSL *ssl) {
+processInput(int fd, int errorFd, SSL *ssl) {
 	char *host = NULL;
 	char *path = NULL;
 	char *verb = NULL;
@@ -46,7 +46,7 @@ processInput(int fd, SSL *ssl) {
 	if (received <= 0) {
 		// no data to read
 		doDebug("NO DATA\n");
-		sendErrorResponse(fd, ssl, 400, "Bad Request", "No data");
+		sendErrorResponse(fd, errorFd, ssl, 400, "Bad Request", "No data");
 		return;
 	} else {
 		// Save all the headers in case of `proxy_pass`
@@ -60,7 +60,7 @@ processInput(int fd, SSL *ssl) {
 		p = strchr(verb, ' ');
 		if (!p) {
 			doDebug("Bad data");
-			sendErrorResponse(fd, ssl, 400, "Bad Request", "Bad data");
+			sendErrorResponse(fd, errorFd, ssl, 400, "Bad Request", "Bad data");
 			free(headers);
 			return;
 		}
@@ -82,7 +82,7 @@ processInput(int fd, SSL *ssl) {
 			if (!path) {
 				path = "/";
 			}
-			sendErrorResponse(fd, ssl, 400, "Bad Request", path);
+			sendErrorResponse(fd, errorFd, ssl, 400, "Bad Request", path);
 			free(headers);
 			return;
 		}
@@ -115,7 +115,7 @@ processInput(int fd, SSL *ssl) {
 		// (except for proxy_pass
 		//
 		if (strcmp(verb, "GET") != 0) {
-			sendErrorResponse(fd, ssl, 405, "Method Not Allowed", path);
+			sendErrorResponse(fd, errorFd, ssl, 405, "Method Not Allowed", path);
 			free(headers);
 			return;
 		}
@@ -129,7 +129,7 @@ processInput(int fd, SSL *ssl) {
 			strncpy(truncated, path, maxLen);
 			truncated[maxLen] = '\0';
 			strcat(truncated, "...");
-			sendErrorResponse(fd, ssl, 414, "URI too long", truncated);
+			sendErrorResponse(fd, errorFd, ssl, 414, "URI too long", truncated);
 			return;
 		}
 

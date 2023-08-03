@@ -36,7 +36,7 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, _location *loc, char *path,
 		if (g.debug) {
 			fprintf(stderr, "%s: file stat failed: %s\n", fullPath, strerror(e));
 		}
-		sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
+		sendErrorResponse(sockfd, server->errorLog->fd, ssl, 404, "Not Found", path);
 		return;
 	}
 
@@ -52,12 +52,12 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, _location *loc, char *path,
 			// if the path is a directory, and the index file is not present,
 			// do we want to show a directory listing?
 			if (loc->autoIndex) {
-				showDirectoryListing(sockfd, ssl, loc->root, path);
+				showDirectoryListing(sockfd, server, ssl, loc->root, path);
 			} else {
 				if (g.debug) {
 					fprintf(stderr, "%s: file open failed: %s\n", fullPath, strerror(errno));
 				}
-				sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
+				sendErrorResponse(sockfd, server->errorLog->fd, ssl, 404, "Not Found", path);
 			}
 			return;
 		}
@@ -68,7 +68,7 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, _location *loc, char *path,
 			if (g.debug) {
 				fprintf(stderr, "%s: file open failed: %s\n", fullPath, strerror(errno));
 			}
-			sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
+			sendErrorResponse(sockfd, server->errorLog->fd, ssl, 404, "Not Found", path);
 			return;
 		}
 	}
@@ -100,7 +100,7 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, _location *loc, char *path,
 		doDebug("Problem sending response headers");
 	}
 	sendFile(sockfd, fd, ssl, size);
-	accessLog(sockfd, server->accessFd, "GET", httpCode, path, size);
+	accessLog(sockfd, server->accessLog->fd, "GET", httpCode, path, size);
 	close(fd);
 	return;
 }

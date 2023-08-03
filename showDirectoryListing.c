@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
@@ -36,7 +37,7 @@ void addFragment(char *,char *,char *);
  * Show a listing of files in a directory 
  */
 void
-showDirectoryListing(int sockfd, SSL *ssl, char *docRoot, char *path)
+showDirectoryListing(int sockfd, _server *server, SSL *ssl, char *docRoot, char *path)
 {
 	DIR *dp;
 	struct dirent *ep;
@@ -52,7 +53,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *docRoot, char *path)
 	dp = opendir (fullPath);
 	if (dp == NULL) {
 		doDebug("Problem opening a directory, shouldn't happen");
-		sendErrorResponse(sockfd, ssl, 404, "Not Found", path);
+		sendErrorResponse(sockfd, server->errorLog->fd, ssl, 404, "Not Found", path);
 		return;
 	}
 	while ((ep = readdir(dp)) != NULL) {
@@ -96,7 +97,7 @@ showDirectoryListing(int sockfd, SSL *ssl, char *docRoot, char *path)
 		free(f);
 	}
 	sendData(sockfd, ssl, footer, strlen(footer));
-	accessLog(sockfd, server->accessFd, "GET", 200, path, contentLength);
+	accessLog(sockfd, server->accessLog->fd, "GET", 200, path, contentLength);
 	return;
 }
 

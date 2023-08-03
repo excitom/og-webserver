@@ -23,6 +23,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <pthread.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
@@ -39,17 +40,18 @@ int  threadCount = 0;
  * The SSL server
  */
 void
-tlsServer(int port)
+tlsServer(int portNum, int errorFd)
 {
 	SSL_CTX *ctx = createContext();
-	configureContext(ctx, port);
+	configureContext(ctx, portNum);
 	const int isTLS = 1;
-	int sockfd = createBindAndListen(isTLS, port);
+	int sockfd = createBindAndListen(isTLS, portNum);
 	while(1) {
 		struct sockaddr_in addr;
 		socklen_t len = sizeof(addr);
 		int clientfd = accept(sockfd, (struct sockaddr*)&addr, &len);
 		_clientConnection *client = queueClientConnection(clientfd, addr, ctx);
+		client->errorFd = errorFd;
 		pthread_t thread;
 		pthread_create(&thread, NULL, processRequest, (void *)client);
 	}
@@ -79,7 +81,7 @@ processRequest(void *param)
 				break;
 			}
 		} else {
-			processInput(c->fd, ssl);
+			processInput(c->fd, c->errorFd, ssl);
 			break;
 		}
 	}
@@ -122,13 +124,13 @@ createContext()
  * is TBD.
  */
 void
-configureContext(SSL_CTX *ctx, int port)
+configureContext(SSL_CTX *ctx, int portNum)
 {
 	_server *server = g.servers;
 	while (server) {
-		_ports *p = server->ports;
+		_port *p = server->ports;
 		while (p) {
-			if (p->port == port) {
+			if (p->portNum == portNum) {
 				goto found;		// valid use of a `goto` :-)
 			}
 			p = p->next;

@@ -17,6 +17,7 @@
 #include <arpa/inet.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
