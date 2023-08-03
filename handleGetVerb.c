@@ -17,6 +17,7 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
@@ -99,7 +100,7 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, _location *loc, char *path,
 		doDebug("Problem sending response headers");
 	}
 	sendFile(sockfd, fd, ssl, size);
-	accessLog(sockfd, "GET", httpCode, path, size);
+	accessLog(sockfd, server->accessFd, "GET", httpCode, path, size);
 	close(fd);
 	return;
 }

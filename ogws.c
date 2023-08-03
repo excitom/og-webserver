@@ -20,6 +20,7 @@
  #include <sys/wait.h>
  #include <sys/prctl.h>
  #include <locale.h>
+ #include "serverlist.h"
  #include "server.h"
 
  // global variables
@@ -58,17 +59,17 @@
 
  typedef struct _procs {
  	struct _procs *next;
- 	int port;
+ 	int portNum;
  	int tls;
  }_procs;
 
 _procs *procList = NULL;
 
 int
-uniquePort(int port) {
+uniquePort(int portNum) {
 	_procs *p = procList;
 	while (p) {
-		if (p->port == port) {
+		if (p->portNum == portNum) {
 			return 0;
 		}
 		p = p->next;
@@ -86,11 +87,11 @@ uniquePort(int port) {
  	// figure out what ports to assign to the processes
 	int pcount = 1;
 	for (_server *server = g.servers; server != NULL; server = server->next) {
-		for (_ports *port = server->ports; port != NULL; port = port->next) {
-			if (uniquePort(port->port)) {
+		for (_port *port = server->ports; port != NULL; port = port->next) {
+			if (uniquePort(port->portNum)) {
  				for (int i = 0; i < g.workerProcesses; i++) {
  					_procs *p = (_procs *)malloc(sizeof(_procs));
- 					p->port = port->port;
+ 					p->portNum = port->portNum;
  					p->tls = server->tls;
  					p->next = procList;
  					procList = p;
@@ -116,16 +117,16 @@ uniquePort(int port) {
  				exit(1);
  			}
  			if (g.debug) {
- 				fprintf(stderr, "Server Starting, process: %d for port %d\n", pid, p->port);
+ 				fprintf(stderr, "Server Starting, process: %d for port %d\n", pid, p->portNum);
  			}
  			break;
  		}
  		p = p->next;
  	}
  	if (p->tls) {
- 		tlsServer(p->port);
+ 		tlsServer(p->portNum);
  	} else {
- 		server(p->port);
+ 		server(p->portNum);
  	}
  }
  /**

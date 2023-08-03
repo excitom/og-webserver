@@ -9,6 +9,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 

@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
@@ -103,4 +104,6 @@ initGlobals(char *version) {
 	strcpy(g.user, user);
 	g.group = (char *)malloc(strlen(user)+1);
 	strcpy(g.group, user);
+	g.accessLogs = NULL;
+	g.errorLogs = NULL;
 }

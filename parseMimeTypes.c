@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
@@ -53,7 +54,7 @@ parseMimeTypes() {
 	// allocate space to hold the whole file
   	int size = lseek(fd, 0, SEEK_END);
 	char *data = malloc(size+1);
-	char *p = data;
+	p = data;
 	if (p == NULL) {
 		perror("Out of memory");
 		exit(1);

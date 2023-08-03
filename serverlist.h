@@ -3,13 +3,8 @@
  * configurations.
  */
 
-typedef struct _doc_root {
-	struct _doc_root *next;
-	char *path;
-} _doc_root;
-
 typedef struct _log_file {
-	struct _access_log *next;
+	struct _log_file *next;
 	char *path;
 	int fd;
 	int type;
@@ -21,6 +16,9 @@ typedef struct _log_file {
 #define EQUAL_MATCH 0
 #define REGEX_MATCH 1
 #define PREFIX_MATCH 2
+#define PROTOCOL_HTTP 0
+#define PROTOCOL_HTTPS 1
+#define PROTOCOL_HTTP2 2
 typedef struct _try_target {
 	struct _try_target *next;
 	char *target;
@@ -53,7 +51,7 @@ typedef struct _index_file {
 }_index_file;
 
 typedef struct _port {
-	struct _ports *next;
+	struct _port *next;
 	int portNum;
 }_port;
 
@@ -61,14 +59,12 @@ typedef struct _server {
 	struct _server *next;
 	_server_name *serverNames;
 	_index_file *indexFiles;
-	_ports *ports;
+	_port *ports;
+	_location *locations;
 	int tls;
-	char *listen;
+	int autoIndex;
 	char *certFile;
 	char *keyFile;
-	_location *locations;
-	char *accessLog;
-	char *errorLog;
-	int accessFd;
-	int errorFd;
+	_log_file *accessLog;
+	_log_file *errorLog;
 }_server;

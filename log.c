@@ -13,11 +13,12 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
 void
-accessLog(int sockfd, char *verb, int httpCode, char *path, int size)
+accessLog(int sockfd, int logFd,  char *verb, int httpCode, char *path, int size)
 {
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, LOG_RECORD_FORMAT);
@@ -30,11 +31,11 @@ accessLog(int sockfd, char *verb, int httpCode, char *path, int size)
 
 	char buffer[BUFF_SIZE];
 	int sz = snprintf(buffer, BUFF_SIZE, "%s %s %s %d %s %d\n", ts, peerIp, verb, httpCode, path, size);
-	write(g.accessFd, buffer, sz);
+	write(logFd, buffer, sz);
 }
 
 void
-errorLog(int sockfd, char *verb, int httpCode, char *path, char *msg)
+errorLog(int sockfd, int logFd, char *verb, int httpCode, char *path, char *msg)
 {
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, LOG_RECORD_FORMAT);
@@ -47,7 +48,7 @@ errorLog(int sockfd, char *verb, int httpCode, char *path, char *msg)
 
 	char buffer[BUFF_SIZE];
 	int sz = snprintf(buffer, BUFF_SIZE, "%s %s %s %d %s %s\n", ts, peerIp, verb, httpCode, path, msg);
-	write(g.errorFd, buffer, sz);
+	write(logFd, buffer, sz);
 }
 
 /**

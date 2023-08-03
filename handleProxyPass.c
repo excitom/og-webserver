@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 

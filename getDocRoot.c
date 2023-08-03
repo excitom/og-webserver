@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <regex.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 

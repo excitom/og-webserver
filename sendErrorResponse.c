@@ -13,11 +13,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
 void
-sendErrorResponse( int fd, SSL* ssl, int code, char *msg, char *path )
+sendErrorResponse( int fd, int errorFd,  SSL* ssl, int code, char *msg, char *path )
 {
 	doDebug(msg);
 	char buffer1[BUFF_SIZE];
@@ -49,6 +50,6 @@ sendErrorResponse( int fd, SSL* ssl, int code, char *msg, char *path )
 	sendData(fd, ssl, buffer2, sz2);
 	sendData(fd, ssl, buffer1, sz1);
 
-	errorLog(fd, "GET", code, path, msg);
+	errorLog(fd, errorFd, "GET", code, path, msg);
 	return;
 }

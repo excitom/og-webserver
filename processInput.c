@@ -17,6 +17,7 @@
 #include <netdb.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include "serverlist.h"
 #include "server.h"
 #include "global.h"
 
@@ -141,11 +142,11 @@ processInput(int fd, SSL *ssl) {
  * Find the server information based on the hostname
  */
 int
-hasPort(int port, _server *server)
+hasPort(int portNum, _server *server)
 {
-	_ports *p = server->ports;
+	_port *p = server->ports;
 	while(p) {
-		if (p->port == port) {
+		if (p->portNum == portNum) {
 			return 1;
 		}
 		p = p->next;
@@ -158,9 +159,9 @@ getServerForHost(char *host)
 {
 	_server *server = g.servers;	// default server
 	char *p = strchr(host, ':');
-	int port = server->ports->port;
+	int portNum = server->ports->portNum;
 	if (p) {
-		port = atoi(p+1);
+		portNum = atoi(p+1);
 		*p = '\0';
 	} 
 	size_t hostLen = strlen(host);
@@ -169,7 +170,7 @@ getServerForHost(char *host)
 		while(sn != NULL) {
 			if ((hostLen == strlen(sn->serverName)) 
 					&& (strcmp(host, sn->serverName) == 0)
-					&& (hasPort(port, server))) {
+					&& (hasPort(portNum, server))) {
 				return server;
 			}
 			sn = sn->next;

@@ -1,4 +1,3 @@
-#include "serverlist.h"
 #include "clients.h"
 
 void parseArgs(int, char**, char *);
@@ -24,8 +23,8 @@ void handleGetVerb(int, SSL*, _server*, _location *,char*, char*);
 void parseMimeTypes();
 void parseConfig();
 void checkConfig();
-void accessLog(int, char*, int, char*, int);
-void errorLog(int, char*, int, char*, char*);
+void accessLog(int, int, char*, int, char*, int);
+void errorLog(int, int, char*, int, char*, char*);
 void getMimeType(char*, char*);
 void showDirectoryListing(int, SSL*, char *, char *);
 void server(int);
@@ -69,10 +68,8 @@ struct globalVars {
 	char *group;
 	char *signal;
 	char *version;
-	char *accessLog;
-	char *errorLog;
-	int accessFd;
-	int errorFd;
+	_log_file *accessLogs;
+	_log_file *errorLogs;
 	_server *servers;
 	_clientConnection *clients;
 	int portCount;
