@@ -69,7 +69,7 @@ defaultLocation() {
 	loc->matchType = PREFIX_MATCH;
 	loc->match = "/";
 	loc->autoIndex = 0;
-	loc->root = "/var/www/ogws";
+	loc->root = "/var/www/ogws/html";
 	loc->try_target = NULL;
 	loc->passTo = NULL;	
 	loc->expires = 0;
@@ -691,7 +691,10 @@ parseConfig() {
 		doDebug(buffer);
 		exit(1);
 	}
-	yyparse();
+	if (yyparse() != 0) {
+		fprintf(stderr, "Config file not parsed correctly, exiting.\n");
+		exit(1);
+	}
 }
 
 /**
