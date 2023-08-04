@@ -78,6 +78,8 @@ void yyerror( const char * );
 config
 	: main_directives events_section http_section
 	{f_config_complete();}
+	| events_section http_section
+	{f_config_complete();}
 	;
 main_directives
 	: main_directive main_directives
@@ -128,6 +130,7 @@ worker_rlimit_nofile_directive
 	;
 events_section
 	: EVENTS '{' events_directives '}'
+	| EVENTS '{' '}'
 	;
 events_directives
 	: events_directives events_directive
@@ -219,6 +222,9 @@ strings
 server_section
 	:
 	SERVER '{' server_directives '}'
+	{f_server();}
+	|
+	SERVER '{' '}'
 	{f_server();}
 	;
 server_directives

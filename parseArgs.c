@@ -96,7 +96,7 @@ initGlobals(char *version) {
 	g.signal = NULL;
 	g.servers = NULL;
 	g.portCount = 0;
-	char pidFile[] = "/run/ogws.pid";
+	char pidFile[] = "/etc/ogws/ogws.pid";
 	g.pidFile = (char *)malloc(strlen(pidFile)+1);
 	strcpy(g.pidFile, pidFile);
 	char user[] = "ogws";
