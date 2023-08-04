@@ -239,6 +239,8 @@ server_directive
 	| autoindex_directive
 	| location_section
 	| listen_directive
+	| ssl_directive
+	| index_directive
 	;
 server_name_directive
 	: SERVERNAME server_names EOL
@@ -295,6 +297,14 @@ root_directive
 	|
 	ROOT NAME EOL
 	{f_root($2);}
+	;
+ssl_directive
+	:
+	SSLCERTIFICATE PATH EOL
+	{f_ssl_certificate($2);}
+	|
+	SSLCERTIFICATEKEY PATH EOL
+	{f_ssl_certificate_key($2);}
 	;
 autoindex_directive
 	:

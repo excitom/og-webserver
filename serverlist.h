@@ -18,6 +18,7 @@ typedef struct _log_file {
 #define EQUAL_MATCH 0
 #define REGEX_MATCH 1
 #define PREFIX_MATCH 2
+#define PROTOCOL_UNSET -1
 #define PROTOCOL_HTTP 0
 #define PROTOCOL_HTTPS 1
 #define PROTOCOL_HTTP2 2
@@ -32,6 +33,7 @@ typedef struct _location {
 	int matchType;
 	char *match;
 	char *root;
+	int protocol;
 	int autoIndex;
 	_try_target *try_target;
 	struct sockaddr_in *passTo;		// for proxy_pass locations

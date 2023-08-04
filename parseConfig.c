@@ -28,11 +28,11 @@ static _try_target *tryTargets = NULL;
 static char *certFile = NULL;
 static char *keyFile = NULL;
 static int autoIndex = 0;
-static int protocol = 0;
+static int protocol = PROTOCOL_UNSET;
 
 void
 defaultAccessLog() {
-	_log_file *log = (_log_file *)malloc(sizeof(_log_file));
+	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = "/var/log/ogws/access.log";
 	log->next = NULL;
 	g.accessLogs = log;
@@ -40,7 +40,7 @@ defaultAccessLog() {
 
 void
 defaultErrorLog() {
-	_log_file *log = (_log_file *)malloc(sizeof(_log_file));
+	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = "/var/log/ogws/error.log";
 	log->next = NULL;
 	g.errorLogs = log;
@@ -48,7 +48,7 @@ defaultErrorLog() {
 
 void
 defaultPort() {
-	_port *p = (_port *)malloc(sizeof(_port));
+	_port *p = (_port *)calloc(1, sizeof(_port));
 	p->portNum = 8080;
 	p->next = NULL;
 	ports = p;
@@ -56,7 +56,7 @@ defaultPort() {
 
 void
 defaultServerName() {
-	_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+	_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
 	sn->serverName = "*";
 	sn->next = NULL;
 	serverNames = sn;
@@ -64,7 +64,7 @@ defaultServerName() {
 
 void
 defaultLocation() {
-	_location *loc = (_location *)malloc(sizeof(_location));
+	_location *loc = (_location *)calloc(1, sizeof(_location));
 	loc->type = TYPE_DOC_ROOT;
 	loc->matchType = PREFIX_MATCH;
 	loc->match = "/";
@@ -80,7 +80,7 @@ defaultLocation() {
 
 void 
 defaultIndexFile() {
-	_index_file *index = (_index_file *)malloc(sizeof(_index_file));
+	_index_file *index = (_index_file *)calloc(1, sizeof(_index_file));
 	index->indexFile = "index.html";
 	index->next = NULL;
 	indexFiles = index;
@@ -196,7 +196,7 @@ f_user(char *user, char *group) {
 // process the server section
 void
 f_server() {
-	_server *server = (_server *)malloc(sizeof(_server));
+	_server *server = (_server *)calloc(1, sizeof(_server));
 	server->next = g.servers;
 	g.servers = server;
 	_server_name *sn = serverNames;
@@ -210,7 +210,7 @@ f_server() {
 	// 	  else
 	// 	  	move the list to the server, exclude the default
 	if (!sn->next) {
-		_server_name *copysn = (_server_name *)malloc(sizeof(_server_name));
+		_server_name *copysn = (_server_name *)calloc(1, sizeof(_server_name));
 		memcpy(copysn, sn, sizeof(_server_name));
 		server->serverNames = copysn;
 	} else {
@@ -227,7 +227,7 @@ f_server() {
 	}
 	_index_file *ifn = indexFiles;
 	if (!ifn->next) {
-		_index_file *copyifn = (_index_file *)malloc(sizeof(_index_file));
+		_index_file *copyifn = (_index_file *)calloc(1, sizeof(_index_file));
 		memcpy(copyifn, ifn, sizeof(_index_file));
 		server->indexFiles = copyifn;
 	} else {
@@ -244,7 +244,7 @@ f_server() {
 	}
 	_port *port = ports;
 	if (!port->next) {
-		_port *copyport = (_port *)malloc(sizeof(_port));
+		_port *copyport = (_port *)calloc(1, sizeof(_port));
 		memcpy(copyport, port, sizeof(_port));
 		server->ports = copyport;
 	} else {
@@ -261,7 +261,7 @@ f_server() {
 	}
 	_location *loc = locations;
 	if (!loc->next) {
-		_location *copyloc = (_location *)malloc(sizeof(_location));
+		_location *copyloc = (_location *)calloc(1, sizeof(_location));
 		memcpy(copyloc, loc, sizeof(_location));
 		server->locations = copyloc;
 	} else {
@@ -270,9 +270,18 @@ f_server() {
 				// skip the default
 				break;
 			}
+			// preserve the order of the locations
+			if (server->locations) {
+				_location *prev = server->locations;
+				while(prev->next) {
+					prev = prev->next;
+				}
+				prev->next = loc;
+			} else {
+				server->locations = loc;
+			}
 			locations = loc->next;
-			loc->next = server->locations;
-			server->locations = loc;
+			loc->next = NULL;
 			loc = locations;
 		}
 	}
@@ -318,7 +327,7 @@ f_http() {
 	}
 	// create a default server, even if there are servers, in case one of
 	// them didn't define all the defaults.
-	_server *server = (_server *)malloc(sizeof(_server));
+	_server *server = (_server *)calloc(1, sizeof(_server));
 	server->next = g.servers;
 	g.servers = server;
 	_server_name *sn = serverNames;
@@ -340,7 +349,7 @@ f_http() {
 // document root
 void
 f_root(char *root) {
-	_location *loc = (_location *)malloc(sizeof(_location));
+	_location *loc = (_location *)calloc(1, sizeof(_location));
 	_location *defloc = locations;
 	// get the default location
 	while (defloc->next) {
@@ -410,7 +419,7 @@ int dupName(char *name) {
 void
 f_server_name(char *serverName, int type) {
 	if (!dupName(serverName)) {
-		_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+		_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
 		sn->serverName = serverName;
 		sn->type = type;
 		sn->next = serverNames;
@@ -425,7 +434,7 @@ f_server_name(char *serverName, int type) {
 // index file name
 void
 f_indexFile(char *indexFile) {
-	_index_file *i = (_index_file *)malloc(sizeof(_index_file));
+	_index_file *i = (_index_file *)calloc(1, sizeof(_index_file));
 	i->next = indexFiles;
 	indexFiles = i;
 	i->indexFile = indexFile;
@@ -438,7 +447,7 @@ f_indexFile(char *indexFile) {
 // error log file path
 void
 f_error_log(char *path) {
-	_log_file *log = (_log_file *)malloc(sizeof(_log_file));
+	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = path;
 	log->fd = -1;
 	log->next = g.errorLogs;
@@ -452,7 +461,7 @@ f_error_log(char *path) {
 // access log file path
 void
 f_access_log(char *path, int type) {
-	_log_file *log = (_log_file *)malloc(sizeof(_log_file));
+	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = path;
 	log->type = type;
 	log->fd = -1;
@@ -525,7 +534,7 @@ void
 f_listen(char *name, int portNum) {
 	if (portNum > 0) {
 		if (!dupPort(portNum)) {
-			_port *p = (_port *)malloc(sizeof(_port));
+			_port *p = (_port *)calloc(1, sizeof(_port));
 			p->portNum = portNum;
 			p->tls = 0;
 			p->next = ports;
@@ -534,7 +543,7 @@ f_listen(char *name, int portNum) {
 	}
 	if (name != NULL) {
 		if (!dupName(name)) {
-			_server_name *sn = (_server_name *)malloc(sizeof(_server_name));
+			_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
 			sn->serverName = name;
 			sn->next = serverNames;
 			serverNames = sn;
@@ -550,25 +559,19 @@ f_tls() {
 
 // location directive
 void
-f_location(int type, char *match) {
+f_location(int matchType, char *match) {
 	_location *loc = locations;
-	loc->matchType = type;
+	loc->matchType = matchType;
 	loc->match = match;
-	locations = loc->next;
-	_server *server = g.servers;
-	if (server) {
-		loc->next = server->locations;
-		server->locations = loc;
-	} else {
-		fprintf(stderr, "Location directive outside a server block, ignored\n");
-	}
+	loc->protocol = protocol;
+	protocol = TYPE_UNSET;
 	return;
 }
 
 void
 f_try_target(char *target) {
 	locations->type = TYPE_TRY_FILES;
-	_try_target *tt = malloc(sizeof(_try_target));
+	_try_target *tt = calloc(1, sizeof(_try_target));
 	_try_target *prev = tryTargets;
 	if (prev == NULL) {
 		tryTargets = tt;
@@ -592,10 +595,6 @@ f_try_files() {
 // proxy_pass protocol
 void
 f_protocol(char *p) {
-	if (p != NULL) {
-		fprintf(stderr,"Duplicate protocol, ignored\n");
-		return;
-	}
 	int len = strlen(p);
 	if ((len == 5) 
 		&& (strcmp(p, "https") == 0)) {
@@ -619,8 +618,7 @@ f_protocol(char *p) {
 // proxy_pass directive
 void
 f_proxy_pass(char *host, int port) {
-	struct sockaddr_in *passTo = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
-	memset(passTo, 0, sizeof(struct sockaddr_in));
+	struct sockaddr_in *passTo = (struct sockaddr_in *)calloc(1, sizeof(struct sockaddr_in));
 	struct hostent *hostName = gethostbyname(host);
 	if (hostName == (struct hostent *)0) {
 		doDebug("gethostbyname failed");
@@ -629,8 +627,11 @@ f_proxy_pass(char *host, int port) {
 	passTo->sin_family = AF_INET;
 	passTo->sin_port = htons(port);
 	passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
-	locations->passTo = passTo;
-	locations->type = TYPE_PROXY_PASS;
+	_location *loc = (_location *)calloc(1, sizeof(_location));
+	loc->passTo = passTo;
+	loc->type = TYPE_PROXY_PASS;
+	loc->next = locations;
+	locations = loc;
 	return;
 }
 
@@ -703,10 +704,29 @@ parseConfig() {
 void
 checkDocRoots(_server *s) {
 	for(_location *loc = s->locations; loc != NULL; loc = loc->next) {
-		if (access(loc->root, R_OK) == -1) {
-			fprintf(stderr, "%s: ", loc->root);
-			perror("doc root not valid:");
-			exit(1);
+		switch(loc->type) {
+			case TYPE_PROXY_PASS:
+				if (!loc->passTo) {
+					perror("Proxy pass missing\n");
+					exit(1);
+				}
+				break;
+			case TYPE_DOC_ROOT:
+				if (access(loc->root, R_OK) == -1) {
+					fprintf(stderr, "%s: ", loc->root);
+					perror("doc root not valid:");
+					exit(1);
+				}
+				break;
+			case TYPE_TRY_FILES:
+				if (!loc->try_target) {
+					perror("Try directive incomplete\n");
+					exit(1);
+				}
+				break;
+			default:
+				fprintf(stderr, "Unknown location type %d\n", loc->type);
+				exit(1);
 		}
 	}
 }
