@@ -260,15 +260,20 @@ f_server() {
 		}
 	}
 	_location *loc = locations;
+	char *defroot = NULL;
 	if (!loc->next) {
 		_location *copyloc = (_location *)calloc(1, sizeof(_location));
 		memcpy(copyloc, loc, sizeof(_location));
 		server->locations = copyloc;
+		defroot = copyloc->root;
 	} else {
 		while(loc) {
 			if (!loc->next) {
 				// skip the default
 				break;
+			}
+			if (!defroot) {
+				defroot = loc->root;
 			}
 			// preserve the order of the locations
 			if (server->locations) {
@@ -285,22 +290,11 @@ f_server() {
 			loc = locations;
 		}
 	}
-	// fill in missing fields with defaults
-	_location *defloc = locations;
+	// propagate default doc root to all locations that need it
 	loc = server->locations;
 	while(loc) {
-		if (loc->type < 0) {
-			loc->type = defloc->type;
-		}
-		if (loc->matchType < 0) {
-			loc->matchType = defloc->matchType;
-		}
-		if (!loc->match) {
-			loc->match = defloc->match;
-		}
-		if ((loc->type == TYPE_DOC_ROOT) 
-			&& !loc->root){
-			loc->root = defloc->root;
+		if (!loc->root) {
+			loc->root = defroot;
 		}
 		loc = loc->next;
 	}
@@ -570,7 +564,6 @@ f_location(int matchType, char *match) {
 
 void
 f_try_target(char *target) {
-	locations->type = TYPE_TRY_FILES;
 	_try_target *tt = calloc(1, sizeof(_try_target));
 	_try_target *prev = tryTargets;
 	if (prev == NULL) {
@@ -589,7 +582,13 @@ f_try_target(char *target) {
 // try_files directive
 void
 f_try_files() {
-	doDebug("try_files directive complete");
+	_location *loc = (_location *)calloc(1, sizeof(_location));
+	loc->type = TYPE_TRY_FILES;
+	loc->matchType = TYPE_UNSET;
+	loc->try_target = tryTargets;
+	tryTargets = NULL;
+	loc->next = locations;
+	locations = loc;
 }
 
 // proxy_pass protocol
@@ -629,6 +628,7 @@ f_proxy_pass(char *host, int port) {
 	passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
 	_location *loc = (_location *)calloc(1, sizeof(_location));
 	loc->passTo = passTo;
+	passTo = NULL;
 	loc->type = TYPE_PROXY_PASS;
 	loc->next = locations;
 	locations = loc;
@@ -720,7 +720,7 @@ checkDocRoots(_server *s) {
 				break;
 			case TYPE_TRY_FILES:
 				if (!loc->try_target) {
-					perror("Try directive incomplete\n");
+					fprintf(stderr, "Try directive incomplete\n");
 					exit(1);
 				}
 				break;

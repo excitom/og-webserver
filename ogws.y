@@ -359,7 +359,7 @@ fastcgi_pass
 try_files_directive
 	:
 	TRYFILES try_paths EOL
-	{printf("TRY FILES\n");}
+	{f_try_files();}
 	;
 try_paths
 	:
