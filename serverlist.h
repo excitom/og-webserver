@@ -2,6 +2,7 @@
  * Define the datastructures for maintaining server (virtual host)
  * configurations.
  */
+#include <openssl/ssl.h>
 
 typedef struct _log_file {
 	struct _log_file *next;
@@ -34,7 +35,6 @@ typedef struct _location {
 	char *match;
 	char *root;
 	int protocol;
-	int autoIndex;
 	_try_target *try_target;
 	struct sockaddr_in *passTo;		// for proxy_pass locations
 	int expires;
@@ -73,3 +73,17 @@ typedef struct _server {
 	_log_file *accessLog;
 	_log_file *errorLog;
 }_server;
+
+typedef struct _request {
+	char *path;
+	char *fullPath;
+	char *queryString;
+	char *headers;
+	int fd;
+	int errorFd;
+	int sockFd;
+	int isDir;
+	SSL *ssl;
+	_server *server;
+	_location *loc;
+}_request;

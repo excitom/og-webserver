@@ -32,16 +32,16 @@ server(int port, int errorFd)
 {
 	int epollfd = epollCreate();
 	const int isTLS = 0;
-	int sockfd = createBindAndListen(isTLS, port);
+	int sockFd = createBindAndListen(isTLS, port);
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.u64 = 0LL;
-	ev.data.fd = sockfd;
+	ev.data.fd = sockFd;
 
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sockfd, &ev) < 0) {
-		snprintf(buffer, BUFF_SIZE, "Couldn't add server socket %d to epoll set: %m\n", sockfd);
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sockFd, &ev) < 0) {
+		snprintf(buffer, BUFF_SIZE, "Couldn't add server socket %d to epoll set: %m\n", sockFd);
 		doDebug(buffer);
-		cleanup(sockfd);	  
+		cleanup(sockFd);	  
 		exit(1);
 	}
 
@@ -59,7 +59,7 @@ server(int port, int errorFd)
 		while ((rval = epoll_wait(epollfd, epoll_events, g.workerConnections, -1)) < 0) {
 			if ((rval < 0) && (errno != EINTR)) {
 				doDebug("epoll_wait failed");
-				cleanup(sockfd);
+				cleanup(sockFd);
 				return;
 			}
 		}
@@ -77,13 +77,13 @@ server(int port, int errorFd)
 			// Misc error
 			//
 			if (events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) {
-				if (fd == sockfd) {
+				if (fd == sockFd) {
 					doDebug("epoll_wait failed");
 					doDebug(buffer);
-					cleanup(sockfd);
+					cleanup(sockFd);
 					exit(1);
 				} else {
-					snprintf(buffer, BUFF_SIZE, "Closing socket with sockfd %d\n", fd);
+					snprintf(buffer, BUFF_SIZE, "Closing socket with sockFd %d\n", fd);
 					doDebug(buffer);
 					cleanup(fd);
 					continue;
@@ -97,14 +97,14 @@ server(int port, int errorFd)
 				//
 				// Input on the listening socket means a new incoming connection
 				//
-				if (fd == sockfd) {
+				if (fd == sockFd) {
 					struct sockaddr_in peeraddr;
 					socklen_t salen = sizeof(peeraddr);
-					while ((clientsfd = accept(sockfd, (struct sockaddr *) &peeraddr, &salen)) < 0) {
+					while ((clientsfd = accept(sockFd, (struct sockaddr *) &peeraddr, &salen)) < 0) {
 						if ((clientsfd < 0) && (errno != EINTR)) {
-							snprintf(buffer, BUFF_SIZE, "Accept on socket %d failed: %m\n", sockfd);
+							snprintf(buffer, BUFF_SIZE, "Accept on socket %d failed: %m\n", sockFd);
 							doDebug(buffer);
-							cleanup(sockfd);
+							cleanup(sockFd);
 							return;
 						}
 					}
@@ -120,7 +120,7 @@ server(int port, int errorFd)
 					if (epoll_ctl(epollfd, EPOLL_CTL_ADD, clientsfd, &ev) < 0) {
 						snprintf(buffer, BUFF_SIZE, "Couldn't add client socket %d to epoll set: %m\n", clientsfd);
 						doDebug(buffer);
-						cleanup(sockfd);	  
+						cleanup(sockFd);	  
 						exit(1);
 					}
 
@@ -128,7 +128,16 @@ server(int port, int errorFd)
 					//
 					// Process the incoming data from a socket
 					//
-					processInput(fd, errorFd, NULL);
+					_request *req = (_request *)calloc(1,sizeof(_request));
+					req->errorFd = errorFd;
+					req->sockFd = fd;
+					req->ssl = NULL;
+					processInput(req);
+					if (req->path) free(req->path);
+					if (req->fullPath) free(req->fullPath);
+					if (req->queryString) free(req->queryString);
+					if (req->headers) free(req->headers);
+					free(req);
 
 					// not handling "keep alive" yet
 					cleanup(fd);

@@ -55,7 +55,7 @@ void yyerror( const char * );
 %token <str>  TRYFILES;
 %token <str>  SSLCERTIFICATEKEY;
 %token <str>  SSLCERTIFICATE;
-%token SSL;
+%token SSL_;
 %token TRACE;
 %token REUSEPORT;
 %token INDEX;
@@ -411,7 +411,7 @@ listen_option
 	{f_listen("*", 0);}
 	| DEFAULTSERVER
 	{printf("UNIMPLEMENTED This is the default server\n");}
-	| SSL
+	| SSL_
 	{f_tls();}
 	| HTTP2L
 	{printf("UNIMPLEMENTED This server uses HTTP2\n");}

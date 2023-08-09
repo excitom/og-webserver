@@ -22,65 +22,63 @@
 #include "global.h"
 
 void
-handleGetVerb(int sockfd, SSL *ssl, _server *server, _location *loc, char *path, char *queryString)
+handleGetVerb(_request *req)
 {
-	if (queryString != NULL) {
+	if (req->queryString != NULL) {
 		doDebug("Query string ignored, not yet implemented.");
 	}
-	char fullPath[300];
-	strcpy(fullPath, loc->root);
-	strcat(fullPath, path);
-	struct stat sb;
-	if (stat(fullPath, &sb) == -1) {
-		int e = errno;
-		if (g.debug) {
-			fprintf(stderr, "%s: file stat failed: %s\n", fullPath, strerror(e));
-		}
-		sendErrorResponse(sockfd, server->errorLog->fd, ssl, 404, "Not Found", path);
+	if (pathExists(req, req->path) == -1) {
+		sendErrorResponse(req, 404, "Not Found", req->path);
 		return;
 	}
 
 	// if the path pointing to a directory?
-	int fd;
-	if (S_ISDIR(sb.st_mode)) {
-		if (fullPath[strlen(fullPath)-1] != '/') {
-			strcat(fullPath, "/");
-		}
+	if (req->isDir) {
 		// default to the index file if not specified
-		fd = openDefaultIndexFile(server, fullPath);
-		if (fd == -1) {
+		req->fd = openDefaultIndexFile(req);
+		if (req->fd == -1) {
 			// if the path is a directory, and the index file is not present,
 			// do we want to show a directory listing?
-			if (loc->autoIndex) {
-				showDirectoryListing(sockfd, server, ssl, loc->root, path);
+			if (req->server->autoIndex) {
+				showDirectoryListing(req);
 			} else {
 				if (g.debug) {
-					fprintf(stderr, "%s: file open failed: %s\n", fullPath, strerror(errno));
+					fprintf(stderr, "%s: file open failed: %s\n", req->fullPath, strerror(errno));
 				}
-				sendErrorResponse(sockfd, server->errorLog->fd, ssl, 404, "Not Found", path);
+				sendErrorResponse(req, 404, "Not Found", req->path);
 			}
 			return;
 		}
 	} else {
 		// not a directory
-		fd = open(fullPath, O_RDONLY);
-		if (fd == -1) {
+		req->fd = open(req->fullPath, O_RDONLY);
+		if (req->fd == -1) {
 			if (g.debug) {
-				fprintf(stderr, "%s: file open failed: %s\n", fullPath, strerror(errno));
+				fprintf(stderr, "%s: file open failed: %s\n", req->fullPath, strerror(errno));
 			}
-			sendErrorResponse(sockfd, server->errorLog->fd, ssl, 404, "Not Found", path);
+			sendErrorResponse(req, 404, "Not Found", req->path);
 			return;
 		}
 	}
 
+	serveFile(req);
+	return;
+}
+
+/**
+ * Server a file to a client
+ */
+void
+serveFile(_request *req)
+{
 	// guess the mime type by the extension, if any
 	char mt[256];
 	char *mimeType = (char *)&mt;
-	getMimeType(fullPath, mimeType);
+	getMimeType(req->fullPath, mimeType);
 
 	// get the content length
-	size_t size = lseek(fd, 0, SEEK_END);
-	lseek(fd, 0, SEEK_SET);
+	size_t size = lseek(req->fd, 0, SEEK_END);
+	lseek(req->fd, 0, SEEK_SET);
 
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, RESPONSE_FORMAT);
@@ -95,13 +93,13 @@ handleGetVerb(int sockfd, SSL *ssl, _server *server, _location *loc, char *path,
 
 	char buffer[BUFF_SIZE];
 	size_t sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, g.version, ts, mimeType, size);
-	size_t sent = sendData(sockfd, ssl, buffer, sz);
+	size_t sent = sendData(req->sockFd, req->ssl, buffer, sz);
 	if (sent != sz) {
 		doDebug("Problem sending response headers");
 	}
-	sendFile(sockfd, fd, ssl, size);
-	accessLog(sockfd, server->accessLog->fd, "GET", httpCode, path, size);
-	close(fd);
+	sendFile(req, size);
+	accessLog(req->sockFd, req->server->accessLog->fd, "GET", httpCode, req->path, size);
+	close(req->fd);
 	return;
 }
 
@@ -129,20 +127,54 @@ getMimeType(char *name, char *mimeType)
 }
 
 /**
- * open the default index file for a directory
+ * Open the default index file for a directory.
+ * Return the file descriptor on success.
  */
 int
-openDefaultIndexFile(_server *server, char *fullPath) {
+openDefaultIndexFile(_request *req)
+{
 	char indexPath[300];
-	_server_name *sn = server->serverNames;
-	while(sn) {
-		strcpy(indexPath, fullPath);
-		strcat(indexPath, server->indexFiles->indexFile);
+	_index_file *ifn = req->server->indexFiles;
+	while(ifn) {
+		strcpy(indexPath, req->fullPath);
+		if (ifn->indexFile[0] != '/') {
+			strcat(indexPath, "/");
+		}
+		strcat(indexPath, ifn->indexFile);
 		int fd = open(indexPath, O_RDONLY);
 		if (fd >= 0) {
 			return fd;
 		}
-		sn = sn->next;
+		ifn = ifn->next;
 	}
 	return -1;
+}
+
+/**
+ * Check if a path exists.
+ * The fullPath parameter is updated.
+ *
+ * Note: Even though `request` has a `path` member, the input path may be
+ * something different (see `try_files`) so it is passed explicitly.
+ */
+int
+pathExists(_request *req, char *path)
+{
+	req->fullPath = (char *)calloc(1, 300);
+	req->isDir = 0;
+	strcpy(req->fullPath, req->loc->root);
+	if (path[0] != '/') {
+		strcat(req->fullPath, "/");
+	}
+	strcat(req->fullPath, path);
+	struct stat sb;
+	if (stat(req->fullPath, &sb) == -1) {
+		int e = errno;
+		if (g.debug) {
+			fprintf(stderr, "%s: file stat failed: %s\n", req->fullPath, strerror(e));
+		}
+		return -1;
+	}
+	req->isDir = (S_ISDIR(sb.st_mode)) ? 1 : 0;
+	return 1;
 }

@@ -19,12 +19,12 @@
 #include "global.h"
 
 void
-handleProxyPass(int fd, char *headers, _location *loc)
+handleProxyPass(_request *req)
 {
     struct sockaddr_in server;
-    server.sin_family      = loc->passTo->sin_family;
-    server.sin_port        = loc->passTo->sin_port;
-    server.sin_addr.s_addr = loc->passTo->sin_addr.s_addr;
+    server.sin_family      = req->loc->passTo->sin_family;
+    server.sin_port        = req->loc->passTo->sin_port;
+    server.sin_addr.s_addr = req->loc->passTo->sin_addr.s_addr;
 	int upstream;
     if ((upstream = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -40,18 +40,18 @@ handleProxyPass(int fd, char *headers, _location *loc)
     }
 	// change the \r\n\r\n which marks the end of the headers to
 	// \r\n in order to add the `X-Forwarded-For` header
-	char *r = strstr(headers, "\r\n\r\n");
+	char *r = strstr(req->headers, "\r\n\r\n");
 	char *body = NULL;
 	if (r) {
 		r += 2;
 		*r = '\0';
 		body = r + 2;
 	}
-	sendData(upstream, NULL, headers, strlen(headers));
+	sendData(upstream, NULL, req->headers, strlen(req->headers));
 	char buffer[BUFF_SIZE];
 	if (r) {
 		strcpy((char *)&buffer, "X-Forwarded-For: ");
-		_clientConnection *c = getClient(fd);
+		_clientConnection *c = getClient(req->sockFd);
 		strcat((char *)&buffer, c->ip);
 		strcat((char *)&buffer, "\r\n\r\n");
 		sendData(upstream, NULL, buffer, strlen(buffer));
@@ -69,7 +69,7 @@ handleProxyPass(int fd, char *headers, _location *loc)
 		if (bytes == 0) {
 			break;
 		}
-		sendData(fd, NULL, (char *)&buffer, bytes);
+		sendData(req->sockFd, NULL, (char *)&buffer, bytes);
 	} while(bytes == BUFF_SIZE);
 	shutdown(upstream, SHUT_RDWR);
 	close(upstream);

@@ -8,7 +8,7 @@ void cleanup(int);
 void doTrace (char, char*, int);
 void doDebug (char*);
 #include <openssl/ssl.h>
-void processInput(int, int, SSL*);
+void processInput(_request *);
 _clientConnection *queueClientConnection(int fd, struct sockaddr_in, SSL_CTX *ctx);
 _clientConnection *getClient(int);
 void configureContext(SSL_CTX*, int port);
@@ -16,22 +16,25 @@ SSL_CTX *createContext();
 void ShowCerts(SSL*);
 int sendData(int, SSL*, char*, int);
 int recvData(int, char*, int);
-void sendFile(int sockfd, int fd, SSL* ssl, size_t size);
+void sendFile(_request *, size_t size);
 void getTimestamp(char*, int);
-void sendErrorResponse(int, int, SSL*,int, char*, char*);
-void handleGetVerb(int, SSL*, _server*, _location *,char*, char*);
+void sendErrorResponse(_request *,int, char*, char*);
+void handleGetVerb(_request *);
 void parseMimeTypes();
 void parseConfig();
 void checkConfig();
 void accessLog(int, int, char*, int, char*, int);
 void errorLog(int, int, char*, int, char*, char*);
 void getMimeType(char*, char*);
-void showDirectoryListing(int, _server *, SSL*, char *, char *);
+void showDirectoryListing(_request *);
 void server(int, int);
 void tlsServer();
 _location *getDocRoot(_server *, char *);
-void handleProxyPass(int, char *, _location *);
-int openDefaultIndexFile(_server *, char *);
+void handleProxyPass(_request *);
+void handleTryFiles(_request *);
+int openDefaultIndexFile(_request *);
+int pathExists(_request *, char *);
+void serveFile(_request *);
 
 #define FAIL    -1
 #define BUFF_SIZE 4096

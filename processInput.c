@@ -24,21 +24,21 @@
 _server *getServerForHost(char *);
 
 void
-processInput(int fd, int errorFd, SSL *ssl) {
+processInput(_request *req) {
+	req->path = NULL;
+	req->queryString = NULL;
 	char *host = NULL;
-	char *path = NULL;
 	char *verb = NULL;
-	char *queryString = NULL;
 	char *p;
 	char inbuff[BUFF_SIZE];
 	char outbuff[BUFF_SIZE];
 	char *input = (char *)&inbuff;
 	size_t received;
 	memset(input, 0, BUFF_SIZE);
-	if (ssl) {
-		SSL_read_ex(ssl, (void *)input, BUFF_SIZE, &received);
+	if (req->ssl) {
+		SSL_read_ex(req->ssl, (void *)input, BUFF_SIZE, &received);
 	} else {
-		received = recvData(fd, input, BUFF_SIZE);
+		received = recvData(req->sockFd, input, BUFF_SIZE);
 	}
 
 	snprintf(outbuff, BUFF_SIZE, "RECEIVED %d BYTES\n", (int)received);
@@ -46,12 +46,12 @@ processInput(int fd, int errorFd, SSL *ssl) {
 	if (received <= 0) {
 		// no data to read
 		doDebug("NO DATA\n");
-		sendErrorResponse(fd, errorFd, ssl, 400, "Bad Request", "No data");
+		sendErrorResponse(req, 400, "Bad Request", "No data");
 		return;
 	} else {
 		// Save all the headers in case of `proxy_pass`
-		char *headers = (char *)malloc(strlen(input)+1);
-		strcpy(headers, input);
+		req->headers = (char *)calloc(1, strlen(input)+1);
+		strcpy(req->headers, input);
 		// Expected format:
 		// verb path HTTP/1.1\r\n
 		// Host: nn.nn.nn.nn:pp\r\n
@@ -60,13 +60,13 @@ processInput(int fd, int errorFd, SSL *ssl) {
 		p = strchr(verb, ' ');
 		if (!p) {
 			doDebug("Bad data");
-			sendErrorResponse(fd, errorFd, ssl, 400, "Bad Request", "Bad data");
-			free(headers);
+			sendErrorResponse(req, 400, "Bad Request", "Bad data");
 			return;
 		}
 		*p++ = '\0';
-		path = p;
-		p = strchr(path, ' ');
+		req->path = (char *)calloc(1, strlen(p));
+		strcpy(req->path, p);
+		p = strchr(req->path, ' ');
 		*p++ = '\0';
 		while(*p++) {
 			if (strncmp(p, "Host: ", 6) == 0) {
@@ -78,62 +78,65 @@ processInput(int fd, int errorFd, SSL *ssl) {
 			p = strchr(host, '\r');
 			*p = '\0';
 		}
-		if (!verb || !path || ! host) {
-			if (!path) {
-				path = "/";
+		if (!verb || !req->path || ! host) {
+			if (!req->path) {
+				req->path = "/";
 			}
-			sendErrorResponse(fd, errorFd, ssl, 400, "Bad Request", path);
-			free(headers);
+			sendErrorResponse(req, 400, "Bad Request", req->path);
 			return;
 		}
 
 		// find the query string, if any
-		p = strchr(path, '?');
+		p = strchr(req->path, '?');
 		if (p != NULL) {
 			*p++ = '\0';
-			queryString = p;
+			req->queryString = p;
 		}
-		_server *server = getServerForHost(host);
-		_location *loc = getDocRoot(server, path);
-		if (!loc) {
+		req->server = getServerForHost(host);
+		req->loc = getDocRoot(req->server, req->path);
+		if (!req->loc) {
 			doDebug("No doc root.");
+			return;
+		}
+
+		// todo: disallow ../ in the path
+		int size = strlen(req->loc->root) + strlen(req->path);
+		const int maxLen = 255;
+		if (size > maxLen) {
+			doDebug("URI too long");
+			char truncated[maxLen+5];
+			strncpy(truncated, req->path, maxLen);
+			truncated[maxLen] = '\0';
+			strcat(truncated, "...");
+			sendErrorResponse(req, 414, "URI too long", truncated);
 			return;
 		}
 
 		//
 		// check for proxy_pass
 		//
-		if (loc->type == TYPE_PROXY_PASS) {
-			handleProxyPass(fd, headers, loc);
-			free(headers);
+		if (req->loc->type == TYPE_PROXY_PASS) {
+			handleProxyPass(req);
 			return;
 		}
-		free(headers);	// no longer need a copy of the headers
+
+
+		// check for try_files
+		if (req->loc->type == TYPE_TRY_FILES) {
+			handleTryFiles(req);
+			return;
+		}
 
 		//
 		// Only support the GET verb at this time
-		// (except for proxy_pass
+		// (except for proxy_pass)
 		//
 		if (strcmp(verb, "GET") != 0) {
-			sendErrorResponse(fd, errorFd, ssl, 405, "Method Not Allowed", path);
-			free(headers);
+			sendErrorResponse(req, 405, "Method Not Allowed", verb);
 			return;
 		}
 
-		// todo: disallow ../ in the path
-		int size = strlen(loc->root) + strlen(path);
-		const int maxLen = 255;
-		if (size > maxLen) {
-			doDebug("URI too long");
-			char truncated[maxLen+5];
-			strncpy(truncated, path, maxLen);
-			truncated[maxLen] = '\0';
-			strcat(truncated, "...");
-			sendErrorResponse(fd, errorFd, ssl, 414, "URI too long", truncated);
-			return;
-		}
-
-		handleGetVerb(fd, ssl, server, loc, path, queryString);
+		handleGetVerb(req);
 	}
 	return;
 }

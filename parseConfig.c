@@ -68,7 +68,6 @@ defaultLocation() {
 	loc->type = TYPE_DOC_ROOT;
 	loc->matchType = PREFIX_MATCH;
 	loc->match = "/";
-	loc->autoIndex = 0;
 	loc->root = "/var/www/ogws/html";
 	loc->try_target = NULL;
 	loc->passTo = NULL;	

@@ -18,7 +18,7 @@
 #include "global.h"
 
 void
-sendErrorResponse( int fd, int errorFd,  SSL* ssl, int code, char *msg, char *path )
+sendErrorResponse( _request *req, int code, char *msg, char *path )
 {
 	doDebug(msg);
 	char buffer1[BUFF_SIZE];
@@ -46,10 +46,10 @@ sendErrorResponse( int fd, int errorFd,  SSL* ssl, int code, char *msg, char *pa
 
 	int sz3 = snprintf(buffer3, BUFF_SIZE, responseHeaders, code, msg, g.version, ts);
 
-	sendData(fd, ssl, buffer3, sz3);
-	sendData(fd, ssl, buffer2, sz2);
-	sendData(fd, ssl, buffer1, sz1);
+	sendData(req->sockFd, req->ssl, buffer3, sz3);
+	sendData(req->sockFd, req->ssl, buffer2, sz2);
+	sendData(req->sockFd, req->ssl, buffer1, sz1);
 
-	errorLog(fd, errorFd, "GET", code, path, msg);
+	errorLog(req->fd, req->errorFd, "GET", code, path, msg);
 	return;
 }

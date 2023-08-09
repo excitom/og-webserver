@@ -33,26 +33,26 @@ createBindAndListen(int isTLS, int port)
 	char buff[BUFF_SIZE];
 	char* buffer = (char *)&buff;
 
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) {
+	int sockFd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockFd < 0) {
 		fprintf(stderr, "Could not create new socket: %m\n");
 		exit(1);
 	}
-	fprintf(stderr, "New socket created with sockfd %d\n", sockfd);
+	fprintf(stderr, "New socket created with sockFd %d\n", sockFd);
 
 	// use blocking I/O for TLS until for now
 	if (!isTLS) {
-		if (fcntl(sockfd, F_SETFL, O_NONBLOCK)) {
+		if (fcntl(sockFd, F_SETFL, O_NONBLOCK)) {
 			fprintf(stderr, "Could not make the socket non-blocking: %m\n");
-			close(sockfd);
+			close(sockFd);
 			exit(1);
 		}
 	}
 
 	int on = 1;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on))) {
-		fprintf(stderr, "Could not set socket %d option for reusability: %m\n", sockfd);
-		close(sockfd);
+	if (setsockopt(sockFd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on))) {
+		fprintf(stderr, "Could not set socket %d option for reusability: %m\n", sockFd);
+		close(sockFd);
 		exit(1);
 	}
 
@@ -62,24 +62,24 @@ createBindAndListen(int isTLS, int port)
 	bindaddr.sin_family= AF_INET;
 	bindaddr.sin_port = htons(port);
 
-	if (bind(sockfd, (struct sockaddr *) &bindaddr, sizeof(struct sockaddr_in)) < 0) {
-		fprintf(stderr, "Could not bind socket %d to address 'INADDR_ANY' and port %u: %m", sockfd, port);
-		close(sockfd);
+	if (bind(sockFd, (struct sockaddr *) &bindaddr, sizeof(struct sockaddr_in)) < 0) {
+		fprintf(stderr, "Could not bind socket %d to address 'INADDR_ANY' and port %u: %m", sockFd, port);
+		close(sockFd);
 		exit(1);
 	} else {
-		snprintf(buffer, BUFF_SIZE, "Bound socket %d to address 'INADDR_ANY' and port %u\n", sockfd, port);
+		snprintf(buffer, BUFF_SIZE, "Bound socket %d to address 'INADDR_ANY' and port %u\n", sockFd, port);
 		doDebug(buffer);
 	}
 
-	if (listen(sockfd, SOMAXCONN)) {
-		snprintf(buffer, BUFF_SIZE, "Could not start listening on server socket %d: %m\n", sockfd);
+	if (listen(sockFd, SOMAXCONN)) {
+		snprintf(buffer, BUFF_SIZE, "Could not start listening on server socket %d: %m\n", sockFd);
 		doDebug(buffer);
-		cleanup(sockfd);
+		cleanup(sockFd);
 	} else {
-		snprintf(buffer, BUFF_SIZE, "Server socket %d started listening to address 'INADDR_ANY' and port %u\n", sockfd, port);
+		snprintf(buffer, BUFF_SIZE, "Server socket %d started listening to address 'INADDR_ANY' and port %u\n", sockFd, port);
 		doDebug(buffer);
 	}
-	return sockfd;
+	return sockFd;
 }
 
 /**
@@ -147,22 +147,22 @@ sendData(int fd, SSL *ssl, char* ptr, int nbytes)
  * Copy a file to a socket
  */
 void
-sendFile(int sockfd, int fd, SSL* ssl, size_t size)
+sendFile(_request *req, size_t size)
 {
 	off_t offset = 0;
 	size_t sent;
-	if (ssl) {
-		//sent = SSL_sendfile(ssl, fd, offset, size, 0);
+	if (req->ssl) {
+		//sent = SSL_sendfile(sreq->sl, freq->d, offset, size, 0);
 		char *p = malloc(size);
-		read(fd, p, size);
-		if (SSL_write_ex(ssl, p, size, &sent) == 0) {
+		read(req->fd, p, size);
+		if (SSL_write_ex(req->ssl, p, size, &sent) == 0) {
 			if (g.debug) {
 				ERR_print_errors_fp(stderr);
 			}
 		}
 		free(p);
 	} else {
-		sent = sendfile(sockfd, fd, &offset, size);
+		sent = sendfile(req->sockFd, req->fd, &offset, size);
 	}
 	if (sent != size) {
 		if (g.debug) {
@@ -183,7 +183,7 @@ queueClientConnection(int fd, struct sockaddr_in addr, SSL_CTX *ctx)
 	char ip[INET_ADDRSTRLEN];
 	if (inet_ntop(AF_INET, &addr.sin_addr.s_addr, ip, INET_ADDRSTRLEN) != NULL) {
 		char buffer[BUFF_SIZE];
-		snprintf(buffer, BUFF_SIZE, "Accepted connection from %s:%u, assigned new sockfd %d\n", ip, ntohs(addr.sin_port), fd);
+		snprintf(buffer, BUFF_SIZE, "Accepted connection from %s:%u, assigned new sockFd %d\n", ip, ntohs(addr.sin_port), fd);
 		doDebug(buffer);
 		strncpy(client->ip, ip, INET_ADDRSTRLEN);
 	} else {

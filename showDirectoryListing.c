@@ -37,27 +37,19 @@ void addFragment(char *,char *,char *);
  * Show a listing of files in a directory 
  */
 void
-showDirectoryListing(int sockfd, _server *server, SSL *ssl, char *docRoot, char *path)
+showDirectoryListing(_request *req)
 {
 	DIR *dp;
 	struct dirent *ep;
 	char buffer[BUFF_SIZE];
-	char fullPath[300];
-	// the caller has already checked that strlen(docRoot+path) <= 255
-	int size = strlen(path);
-	if (path[size-1] != '/') {
-		strcat(path, "/");
-	}
-	strcpy(fullPath, docRoot);
-	strcat(fullPath, path);
-	dp = opendir (fullPath);
+	dp = opendir (req->fullPath);
 	if (dp == NULL) {
 		doDebug("Problem opening a directory, shouldn't happen");
-		sendErrorResponse(sockfd, server->errorLog->fd, ssl, 404, "Not Found", path);
+		sendErrorResponse(req, 404, "Not Found", req->path);
 		return;
 	}
 	while ((ep = readdir(dp)) != NULL) {
-		addFragment(fullPath, path, ep->d_name);
+		addFragment(req->fullPath, req->path, ep->d_name);
 	}
 	closedir(dp);
 	char *header =	"<html><head>"
@@ -85,19 +77,19 @@ showDirectoryListing(int sockfd, _server *server, SSL *ssl, char *docRoot, char 
 
 	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, ts, contentLength);
 	// send the response headers
-	sendData(sockfd, ssl, (char *)&buffer, sz);
+	sendData(req->sockFd, req->ssl, (char *)&buffer, sz);
 
 	// send the response body
-	sendData(sockfd, ssl, header, strlen(header));
+	sendData(req->sockFd, req->ssl, header, strlen(header));
 	while(fragments != NULL) {
 		_fragment *f = fragments;
 		fragments = f->next;
-		sendData(sockfd, ssl, f->fragment, f->len);
+		sendData(req->sockFd, req->ssl, f->fragment, f->len);
 		free(f->fragment);
 		free(f);
 	}
-	sendData(sockfd, ssl, footer, strlen(footer));
-	accessLog(sockfd, server->accessLog->fd, "GET", 200, path, contentLength);
+	sendData(req->sockFd, req->ssl, footer, strlen(footer));
+	accessLog(req->sockFd, req->server->accessLog->fd, "GET", 200, req->path, contentLength);
 	return;
 }
 
@@ -129,6 +121,7 @@ addFragment(char *dirPath, char *path, char *fileName)
 	char buffer[BUFF_SIZE];
 	char *fullPath = (char *)&buffer;
 	strcpy(fullPath, dirPath);
+	strcat(fullPath, "/");
 	strcat(fullPath, fileName);
 	struct stat sb;
 	int fileSize = 0;
@@ -141,9 +134,9 @@ addFragment(char *dirPath, char *path, char *fileName)
 	// <li><a href="PATH">FILE NAME</a> SIZE Bytes</li>
 	//
 	if (S_ISDIR(sb.st_mode)) {
-		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a> Directory</li>", path, fileName, fileName);
+		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s/%s\">%s</a> Directory</li>", path, fileName, fileName);
 	} else {
-		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s%s\">%s</a><span  class=\"sz\"> - %'d Bytes</span></li>", path, fileName, fileName, fileSize);
+		f->len = snprintf(buffer, BUFF_SIZE, "<li><a href=\"%s/%s\">%s</a><span  class=\"sz\"> - %'d Bytes</span></li>", path, fileName, fileName, fileSize);
 	}
 	f->fragment = (char *)malloc(f->len+1);
 	strcpy(f->fragment, (char *)&buffer);

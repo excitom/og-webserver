@@ -81,7 +81,16 @@ processRequest(void *param)
 				break;
 			}
 		} else {
-			processInput(c->fd, c->errorFd, ssl);
+			_request *req = (_request *)calloc(1,sizeof(_request));
+			req->fd = c->fd;
+			req->errorFd = c->errorFd;
+			req->ssl = ssl;
+			processInput(req);
+			if (req->path) free(req->path);
+			if (req->fullPath) free(req->fullPath);
+			if (req->queryString) free(req->queryString);
+			if (req->headers) free(req->headers);
+			free(req);
 			break;
 		}
 	}
