@@ -79,6 +79,9 @@ typedef struct _request {
 	char *fullPath;
 	char *queryString;
 	char *headers;
+	char *verb;
+	char *protocol;;
+	char *host;
 	int fd;
 	int errorFd;
 	int sockFd;

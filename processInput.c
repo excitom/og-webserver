@@ -29,6 +29,8 @@ processInput(_request *req) {
 	req->queryString = NULL;
 	char *host = NULL;
 	char *verb = NULL;
+	char *path = NULL;
+	char *protocol = NULL;
 	char *p;
 	char inbuff[BUFF_SIZE];
 	char outbuff[BUFF_SIZE];
@@ -64,10 +66,18 @@ processInput(_request *req) {
 			return;
 		}
 		*p++ = '\0';
-		req->path = (char *)calloc(1, strlen(p));
-		strcpy(req->path, p);
-		p = strchr(req->path, ' ');
+		req->verb = (char *)calloc(1, strlen(verb)+1);
+		strcpy(req->verb, verb);
+		path = p;
+		p = strchr(path, ' ');
 		*p++ = '\0';
+		req->path = (char *)calloc(1, strlen(path)+1);
+		strcpy(req->path, path);
+		protocol = p;
+		p = strchr(protocol, '\r');
+		*p++ = '\0';
+		req->protocol = (char *)calloc(1, strlen(protocol)+1);
+		strcpy(req->protocol, protocol);
 		while(*p++) {
 			if (strncmp(p, "Host: ", 6) == 0) {
 				break;
@@ -78,7 +88,9 @@ processInput(_request *req) {
 			p = strchr(host, '\r');
 			*p = '\0';
 		}
-		if (!verb || !req->path || ! host) {
+		req->host = (char *)calloc(1, strlen(host)+1);
+		strcpy(req->host, host);
+		if (!req->verb || !req->path || ! req->host) {
 			if (!req->path) {
 				req->path = "/";
 			}

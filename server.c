@@ -137,6 +137,9 @@ server(int port, int errorFd)
 					if (req->fullPath) free(req->fullPath);
 					if (req->queryString) free(req->queryString);
 					if (req->headers) free(req->headers);
+					if (req->verb) free(req->verb);
+					if (req->protocol) free(req->protocol);
+					if (req->host) free(req->host);
 					free(req);
 
 					// not handling "keep alive" yet

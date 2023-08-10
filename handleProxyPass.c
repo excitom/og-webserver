@@ -64,14 +64,29 @@ handleProxyPass(_request *req)
 	// forward it to the client
 	//
 	size_t bytes = BUFF_SIZE;
+	int startOfResponse = 1;
+	int httpCode;
+	int size = 0;
 	do {
 		bytes = recvData(upstream, buffer, BUFF_SIZE);
 		if (bytes == 0) {
 			break;
 		}
+		size += bytes;
 		sendData(req->sockFd, NULL, (char *)&buffer, bytes);
+		if (startOfResponse) {
+			startOfResponse = 0;
+			// extract the HTTP responsse code
+			char *p = (char *)&buffer;
+			p = strchr(p, ' ');
+			char *q = ++p;
+			p = strchr(q, ' ');
+			*p = '\0';
+			httpCode = atoi(q);
+		}
 	} while(bytes == BUFF_SIZE);
 	shutdown(upstream, SHUT_RDWR);
 	close(upstream);
+	accessLog(req->sockFd, req->server->accessLog->fd, req->verb, httpCode, req->path, size);
 	return;
 }
