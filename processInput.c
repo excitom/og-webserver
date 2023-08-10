@@ -94,7 +94,7 @@ processInput(_request *req) {
 		}
 		req->server = getServerForHost(host);
 		req->loc = getDocRoot(req->server, req->path);
-		if (!req->loc) {
+		if (!req->loc || !req->loc->root) {
 			doDebug("No doc root.");
 			return;
 		}

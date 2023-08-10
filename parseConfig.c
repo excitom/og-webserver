@@ -34,6 +34,7 @@ void
 defaultAccessLog() {
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = "/var/log/ogws/access.log";
+	log->fd = -1;
 	log->next = NULL;
 	g.accessLogs = log;
 }
@@ -42,6 +43,7 @@ void
 defaultErrorLog() {
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = "/var/log/ogws/error.log";
+	log->fd = -1;
 	log->next = NULL;
 	g.errorLogs = log;
 }
@@ -85,11 +87,29 @@ defaultIndexFile() {
 	indexFiles = index;
 }
 
+int
+pathAlreadyOpened(char *path, _log_file *list) {
+	_log_file *log = list;
+	while(log) {
+		if ((strlen(path) == strlen(log->path))
+			&& (strcmp(path, log->path) == 0)) {
+			if (log->fd != -1) {
+				return log->fd;
+			}
+		}
+		log = log->next;
+	}
+	return -1;
+}
+
 void
 openLogFiles() {
 	_log_file *log = g.accessLogs;
 	while(log) {
-		log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		log->fd = pathAlreadyOpened(log->path, g.accessLogs);
+		if (log->fd == -1) {
+			log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		}
 		if (log->fd == -1) {
 			fprintf(stderr, "%s: ", log->path);
 			perror("access log not valid:");
@@ -99,7 +119,10 @@ openLogFiles() {
 	}
 	log = g.errorLogs;
 	while(log) {
-		log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		log->fd = pathAlreadyOpened(log->path, g.errorLogs);
+		if (log->fd == -1) {
+			log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		}
 		if (log->fd == -1) {
 			fprintf(stderr, "%s: ", log->path);
 			perror("error log not valid:");
@@ -557,6 +580,13 @@ f_location(int matchType, char *match) {
 	loc->matchType = matchType;
 	loc->match = match;
 	loc->protocol = protocol;
+	if (!loc->root) {
+		if (!loc->next || ! loc->next->root) {
+			fprintf(stderr, "Missing default location\n");
+			exit(1);
+		}
+		loc->root = loc->next->root;
+	}
 	protocol = TYPE_UNSET;
 	return;
 }
