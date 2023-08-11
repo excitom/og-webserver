@@ -35,7 +35,6 @@
 #include "global.h"
 
 static char *tryTarget;
-static char *fullPath;
 
 /**
  * If the requested path is not a file or directory, 
@@ -48,14 +47,20 @@ serveDefaultFile(_request *req)
 	req->path = (char *)malloc(strlen(tryTarget)+1);
 	strcpy(req->path, tryTarget);
 	free(req->fullPath);
-	fullPath = (char *)malloc(strlen(req->loc->root)+strlen(tryTarget)+1);
-	strcpy(req->fullPath, req->loc->root);
-	strcat(req->fullPath, tryTarget);
-	req->fd = open(req->fullPath, O_RDONLY);
-	if (req->fd == -1) {
-		sendErrorResponse(req, 404, "Not Found", req->path);
+	if (pathExists(req, tryTarget)) {
+		if (req->isDir) {
+			sendErrorResponse(req, 404, "Not Found", req->path);
+			doDebug("Try target is a directory not a file");
+		} else {
+			req->fd = open(req->fullPath, O_RDONLY);
+			if (req->fd == -1) {
+				sendErrorResponse(req, 404, "Not Found", req->path);
+			} else {
+				serveFile(req);
+			}
+		}
 	} else {
-		serveFile(req);
+		sendErrorResponse(req, 404, "Not Found", req->path);
 	}
 }
 
@@ -86,7 +91,6 @@ checkTryFilesFormat(_location *loc)
 	if (!tt) {
 		return NULL;
 	}
-	tryTarget = tt->target;
 	return tt->target;
 }
 
@@ -96,7 +100,7 @@ checkTryFilesFormat(_location *loc)
 void
 handleTryFiles(_request *req)
 {
-	char *tryTarget = checkTryFilesFormat(req->loc);
+	tryTarget = checkTryFilesFormat(req->loc);
 	if (!tryTarget) {
 		fprintf(stderr, "Unrecognized `try_files` format\n");
 		sendErrorResponse(req, 404, "Not Found", req->path);
@@ -106,41 +110,27 @@ handleTryFiles(_request *req)
 		serveDefaultFile(req);
 		return;
 	}
+	// file exists and is a plain file
 	if (req->isDir == 0) {
 		req->fd = open(req->fullPath, O_RDONLY);
-		if (req->fd != -1) {
+		if (req->fd == -1) {
 			serveDefaultFile(req);
-			return;
+		} else {
+			serveFile(req);
 		}
-	}
-
-	// this is a directory
-	req->fd = openDefaultIndexFile(req);
-	if (req->fd != -1) {
-		serveDefaultFile(req);
-		return;
 	} else {
-		// the index file is not present,
-		// do we want to show a directory listing?
-		if (req->server->autoIndex) {
-			showDirectoryListing(req);
-			return;
+		// this is a directory
+		req->fd = openDefaultIndexFile(req);
+		if (req->fd == -1) {
+			// the index file is not present,
+			// do we want to show a directory listing?
+			if (req->server->autoIndex) {
+				showDirectoryListing(req);
+			} else {
+				serveDefaultFile(req);
+			}
+		} else {
+			serveFile(req);
 		}
 	}
-
-	// specific file or directory do not exist, fall back to the try target
-	if (pathExists(req, tryTarget) == -1) {
-		sendErrorResponse(req, 404, "Not Found", tryTarget);
-		return;
-	}
-	if (req->isDir == 0) {
-		req->fd = open(req->fullPath, O_RDONLY);
-		if (req->fd != -1) {
-			serveDefaultFile(req);
-			return;
-		}
-	}
-	sendErrorResponse(req, 404, "Not Found", req->path);
-	
-	return;
 }
