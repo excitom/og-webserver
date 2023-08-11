@@ -102,7 +102,10 @@ processInput(_request *req) {
 		p = strchr(req->path, '?');
 		if (p != NULL) {
 			*p++ = '\0';
-			req->queryString = p;
+			if (strlen(p)) {
+				req->queryString = (char *)calloc(1, strlen(p)+1);
+				strcpy(req->queryString, p);
+			}
 		}
 		req->server = getServerForHost(host);
 		req->loc = getDocRoot(req->server, req->path);

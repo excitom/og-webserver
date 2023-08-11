@@ -5,7 +5,7 @@
  *
  * Example directives:
  * 		location / {
- * 			try_files $uri $uri/ index.php;
+ * 			try_files $uri $uri/ /index.php;
  * 		}
  *
  * 	In this example, if the file exists, serve it. If the path is a directory
@@ -34,9 +34,34 @@
 #include "server.h"
 #include "global.h"
 
+static char *tryTarget;
+static char *fullPath;
+
+/**
+ * If the requested path is not a file or directory, 
+ * serve the default file.
+ */
+void
+serveDefaultFile(_request *req)
+{
+	free(req->path);
+	req->path = (char *)malloc(strlen(tryTarget)+1);
+	strcpy(req->path, tryTarget);
+	free(req->fullPath);
+	fullPath = (char *)malloc(strlen(req->loc->root)+strlen(tryTarget)+1);
+	strcpy(req->fullPath, req->loc->root);
+	strcat(req->fullPath, tryTarget);
+	req->fd = open(req->fullPath, O_RDONLY);
+	if (req->fd == -1) {
+		sendErrorResponse(req, 404, "Not Found", req->path);
+	} else {
+		serveFile(req);
+	}
+}
+
 /**
  * At this time, only a specific format is implemented.
- * 	try_files $uri $uri/ index_file
+ * 	try_files $uri $uri/ /index_file
  */
 char *
 checkTryFilesFormat(_location *loc)
@@ -46,7 +71,7 @@ checkTryFilesFormat(_location *loc)
 		return NULL;
 	}
 	if ((strlen(tt->target) != 4)
-		|| (strcmp(tt->target, "$url") != 0)) {
+		|| (strcmp(tt->target, "$uri") != 0)) {
 		return NULL;
 	}
 	tt = tt->next;
@@ -54,13 +79,14 @@ checkTryFilesFormat(_location *loc)
 		return NULL;
 	}
 	if ((strlen(tt->target) != 5)
-		|| (strcmp(tt->target, "$url") != 0)) {
+		|| (strcmp(tt->target, "$uri/") != 0)) {
 		return NULL;
 	}
 	tt = tt->next;
 	if (!tt) {
 		return NULL;
 	}
+	tryTarget = tt->target;
 	return tt->target;
 }
 
@@ -77,13 +103,13 @@ handleTryFiles(_request *req)
 	}
 	req->isDir = 0;
 	if (pathExists(req, req->path) == -1) {
-		sendErrorResponse(req, 404, "Not Found", req->path);
+		serveDefaultFile(req);
 		return;
 	}
 	if (req->isDir == 0) {
 		req->fd = open(req->fullPath, O_RDONLY);
 		if (req->fd != -1) {
-			serveFile(req);
+			serveDefaultFile(req);
 			return;
 		}
 	}
@@ -91,7 +117,7 @@ handleTryFiles(_request *req)
 	// this is a directory
 	req->fd = openDefaultIndexFile(req);
 	if (req->fd != -1) {
-		serveFile(req);
+		serveDefaultFile(req);
 		return;
 	} else {
 		// the index file is not present,
@@ -110,7 +136,7 @@ handleTryFiles(_request *req)
 	if (req->isDir == 0) {
 		req->fd = open(req->fullPath, O_RDONLY);
 		if (req->fd != -1) {
-			serveFile(req);
+			serveDefaultFile(req);
 			return;
 		}
 	}
