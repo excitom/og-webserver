@@ -1,4 +1,7 @@
 %{
+// This is the grammar the config file. It implements a subset of the
+// NGINX configuration directives. I use a full-featured sample from
+// the NGINX documentation for testing the grammar.
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

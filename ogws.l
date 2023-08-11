@@ -1,4 +1,8 @@
 %{
+// This is the lexical analyzer for parsing the config file.
+// It implements a subset of the NGINX configuration directives.
+// I use a full-featured sample from the NGINX documentation
+// for testing the grammar.
 #include <stdio.h>
 #include "ogws.tab.h"
 extern int main(int, char **);
