@@ -62,9 +62,7 @@ daemonize()
 		// create a file for debug and trace information
 		char path[256];
 		char *p = (char *)&path;
-		strcpy(p, g.configFile);
-		char *q = strrchr(p, '/');
-		*q = '\0';
+		strcpy(p, g.configDir);
 		strcat(p, "/debug.out");
 		int fd = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 		if (fd == -1) {

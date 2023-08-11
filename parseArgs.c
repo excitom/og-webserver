@@ -76,6 +76,11 @@ parseArgs(int argc, char* argv[], char *version)
 		perror("config file not valid:");
 		exit(1);
 	}
+	char *p = (char *)malloc(strlen(g.configFile)+1);
+	strcpy(p, g.configFile);
+	char *q = strrchr(p, '/');
+	*++q = '\0';
+	g.configDir = p;
 }
 
 /**

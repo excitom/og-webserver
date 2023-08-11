@@ -30,63 +30,10 @@ static char *keyFile = NULL;
 static int autoIndex = 0;
 static int protocol = PROTOCOL_UNSET;
 
-void
-defaultAccessLog() {
-	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
-	log->path = "/var/log/ogws/access.log";
-	log->fd = -1;
-	log->next = NULL;
-	g.accessLogs = log;
-}
-
-void
-defaultErrorLog() {
-	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
-	log->path = "/var/log/ogws/error.log";
-	log->fd = -1;
-	log->next = NULL;
-	g.errorLogs = log;
-}
-
-void
-defaultPort() {
-	_port *p = (_port *)calloc(1, sizeof(_port));
-	p->portNum = 8080;
-	p->next = NULL;
-	ports = p;
-}
-
-void
-defaultServerName() {
-	_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
-	sn->serverName = "*";
-	sn->next = NULL;
-	serverNames = sn;
-}
-
-void
-defaultLocation() {
-	_location *loc = (_location *)calloc(1, sizeof(_location));
-	loc->type = TYPE_DOC_ROOT;
-	loc->matchType = PREFIX_MATCH;
-	loc->match = "/";
-	loc->root = "/var/www/ogws/html";
-	loc->try_target = NULL;
-	loc->passTo = NULL;	
-	loc->expires = 0;
-	loc->next = locations;
-	locations = loc;
-	return;
-}
-
-void 
-defaultIndexFile() {
-	_index_file *index = (_index_file *)calloc(1, sizeof(_index_file));
-	index->indexFile = "index.html";
-	index->next = NULL;
-	indexFiles = index;
-}
-
+/**
+ * Multiple servers may share the same log file(s). Share the file
+ * descriptor in this case rather than re-openeing the file.
+ */
 int
 pathAlreadyOpened(char *path, _log_file *list) {
 	_log_file *log = list;
@@ -102,6 +49,9 @@ pathAlreadyOpened(char *path, _log_file *list) {
 	return -1;
 }
 
+/**
+ * Open all the log files (access and error)
+ */
 void
 openLogFiles() {
 	_log_file *log = g.accessLogs;
@@ -132,6 +82,270 @@ openLogFiles() {
 	}
 }
 
+/**
+ * Check sanity of the configuration
+ */
+void
+checkDocRoots(_server *s) {
+	for(_location *loc = s->locations; loc != NULL; loc = loc->next) {
+		switch(loc->type) {
+			case TYPE_PROXY_PASS:
+				if (!loc->passTo) {
+					perror("Proxy pass missing\n");
+					exit(1);
+				}
+				break;
+			case TYPE_DOC_ROOT:
+				if (access(loc->root, R_OK) == -1) {
+					fprintf(stderr, "%s: ", loc->root);
+					perror("doc root not valid:");
+					exit(1);
+				}
+				break;
+			case TYPE_TRY_FILES:
+				if (!loc->try_target) {
+					fprintf(stderr, "Try directive incomplete\n");
+					exit(1);
+				}
+				break;
+			default:
+				fprintf(stderr, "Unknown location type %d\n", loc->type);
+				exit(1);
+		}
+	}
+}
+
+/**
+ * Make sure there is at least one server name for a server
+ */
+void
+checkServerNames(_server *s) {
+	if (s->serverNames == NULL) {
+		perror("missing server name");
+		exit(1);
+	}
+}
+
+/**
+ * Make sure each server has at least one index file
+ */
+void
+checkIndexFiles(_server *s) {
+	if (s->indexFiles == NULL) {
+		perror("missing default index file");
+		exit(1);
+	}
+}
+
+/**
+ * Make sure each server has an access log
+ */
+void
+checkAccessLogs(_server *s) {
+	if (s->accessLog == NULL) {
+		// use default
+		if (g.servers->accessLog == NULL) {
+			perror("missing access log");
+			exit(1);
+		}
+		s->accessLog = g.accessLogs;
+	}
+}
+
+/**
+ * Make sure each server has an error log
+ */
+void
+checkErrorLogs(_server *s) {
+	if (s->errorLog == NULL) {
+		// use default
+		if (g.servers->errorLog == NULL) {
+			perror("missing error log");
+			exit(1);
+		}
+	}
+}
+
+/**
+ * For SSL/TLS servers,
+ * make sure there is a cert file.
+ */
+void
+checkCertFile(_server *s) {
+	if (access(s->certFile, R_OK) == -1) {
+		fprintf(stderr, "%s: ", s->certFile);
+		perror("certificate file not valid:");
+		exit(1);
+	}
+}
+
+/**
+ * For SSL/TLS servers,
+ * make sure there is a key file.
+ */
+void
+checkKeyFile(_server *s) {
+	if (access(s->keyFile, R_OK) == -1) {
+		fprintf(stderr, "%s: ", s->keyFile);
+		perror("key file not valid:");
+		exit(1);
+	}
+}
+
+/**
+ * Loop through the servers and perform integrity checks
+ */
+void
+checkServers() {
+	for(_server *s = g.servers; s != NULL; s = s->next) {
+		if (!portOk(s)) {
+			exit(1);
+		}
+		checkDocRoots(s);
+		checkServerNames(s);
+		checkIndexFiles(s);
+		checkAccessLogs(s);
+		checkErrorLogs(s);
+		if (s->tls) {
+			checkCertFile(s);
+			checkKeyFile(s);
+		}
+	}
+}
+
+/**
+ * Perform sanity checks on the configuration
+ */
+void
+checkConfig()
+{
+	FILE *fp = fopen(g.pidFile, "r");
+	if (fp == NULL) {
+		perror("pid log not valid:");
+		exit(1);
+	} else {
+		fclose(fp);
+	}
+
+	checkServers();
+	openLogFiles();
+}
+
+/**
+ * Check for a port defined as TLS for one server and non-TLS for another.
+ * Return 1 = ok, 0 = not ok
+ */
+int
+checkPorts(int portNum, int tlsFlag) {
+	_server *s= g.servers;
+	while(s) {
+		_port *p = s->ports;
+		while(p) {
+			if ((p->portNum == portNum)
+				&& (p->tls != tlsFlag)) {
+				return 0;
+			}
+			p = p->next;
+		}
+		s = s->next;
+	}
+	return 1;
+}
+
+int
+portOk(_server *server)
+{
+	_server *s= g.servers;
+	while(s) {
+		_port *p = server->ports;
+		while(p) {
+			if (checkPorts(p->portNum, p->tls) == 0) {
+				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", p->portNum);
+				return 0;
+			}
+			p = p->next;
+		}
+		s = s->next;
+	}
+	// unique port/tls combination
+	return 1;
+}
+
+/**
+ * Define a default access log
+ */
+void
+defaultAccessLog() {
+	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
+	log->path = "/var/log/ogws/access.log";
+	log->fd = -1;
+	log->next = NULL;
+	g.accessLogs = log;
+}
+
+/**
+ * Define a default error log
+ */
+void
+defaultErrorLog() {
+	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
+	log->path = "/var/log/ogws/error.log";
+	log->fd = -1;
+	log->next = NULL;
+	g.errorLogs = log;
+}
+
+/**
+ * Define a default listening port
+ */
+void
+defaultPort() {
+	_port *p = (_port *)calloc(1, sizeof(_port));
+	p->portNum = 8080;
+	p->next = NULL;
+	ports = p;
+}
+
+/**
+ * Define a default server name
+ */
+void
+defaultServerName() {
+	_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
+	sn->serverName = "*";
+	sn->next = NULL;
+	serverNames = sn;
+}
+
+/**
+ * Define a default document root which matches all locations
+ */
+void
+defaultLocation() {
+	_location *loc = (_location *)calloc(1, sizeof(_location));
+	loc->type = TYPE_DOC_ROOT;
+	loc->matchType = PREFIX_MATCH;
+	loc->match = "/";
+	loc->root = "/var/www/ogws/html";
+	loc->try_target = NULL;
+	loc->passTo = NULL;	
+	loc->expires = 0;
+	loc->next = locations;
+	locations = loc;
+	return;
+}
+
+/**
+ * Define a default index file
+ */
+void 
+defaultIndexFile() {
+	_index_file *index = (_index_file *)calloc(1, sizeof(_index_file));
+	index->indexFile = "index.html";
+	index->next = NULL;
+	indexFiles = index;
+}
+
 // The following `f_` functions implement the config file keywords
 // The functions are called from the lex/yacc generated code as the 
 // config file is parsed.
@@ -142,6 +356,15 @@ f_pid(char *pidFile) {
 	g.pidFile = pidFile;
 	if (g.debug) {
 		fprintf(stderr,"PID file location:  %s\n", g.pidFile);
+	}
+}
+
+// Include a file. Note: This should never be called since a pre-processing
+// step expands all the include files.
+void
+f_include(char *path) {
+	if (g.debug) {
+		fprintf(stderr, "Include file ignored %s\n", path);
 	}
 }
 
@@ -703,189 +926,21 @@ f_config_complete() {
 // interface to generated code from yacc/lex
 extern FILE *yyin;
 int yyparse (void);
+char tempFile[] = "/tmp/ogws.conf";
 
 void
 parseConfig() {
+	yyin = expandIncludeFiles((char *)&tempFile);
 	defaultAccessLog();
 	defaultErrorLog();
 	defaultPort();
 	defaultServerName();
 	defaultLocation();
 	defaultIndexFile();
-
-	yyin = fopen(g.configFile, "r");
-	if (yyin == NULL) {
-		int e = errno;
-		char buffer[BUFF_SIZE];
-		snprintf(buffer, BUFF_SIZE, "%s: file open failed: %s\n", g.configFile, strerror(e));
-		doDebug(buffer);
-		exit(1);
-	}
+	// call the parser
 	if (yyparse() != 0) {
 		fprintf(stderr, "Config file not parsed correctly, exiting.\n");
 		exit(1);
 	}
-}
-
-/**
- * Check sanity of the configuration
- */
-void
-checkDocRoots(_server *s) {
-	for(_location *loc = s->locations; loc != NULL; loc = loc->next) {
-		switch(loc->type) {
-			case TYPE_PROXY_PASS:
-				if (!loc->passTo) {
-					perror("Proxy pass missing\n");
-					exit(1);
-				}
-				break;
-			case TYPE_DOC_ROOT:
-				if (access(loc->root, R_OK) == -1) {
-					fprintf(stderr, "%s: ", loc->root);
-					perror("doc root not valid:");
-					exit(1);
-				}
-				break;
-			case TYPE_TRY_FILES:
-				if (!loc->try_target) {
-					fprintf(stderr, "Try directive incomplete\n");
-					exit(1);
-				}
-				break;
-			default:
-				fprintf(stderr, "Unknown location type %d\n", loc->type);
-				exit(1);
-		}
-	}
-}
-
-void
-checkServerNames(_server *s) {
-	if (s->serverNames == NULL) {
-		perror("missing server name");
-		exit(1);
-	}
-}
-
-void
-checkIndexFiles(_server *s) {
-	if (s->indexFiles == NULL) {
-		perror("missing default index file");
-		exit(1);
-	}
-}
-
-void
-checkAccessLogs(_server *s) {
-	if (s->accessLog == NULL) {
-		// use default
-		if (g.servers->accessLog == NULL) {
-			perror("missing access log");
-			exit(1);
-		}
-		s->accessLog = g.accessLogs;
-	}
-}
-
-void
-checkErrorLogs(_server *s) {
-	if (s->errorLog == NULL) {
-		// use default
-		if (g.servers->errorLog == NULL) {
-			perror("missing error log");
-			exit(1);
-		}
-	}
-}
-
-void
-checkCertFile(_server *s) {
-	if (access(s->certFile, R_OK) == -1) {
-		fprintf(stderr, "%s: ", s->certFile);
-		perror("certificate file not valid:");
-		exit(1);
-	}
-}
-
-void
-checkKeyFile(_server *s) {
-	if (access(s->keyFile, R_OK) == -1) {
-		fprintf(stderr, "%s: ", s->keyFile);
-		perror("key file not valid:");
-		exit(1);
-	}
-}
-
-void
-checkServers() {
-	for(_server *s = g.servers; s != NULL; s = s->next) {
-		if (!portOk(s)) {
-			exit(1);
-		}
-		checkDocRoots(s);
-		checkServerNames(s);
-		checkIndexFiles(s);
-		checkAccessLogs(s);
-		checkErrorLogs(s);
-		if (s->tls) {
-			checkCertFile(s);
-			checkKeyFile(s);
-		}
-	}
-}
-
-void
-checkConfig()
-{
-	FILE *fp = fopen(g.pidFile, "r");
-	if (fp == NULL) {
-		perror("pid log not valid:");
-		exit(1);
-	} else {
-		fclose(fp);
-	}
-
-	checkServers();
-	openLogFiles();
-}
-
-/**
- * Check for a port defined as TLS for one server and non-TLS for another.
- * Return 1 = ok, 0 = not ok
- */
-int
-checkPorts(int portNum, int tlsFlag) {
-	_server *s= g.servers;
-	while(s) {
-		_port *p = s->ports;
-		while(p) {
-			if ((p->portNum == portNum)
-				&& (p->tls != tlsFlag)) {
-				return 0;
-			}
-			p = p->next;
-		}
-		s = s->next;
-	}
-	return 1;
-}
-
-int
-portOk(_server *server)
-{
-	_server *s= g.servers;
-	while(s) {
-		_port *p = server->ports;
-		while(p) {
-			if (checkPorts(p->portNum, p->tls) == 0) {
-				fprintf(stderr, "HTTP and HTTPS on the same port not supported, port %d\n", p->portNum);
-				return 0;
-			}
-			p = p->next;
-		}
-		s = s->next;
-	}
-	// unique port/tls combination
-	return 1;
+	unlink((char *)&tempFile);
 }

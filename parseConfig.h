@@ -1,5 +1,6 @@
 // config parser functions
 void f_pid(char *);
+void f_include(char *);
 void f_trace(int);
 void f_autoindex(int);
 void f_sendfile(int);

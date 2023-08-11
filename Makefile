@@ -24,6 +24,7 @@ SRCS = ogws.c \
 	  parseMimeTypes.c \
 	  parseArgs.c \
 	  parseConfig.c \
+	  expandIncludeFiles.c \
 	  log.c \
 	  daemonize.c \
 	  showDirectoryListing.c \

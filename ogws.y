@@ -114,7 +114,7 @@ pid_directive
 include_directive
 	:
 	INCLUDE PATH EOL
-	{printf("UNIMPLEMENTED Include path: %s\n", $2);}
+	{f_include($2);}
 	;
 trace_directive
 	: TRACE ON EOL
@@ -437,9 +437,14 @@ int main( int argc, char **argv )
   yyparse();
   return 0;
 }
-// config parser stub functions for testing in stand alone mode
+// Config parser stub functions for testing in stand alone mode.
+// When integrated with the web server, these functions are 
+// defined in parseConfig.c.
 void f_pid(char *path) {
 	printf("PID file %s\n", path);
+}
+void f_include(char *path) {
+	printf("Include file %s\n", path);
 }
 void f_trace(int flag) {
 	if (flag) {

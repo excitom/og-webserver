@@ -35,6 +35,7 @@ void handleTryFiles(_request *);
 int openDefaultIndexFile(_request *);
 int pathExists(_request *, char *);
 void serveFile(_request *);
+FILE *expandIncludeFiles(char *);
 
 #define FAIL    -1
 #define BUFF_SIZE 4096
@@ -66,6 +67,7 @@ struct globalVars {
 	int useSendfile;
 	int keepaliveTimeout;
 	char *configFile;
+	char *configDir;
 	char *pidFile;
 	char *user;
 	char *group;
