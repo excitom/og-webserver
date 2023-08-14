@@ -25,6 +25,8 @@ expandFile(FILE *in, FILE *out) {
 	int read;
 	size_t len = 0;
 	char *line;
+	// Copy the config to a temp file, checking each line
+	// for an `include` directive.
 	while ((read = (int)getline(&line, &len, in)) != -1) {
 		char *p = line;
 		while((*p == ' ') || (*p == '\t')) {
@@ -36,13 +38,19 @@ expandFile(FILE *in, FILE *out) {
 				file++;
 			}
 			p = strchr(file, ';');
+			char *path;
 			if (p == NULL) {
 				fprintf(stderr, "Invalid 'include' directive, missing semicolon, ignored.\n");
 			} else {
 				*p = '\0';
-				char *path = (char *)malloc(strlen(g.configDir)+strlen(file)+1);
-				strcpy(path, g.configDir);
-				strcat(path, file);
+				if (file[0] == '/') {
+					path = (char *)malloc(strlen(file)+1);
+					strcpy(path, file);
+				} else {
+					path = (char *)malloc(strlen(g.configDir)+strlen(file)+1);
+					strcpy(path, g.configDir);
+					strcat(path, file);
+				}
 				FILE *fd = fopen(path, "r");
 				if (fd != NULL) {
 					if (g.debug) {
@@ -52,6 +60,7 @@ expandFile(FILE *in, FILE *out) {
 				} else {
 					fprintf(stderr, "Invalid include file path %s, ignored\n", path);
 				}
+				free(path);
 			}
 		} else {
 			fputs(line, out);
