@@ -49,6 +49,9 @@ void yyerror( const char * );
 %token <str>  ROOT;
 %token <str>  PROXYPASS;
 %token <str>  FASTCGIPASS;
+%token <str>  FASTCGIINDEX;
+%token <str>  FASTCGIPARAM;
+%token <str>  FASTCGISPLITPATHINFO;
 %token <str>  RETURN;
 %token WEIGHT;
 %token <str>  EXPIRES;
@@ -336,6 +339,9 @@ location_directive
 	: root_directive
 	| proxy_pass_directive
 	| fastcgi_pass
+	| fastcgi_split_path_info
+	| fastcgi_index
+	| fastcgi_param
 	| expires_directive
 	| try_files_directive
 	;
@@ -351,13 +357,25 @@ proxy_pass_directive
 	;
 fastcgi_pass
 	: FASTCGIPASS NAME PORT EOL
-	{printf("UNIMPLEMENTED fastCGI pass to %s on port %d\n", $2, $3);}
+	{f_fastcgi_pass($2, $3);}
 	| FASTCGIPASS IP PORT EOL
-	{printf("UNIMPLEMENTED fastCGI pass to %s on port %d\n", $2, $3);}
+	{f_fastcgi_pass($2, $3);}
 	| FASTCGIPASS NAME EOL
-	{printf("UNIMPLEMENTED fastCGI pass to %s\n", $2);}
+	{f_fastcgi_pass($2, 0);}
 	| FASTCGIPASS IP EOL
-	{printf("UNIMPLEMENTED fastCGI pass to IP %s\n", $2);}
+	{f_fastcgi_pass($2, 0);}
+	;
+fastcgi_split_path_info
+	: FASTCGISPLITPATHINFO REGEXP EOL
+	{f_fastcgi_split_path_info($2);}
+	;
+fastcgi_index
+	: FASTCGIINDEX NAME EOL
+	{f_fastcgi_index($2);}
+	;
+fastcgi_param
+	: FASTCGIPARAM NAME NAME EOL
+	{f_fastcgi_param($2, $3);}
 	;
 try_files_directive
 	:
@@ -563,5 +581,21 @@ void f_events() {
 }
 void f_config_complete() {
 	printf("Config file processing complete\n");
+}
+void f_fastcgi_pass(char *address, int port) {
+	if (port) {
+		printf("fastcgi_pass to address %s on port %d\n", address, port);
+	} else {
+		printf("fastcgi_pass to address %s\n", address);
+	}
+}
+void f_fastcgi_split_path_info(char *regex) {
+	printf("fastcgi_split_path_info using regex %s\n", regex);
+}
+void f_fastcgi_param(char *name, char *value) {
+	printf("fastcgi_param set %s to %s\n", name, value);
+}
+void f_fastcgi_index(char *name) {
+	printf("fastcgi_index file name %s\n", name);
 }
 #endif

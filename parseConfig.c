@@ -865,6 +865,13 @@ f_protocol(char *p) {
 	}
 	return;
 }
+//
+// fastcgi_pass directive
+// to do: implement the fast CGI API. for now, just do a proxy_pass
+void
+f_fastcgi_pass(char *host, int port) {
+	f_proxy_pass(host, port);
+}
 
 // proxy_pass directive
 void
@@ -894,6 +901,21 @@ f_keepalive_timeout(int timeout) {
 	if (g.debug) {
 		fprintf(stderr,"Keepalive timeout: %d\n", g.keepaliveTimeout);
 	}
+}
+
+// fastcgi index, param, and split path info - unimplemented for now,
+// until the fast CGI API is implemented.
+void
+f_fastcgi_index(char *file) {
+	fprintf(stderr, "fastcgi_index file %s, unimplemented, ignored\n", file);
+}
+void
+f_fastcgi_param(char *name, char *value) {
+	fprintf(stderr, "fastcgi_param set %s to %s, unomplemented, ignored\n", name, value);
+}
+void
+f_fastcgi_split_path_info(char *regex) {
+	fprintf(stderr, "fastcgi_split_path_info using regex %s, unimplemented, ignored\n", regex);
 }
 
 // max worker processes

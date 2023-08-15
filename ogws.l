@@ -11,6 +11,7 @@ extern YYSTYPE yylval;
 %option yylineno
 %%
 server_names_hash_bucket_size {yylval.iValue = atoi(yytext); return HASHBUCKET;}
+fastcgi_split_path_info	{yylval.str = strdup(yytext); return FASTCGISPLITPATHINFO;}
 worker_rlimit_nofile {yylval.iValue = atoi(yytext); return WORKERRLIMIT;}
 ssl_certificate_key	{yylval.str = strdup(yytext); return SSLCERTIFICATEKEY;}
 worker_connections	{yylval.iValue = atoi(yytext); return WORKERCONNECTIONS;}
@@ -18,6 +19,8 @@ keepalive_timeout	{yylval.iValue = atoi(yytext); return KEEPALIVETIMEOUT;}
 worker_processes	{yylval.iValue = atoi(yytext); return WORKERPROCESSES;}
 ssl_certificate	{yylval.str = strdup(yytext); return SSLCERTIFICATE;}
 default_server	{yylval.str = strdup(yytext); return DEFAULTSERVER;}
+fastcgi_index	{yylval.str = strdup(yytext); return FASTCGIINDEX;}
+fastcgi_param	{yylval.str = strdup(yytext); return FASTCGIPARAM;}
 log_not_found	{yylval.str = strdup(yytext); return LOGNOTFOUND;}
 fastcgi_pass	{yylval.str = strdup(yytext); return FASTCGIPASS;}
 default_type	{yylval.str = strdup(yytext); return DEFAULTTYPE;}
