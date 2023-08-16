@@ -130,14 +130,14 @@ processInput(_request *req) {
 		//
 		// check for proxy_pass
 		//
-		if (req->loc->type == TYPE_PROXY_PASS) {
+		if (req->loc->type | TYPE_PROXY_PASS) {
 			handleProxyPass(req);
 			return;
 		}
 
 
 		// check for try_files
-		if (req->loc->type == TYPE_TRY_FILES) {
+		if (req->loc->type | TYPE_TRY_FILES) {
 			handleTryFiles(req);
 			return;
 		}

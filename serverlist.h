@@ -11,10 +11,11 @@ typedef struct _log_file {
 	int type;
 } _log_file;
 
-#define TYPE_UNSET -1
-#define TYPE_PROXY_PASS 0
-#define TYPE_DOC_ROOT 1
-#define TYPE_TRY_FILES 2
+// the type field is a bit mask, mutliple values can be set
+#define TYPE_PROXY_PASS 1
+#define TYPE_DOC_ROOT 2
+#define TYPE_TRY_FILES 4
+
 #define UNSET_MATCH -1
 #define EQUAL_MATCH 0
 #define REGEX_MATCH 1

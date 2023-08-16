@@ -88,29 +88,28 @@ openLogFiles() {
 void
 checkDocRoots(_server *s) {
 	for(_location *loc = s->locations; loc != NULL; loc = loc->next) {
-		switch(loc->type) {
-			case TYPE_PROXY_PASS:
-				if (!loc->passTo) {
-					perror("Proxy pass missing\n");
-					exit(1);
-				}
-				break;
-			case TYPE_DOC_ROOT:
-				if (access(loc->root, R_OK) == -1) {
-					fprintf(stderr, "%s: ", loc->root);
-					perror("doc root not valid:");
-					exit(1);
-				}
-				break;
-			case TYPE_TRY_FILES:
-				if (!loc->try_target) {
-					fprintf(stderr, "Try directive incomplete\n");
-					exit(1);
-				}
-				break;
-			default:
-				fprintf(stderr, "Unknown location type %d\n", loc->type);
+		if (loc->type & TYPE_PROXY_PASS) {
+			if (!loc->passTo) {
+				perror("Proxy pass missing\n");
 				exit(1);
+			}
+		}
+		else if(loc->type & TYPE_DOC_ROOT) {
+			if (access(loc->root, R_OK) == -1) {
+				fprintf(stderr, "%s: ", loc->root);
+				perror("doc root not valid:");
+				exit(1);
+			}
+		}
+		else if (loc->type & TYPE_TRY_FILES) {
+			if (!loc->try_target) {
+				fprintf(stderr, "Try directive incomplete\n");
+				exit(1);
+			}
+		}
+		else {
+			fprintf(stderr, "Unknown location type %d\n", loc->type);
+			exit(1);
 		}
 	}
 }
@@ -588,19 +587,34 @@ f_http() {
 // document root
 void
 f_root(char *root) {
-	_location *loc = (_location *)calloc(1, sizeof(_location));
 	_location *defloc = locations;
 	// get the default location
 	while (defloc->next) {
 		defloc = defloc->next;
 	}
+	// if there is a pending location in addition to the default,
+	// update the pending location.
 	// set defaults
-	memcpy(loc, defloc, sizeof(_location));
-	loc->next = locations;
-	locations = loc;
-	loc->root = root;
-	if (g.debug) {
-		fprintf(stderr,"Document root path %s\n", loc->root);
+	if (locations != defloc) {
+		locations->type |= TYPE_DOC_ROOT;
+		if (locations->root) {
+			free(locations->root);
+			doDebug("Duplicate doc root");
+		}
+		locations->root = root;
+		if (g.debug) {
+			fprintf(stderr,"Updated Document root path %s\n", locations->root);
+		}
+	} else {
+		_location *loc = (_location *)calloc(1, sizeof(_location));
+		memcpy(loc, defloc, sizeof(_location));
+		loc->next = locations;
+		locations = loc;
+		loc->root = root;
+		loc->type |= TYPE_DOC_ROOT;
+		if (g.debug) {
+			fprintf(stderr,"New Document root path %s\n", loc->root);
+		}
 	}
 	return;
 }
@@ -818,7 +832,7 @@ f_location(int matchType, char *match) {
 		}
 		loc->root = loc->next->root;
 	}
-	protocol = TYPE_UNSET;
+	protocol = PROTOCOL_UNSET;
 	return;
 }
 
@@ -842,13 +856,35 @@ f_try_target(char *target) {
 // try_files directive
 void
 f_try_files() {
-	_location *loc = (_location *)calloc(1, sizeof(_location));
-	loc->type = TYPE_TRY_FILES;
-	loc->matchType = TYPE_UNSET;
-	loc->try_target = tryTargets;
-	tryTargets = NULL;
-	loc->next = locations;
-	locations = loc;
+	_location *defloc = locations;
+	// get the default location
+	while (defloc->next) {
+		defloc = defloc->next;
+	}
+	// if there is a pending location in addition to the default,
+	// update the pending location.
+	// set defaults
+	if (locations != defloc) {
+		locations->type |= TYPE_TRY_FILES;
+		locations->matchType = UNSET_MATCH;
+		locations->try_target = tryTargets;
+		tryTargets = NULL;
+		if (g.debug) {
+			fprintf(stderr,"Updated try files\n");
+		}
+	} else {
+		_location *loc = (_location *)calloc(1, sizeof(_location));
+		memcpy(loc, defloc, sizeof(_location));
+		loc->next = locations;
+		locations = loc;
+		loc->type |= TYPE_TRY_FILES;
+		loc->matchType = UNSET_MATCH;
+		loc->try_target = tryTargets;
+		tryTargets = NULL;
+		if (g.debug) {
+			fprintf(stderr,"New try files\n");
+		}
+	}
 }
 
 // proxy_pass protocol
@@ -887,12 +923,36 @@ f_proxy_pass(char *host, int port) {
 	passTo->sin_family = AF_INET;
 	passTo->sin_port = htons(port);
 	passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
-	_location *loc = (_location *)calloc(1, sizeof(_location));
-	loc->passTo = passTo;
-	passTo = NULL;
-	loc->type = TYPE_PROXY_PASS;
-	loc->next = locations;
-	locations = loc;
+
+	_location *defloc = locations;
+	// get the default location
+	while (defloc->next) {
+		defloc = defloc->next;
+	}
+	// if there is a pending location in addition to the default,
+	// update the pending location.
+	// set defaults
+	if (locations != defloc) {
+		locations->type |= TYPE_PROXY_PASS;
+		if (locations->passTo) {
+			free(locations->passTo);
+			doDebug("Duplicate proxy pass");
+		}
+		locations->passTo = passTo;
+		if (g.debug) {
+			fprintf(stderr,"Updated proxy pass host %s\n", host);
+		}
+	} else {
+		_location *loc = (_location *)calloc(1, sizeof(_location));
+		memcpy(loc, defloc, sizeof(_location));
+		loc->next = locations;
+		locations = loc;
+		loc->passTo = passTo;
+		loc->type |= TYPE_PROXY_PASS;
+		if (g.debug) {
+			fprintf(stderr,"New proxy pass host %s\n", host);
+		}
+	}
 	free(host);		// no longer needed
 	return;
 }
