@@ -127,18 +127,17 @@ processInput(_request *req) {
 			return;
 		}
 
-		//
-		// check for proxy_pass
-		//
-		if (req->loc->type | TYPE_PROXY_PASS) {
-			handleProxyPass(req);
+		// check for try_files
+		if (req->loc->type & TYPE_TRY_FILES) {
+			handleTryFiles(req);
 			return;
 		}
 
-
-		// check for try_files
-		if (req->loc->type | TYPE_TRY_FILES) {
-			handleTryFiles(req);
+		//
+		// check for proxy_pass
+		//
+		if (req->loc->type & TYPE_PROXY_PASS) {
+			handleProxyPass(req);
 			return;
 		}
 
