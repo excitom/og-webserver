@@ -610,6 +610,7 @@ void
 f_expires(char *expires) {
 	if (!locations) {
 		fprintf(stderr, "Expires directive with no Location, ignored\n");
+		free(expires);
 		return;
 	}
 	if (strncmp(expires, "off", 3) == 0) {
@@ -636,6 +637,7 @@ f_expires(char *expires) {
 	if (g.debug) {
 		fprintf(stderr,"Expires directive %d\n", locations->expires);
 	}
+	free(expires);
 	return;
 }
 
@@ -657,7 +659,10 @@ int dupName(char *name) {
 
 void
 f_server_name(char *serverName, int type) {
-	if (!dupName(serverName)) {
+	if (dupName(serverName)) {
+		// duplicate name, ignored
+		free(serverName);
+	} else {
 		_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
 		sn->serverName = serverName;
 		sn->type = type;
@@ -781,7 +786,10 @@ f_listen(char *name, int portNum) {
 		}
 	}
 	if (name != NULL) {
-		if (!dupName(name)) {
+		if (dupName(name)) {
+			// duplicate server inored
+			free(name);
+		} else {
 			_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
 			sn->serverName = name;
 			sn->next = serverNames;
@@ -863,14 +871,8 @@ f_protocol(char *p) {
 	if (g.debug) {
 		fprintf(stderr, "Proxy pass to %s protocol\n", p);
 	}
+	free(p);
 	return;
-}
-//
-// fastcgi_pass directive
-// to do: implement the fast CGI API. for now, just do a proxy_pass
-void
-f_fastcgi_pass(char *host, int port) {
-	f_proxy_pass(host, port);
 }
 
 // proxy_pass directive
@@ -891,7 +893,15 @@ f_proxy_pass(char *host, int port) {
 	loc->type = TYPE_PROXY_PASS;
 	loc->next = locations;
 	locations = loc;
+	free(host);		// no longer needed
 	return;
+}
+//
+// fastcgi_pass directive
+// to do: implement the fast CGI API. for now, just do a proxy_pass
+void
+f_fastcgi_pass(char *host, int port) {
+	f_proxy_pass(host, port);
 }
 
 // keepalive timeout
@@ -908,14 +918,18 @@ f_keepalive_timeout(int timeout) {
 void
 f_fastcgi_index(char *file) {
 	fprintf(stderr, "fastcgi_index file %s, unimplemented, ignored\n", file);
+	free(file);
 }
 void
 f_fastcgi_param(char *name, char *value) {
 	fprintf(stderr, "fastcgi_param set %s to %s, unomplemented, ignored\n", name, value);
+	free(name);
+	free(value);
 }
 void
 f_fastcgi_split_path_info(char *regex) {
 	fprintf(stderr, "fastcgi_split_path_info using regex %s, unimplemented, ignored\n", regex);
+	free(regex);
 }
 
 // max worker processes
