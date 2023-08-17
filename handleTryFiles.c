@@ -43,6 +43,10 @@ static char *tryTarget;
 void
 serveDefaultFile(_request *req)
 {
+	if (req->loc->type & TYPE_PROXY_PASS) {
+		handleProxyPass(req);
+		return;
+	}
 	free(req->path);
 	req->path = (char *)malloc(strlen(tryTarget)+1);
 	strcpy(req->path, tryTarget);
@@ -130,7 +134,12 @@ handleTryFiles(_request *req)
 				serveDefaultFile(req);
 			}
 		} else {
-			serveFile(req);
+			// handle proxy_pass or fastcgi_pass
+			if (req->loc->type & TYPE_PROXY_PASS) {
+				handleProxyPass(req);
+			} else {
+				serveFile(req);
+			}
 		}
 	}
 }
