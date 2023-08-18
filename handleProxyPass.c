@@ -65,7 +65,7 @@ handleProxyPass(_request *req)
 	//
 	size_t bytes = BUFF_SIZE;
 	int startOfResponse = 1;
-	int httpCode;
+	int httpCode = 200;
 	int size = 0;
 	do {
 		bytes = recvData(upstream, buffer, BUFF_SIZE);

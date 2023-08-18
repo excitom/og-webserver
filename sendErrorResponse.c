@@ -50,6 +50,6 @@ sendErrorResponse( _request *req, int code, char *msg, char *path )
 	sendData(req->sockFd, req->ssl, buffer2, sz2);
 	sendData(req->sockFd, req->ssl, buffer1, sz1);
 
-	errorLog(req->fd, req->errorFd, "GET", code, path, msg);
+	errorLog(req->sockFd, req->errorFd, "GET", code, path, msg);
 	return;
 }
