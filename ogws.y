@@ -184,7 +184,7 @@ index_file
 default_type_directive
 	:
 	DEFAULTTYPE PATH EOL
-	{printf("NOT YET IMPLEMENTED: Default type: %s\n", $2);}
+	{f_default_type($2);}
 	;
 sendfile_directive
 	:
@@ -247,6 +247,7 @@ server_directive
 	| listen_directive
 	| ssl_directive
 	| index_directive
+	| default_type_directive
 	;
 server_name_directive
 	: SERVERNAME server_names EOL
@@ -344,6 +345,7 @@ location_directive
 	| fastcgi_param
 	| expires_directive
 	| try_files_directive
+	| default_type_directive
 	;
 proxy_pass_directive
 	: PROXYPASS protocol NAME PORT EOL
@@ -597,5 +599,8 @@ void f_fastcgi_param(char *name, char *value) {
 }
 void f_fastcgi_index(char *name) {
 	printf("fastcgi_index file name %s\n", name);
+}
+void f_default_type(char *type) {
+	printf("default MIME type for responses: %s\n", type);
 }
 #endif

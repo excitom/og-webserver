@@ -345,6 +345,16 @@ defaultIndexFile() {
 	indexFiles = index;
 }
 
+/**
+ * Default MIME type for responses
+ */
+void
+defaultType() {
+	char defType[] = "text/html";
+	g.defaultType = (char *)malloc(strlen(defType)+1);
+	strcpy(g.defaultType, defType);
+}
+
 // The following `f_` functions implement the config file keywords
 // The functions are called from the lex/yacc generated code as the 
 // config file is parsed.
@@ -365,6 +375,15 @@ f_include(char *path) {
 	if (g.debug) {
 		fprintf(stderr, "Include file ignored %s\n", path);
 	}
+}
+
+// set the default MIME type for responses
+void
+f_default_type(char *type) {
+	if (g.defaultType) {
+		free(g.defaultType);
+	}
+	g.defaultType = type;
 }
 
 // specify option for network trace
@@ -1033,6 +1052,7 @@ parseConfig() {
 	defaultServerName();
 	defaultLocation();
 	defaultIndexFile();
+	defaultType();
 	// call the parser
 	if (yyparse() != 0) {
 		fprintf(stderr, "Config file not parsed correctly, exiting.\n");

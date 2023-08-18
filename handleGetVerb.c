@@ -110,7 +110,7 @@ serveFile(_request *req)
 void
 getMimeType(char *name, char *mimeType)
 {
-	strcpy(mimeType, "text/html");	// default
+	strcpy(mimeType, g.defaultType);	// default
 	char *p = strrchr(name, '.');
 	if (p != NULL) {
 		p++;
@@ -118,7 +118,7 @@ getMimeType(char *name, char *mimeType)
 		while (mt != NULL) {
 			if (strcmp(p, mt->extension) == 0) {
 				strcpy(mimeType, mt->mimeType);
-				break;;
+				break;
 			}
 			mt = mt->next;
 		}
@@ -143,6 +143,8 @@ openDefaultIndexFile(_request *req)
 		strcat(indexPath, ifn->indexFile);
 		int fd = open(indexPath, O_RDONLY);
 		if (fd >= 0) {
+			// update the full path to include the index file
+			strcpy(req->fullPath, indexPath);
 			return fd;
 		}
 		ifn = ifn->next;

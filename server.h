@@ -73,6 +73,7 @@ struct globalVars {
 	char *group;
 	char *signal;
 	char *version;
+	char *defaultType;
 	_log_file *accessLogs;
 	_log_file *errorLogs;
 	_server *servers;
