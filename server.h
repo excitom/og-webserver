@@ -80,4 +80,5 @@ struct globalVars {
 	_clientConnection *clients;
 	int portCount;
 	struct _mimeTypes *mimeTypes;
+	struct _upstreams *upstreams;
 };

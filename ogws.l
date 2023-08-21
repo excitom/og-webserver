@@ -40,6 +40,7 @@ upstream	{yylval.str = strdup(yytext); return UPSTREAM;}
 include		{yylval.str = strdup(yytext); return INCLUDE;}
 expires		{yylval.str = strdup(yytext); return EXPIRES;}
 rewrite		{yylval.str = strdup(yytext); return REWRITE;}
+backup		{return BACKUP;}
 events		{yylval.str = strdup(yytext); return EVENTS;}
 server		{yylval.str = strdup(yytext); return SERVER;}
 listen		{yylval.iValue = atoi(yytext); return LISTEN;}

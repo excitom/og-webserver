@@ -25,6 +25,7 @@ static _server_name *serverNames = NULL;
 static _port *ports = NULL;
 static _location *locations = NULL;
 static _try_target *tryTargets = NULL;
+static _upstream *servers = NULL;
 static char *certFile = NULL;
 static char *keyFile = NULL;
 static int autoIndex = 0;
@@ -353,6 +354,14 @@ defaultType() {
 	char defType[] = "text/html";
 	g.defaultType = (char *)malloc(strlen(defType)+1);
 	strcpy(g.defaultType, defType);
+}
+
+/**
+ * Default list of upstream servers
+ */
+void
+defaultUpstreams() {
+	g.upstreams = NULL;
 }
 
 // The following `f_` functions implement the config file keywords
@@ -855,6 +864,27 @@ f_location(int matchType, char *match) {
 	return;
 }
 
+// upstream directive
+void
+f_upstreams(char *name) {
+	_upstreams *up = (_upstreams *)calloc(1, sizeof(_upstreams));
+	up->next = g.upstreams;
+	g.upstreams = up;
+	up->name = name;
+	up->servers = servers;
+}
+
+// upstream server component
+void
+f_upstream(char *host, int port, int weight) {
+	_upstream *server = (_upstream *)calloc(1, sizeof(_upstream));
+	server->next = servers;
+	servers = server;
+	server->host = host;
+	server->port = port;
+	server->weight = weight;
+}
+
 void
 f_try_target(char *target) {
 	_try_target *tt = calloc(1, sizeof(_try_target));
@@ -1053,6 +1083,7 @@ parseConfig() {
 	defaultLocation();
 	defaultIndexFile();
 	defaultType();
+	defaultUpstreams();
 	// call the parser
 	if (yyparse() != 0) {
 		fprintf(stderr, "Config file not parsed correctly, exiting.\n");

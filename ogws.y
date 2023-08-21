@@ -34,6 +34,7 @@ void yyerror( const char * );
 %token <str>  HTTPS;
 %token <str>  HTTP1;
 %token <str>  HTTP;
+%token <str>  BACKUP;
 %token <iValue> KEEPALIVETIMEOUT;
 %token <str>  DEFAULTTYPE;
 %token <str>  SERVER;
@@ -269,7 +270,7 @@ server_name
 	;
 upstream_directive
 	: UPSTREAM NAME '{' upstreams '}'
-	{printf("UNIMPLEMENTED Upstream to %s\n", $2);}
+	{f_upstreams($2);}
 	;
 upstreams
 	:
@@ -280,10 +281,40 @@ upstreams
 upstream
 	:
 	SERVER IP PORT WEIGHT EQUAL_OPERATOR NUMBER EOL
-	{printf("UNIMPLEMENTED Upstream IP %s port %d weight %d\n", $2, $3, $6);}
+	{f_upstream($2, $3, $6);}
+	|
+	SERVER IP WEIGHT EQUAL_OPERATOR NUMBER EOL
+	{f_upstream($2, 8080, $5);}
 	|
 	SERVER IP PORT EOL
-	{printf("UNIMPLEMENTED Upstream IP %s port %d\n", $2, $3);}
+	{f_upstream($2, $3, 1);}
+	|
+	SERVER IP EOL
+	{f_upstream($2, 8080, 1);}
+	|
+	SERVER NAME PORT WEIGHT EQUAL_OPERATOR NUMBER EOL
+	{f_upstream($2, $3, $6);}
+	|
+	SERVER NAME WEIGHT EQUAL_OPERATOR NUMBER EOL
+	{f_upstream($2, 8080, $5);}
+	|
+	SERVER NAME PORT EOL
+	{f_upstream($2, $3, 1);}
+	|
+	SERVER NAME EOL
+	{f_upstream($2, 8080, 1);}
+	|
+	SERVER IP PORT BACKUP EOL
+	{f_upstream($2, $3, -1);}
+	|
+	SERVER IP BACKUP EOL
+	{f_upstream($2, 8080, -1);}
+	|
+	SERVER NAME PORT BACKUP EOL
+	{f_upstream($2, $3, -1);}
+	|
+	SERVER NAME BACKUP EOL
+	{f_upstream($2, 8080, -1);}
 	;
 access_log_directive
 	:
@@ -551,6 +582,17 @@ void f_location(int type, char *match) {
 		printf("Location prefix match %s\n", match);
 	} else {
 		printf("Location : unknown match type\n");
+	}
+}
+void f_upstreams(char *name) {
+	printf("Upstream group name %s\n", name);
+}
+void f_upstream(char *host, int port, int weight) {
+	printf("Upstream server host %s port %d ", host, port);
+	if (weight == -1) {
+		printf("backup\n");
+	} else {
+		printf("weight %d\n", weight);
 	}
 }
 void f_try_target(char *target) {

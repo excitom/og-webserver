@@ -29,6 +29,19 @@ typedef struct _try_target {
 	char *target;
 } _try_target;
 
+typedef struct _upstream {
+	struct _upstream *next;
+	char *host;
+	int port;
+	int weight;		// -1 signifies a backup server
+}_upstream;
+
+typedef struct _upstreams {
+	struct _upstreams *next;
+	char *name;
+	struct _upstream *servers;
+}_upstreams;
+
 typedef struct _location {
 	struct _location *next;
 	int type;

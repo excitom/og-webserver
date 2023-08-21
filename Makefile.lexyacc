@@ -32,4 +32,3 @@ clean:
 	rm -f $(OBJS) core ∗.o $(PROGRAM) 
 	rm -f lex.yy.*
 	rm -f ogws.tab.*
-	rm -f ogws.c
