@@ -37,3 +37,13 @@ as NGINX rather than re-invent the wheel. In fact, I use sample config files fro
 documentation as test cases for my config parsing.
 
 To do the work of parsing I use the `lex` and `yacc` tools.
+
+## Multi-process and Multi-thread Operations
+
+If you configure multiple worker processes then each is a full clone of the 
+complete configuration, running independantly and in parallel. There isn't 
+any shared memory or other context. Some day if I implement cacheing I will
+use something like `memcached` for the shared memory.
+
+Similarly, each process has a complete, independant copy of the thread 
+environment, when supporting a TLS/SSL server.
