@@ -329,6 +329,7 @@ defaultLocation() {
 	loc->root = "/var/www/ogws/html";
 	loc->try_target = NULL;
 	loc->passTo = NULL;	
+	loc->group = NULL;	
 	loc->expires = 0;
 	loc->next = locations;
 	locations = loc;
@@ -362,6 +363,118 @@ defaultType() {
 void
 defaultUpstreams() {
 	g.upstreams = NULL;
+}
+
+/**
+ * check if a `proxy_pass` target is an upstream group
+ */
+_upstreams *
+isUpstreamGroup(char *host) {
+	_upstreams *group = g.upstreams;
+	while(group) {
+		if (strlen(host) == strlen(group->name) &&
+				strcmp(host, group->name) == 0) {
+			return group;
+		}
+	}
+	return NULL;
+}
+
+/** 
+ * Set up a `proxy_pass` to an upstream group
+ */
+void
+proxyPassToUpstreamGroup(char *host, int port, _upstreams *group) {
+	_location *defloc = locations;
+	// get the default location
+	while (defloc->next) {
+		defloc = defloc->next;
+	}
+	// if there is a pending location in addition to the default,
+	// update the pending location.
+	// set defaults
+	if (locations != defloc) {
+		locations->type |= TYPE_UPSTREAM_GROUP;
+		if (locations->group) {
+			free(locations->group);
+			doDebug("Duplicate upstream group");
+		}
+		locations->group = group;
+		if (g.debug) {
+			fprintf(stderr,"Updated upstream group %s\n", host);
+		}
+	} else {
+		_location *loc = (_location *)calloc(1, sizeof(_location));
+		memcpy(loc, defloc, sizeof(_location));
+		loc->next = locations;
+		locations = loc;
+		loc->group = group;
+		loc->type |= TYPE_UPSTREAM_GROUP;
+		if (g.debug) {
+			fprintf(stderr,"New upstream group %s\n", host);
+		}
+	}
+	// update all the servers in the upstream group
+	_upstream *up = group->servers;
+	while (up) {
+		struct sockaddr_in *passTo = (struct sockaddr_in *)calloc(1, sizeof(struct sockaddr_in));
+		struct hostent *hostName = gethostbyname(up->host);
+		if (hostName == (struct hostent *)0) {
+			doDebug("gethostbyname failed");
+			exit(1);
+		}
+		passTo->sin_family = AF_INET;
+		passTo->sin_port = htons(up->port);
+		passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
+		up->passTo = passTo;
+		up = up->next;
+	}
+}
+
+/** 
+ * Set up a `proxy_pass` to a single host
+ */
+void
+proxyPassToHost(char * host, int port) {
+	struct sockaddr_in *passTo = (struct sockaddr_in *)calloc(1, sizeof(struct sockaddr_in));
+	struct hostent *hostName = gethostbyname(host);
+	if (hostName == (struct hostent *)0) {
+		doDebug("gethostbyname failed");
+		exit(1);
+	}
+	passTo->sin_family = AF_INET;
+	passTo->sin_port = htons(port);
+	passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
+
+	_location *defloc = locations;
+	// get the default location
+	while (defloc->next) {
+		defloc = defloc->next;
+	}
+	// if there is a pending location in addition to the default,
+	// update the pending location.
+	// set defaults
+	if (locations != defloc) {
+		locations->type |= TYPE_PROXY_PASS;
+		if (locations->passTo) {
+			free(locations->passTo);
+			doDebug("Duplicate proxy pass");
+		}
+		locations->passTo = passTo;
+		if (g.debug) {
+			fprintf(stderr,"Updated proxy pass host %s\n", host);
+		}
+	} else {
+		_location *loc = (_location *)calloc(1, sizeof(_location));
+		memcpy(loc, defloc, sizeof(_location));
+		loc->next = locations;
+		locations = loc;
+		loc->passTo = passTo;
+		loc->type |= TYPE_PROXY_PASS;
+		if (g.debug) {
+			fprintf(stderr,"New proxy pass host %s\n", host);
+		}
+	}
 }
 
 // The following `f_` functions implement the config file keywords
@@ -865,24 +978,29 @@ f_location(int matchType, char *match) {
 }
 
 // upstream directive
+// note: the `next` pointer chains the upstreams together.
+// the `currentServer` pointer is the next upstream to get traffic.
 void
 f_upstreams(char *name) {
 	_upstreams *up = (_upstreams *)calloc(1, sizeof(_upstreams));
 	up->next = g.upstreams;
 	g.upstreams = up;
 	up->name = name;
-	up->servers = servers;
+	up->servers = up->currentServer = servers;
 }
 
 // upstream server component
 void
 f_upstream(char *host, int port, int weight) {
-	_upstream *server = (_upstream *)calloc(1, sizeof(_upstream));
-	server->next = servers;
-	servers = server;
-	server->host = host;
-	server->port = port;
-	server->weight = weight;
+	int w = weight;
+	while (w-- > 0) {
+		_upstream *server = (_upstream *)calloc(1, sizeof(_upstream));
+		server->next = servers;
+		servers = server;
+		server->host = host;
+		server->port = port;
+		server->weight = weight;
+	}
 }
 
 void
@@ -956,51 +1074,17 @@ f_protocol(char *p) {
 	if (g.debug) {
 		fprintf(stderr, "Proxy pass to %s protocol\n", p);
 	}
-	free(p);
 	return;
 }
 
 // proxy_pass directive
 void
 f_proxy_pass(char *host, int port) {
-	struct sockaddr_in *passTo = (struct sockaddr_in *)calloc(1, sizeof(struct sockaddr_in));
-	struct hostent *hostName = gethostbyname(host);
-	if (hostName == (struct hostent *)0) {
-		doDebug("gethostbyname failed");
-		exit(1);
-	}
-	passTo->sin_family = AF_INET;
-	passTo->sin_port = htons(port);
-	passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
-
-	_location *defloc = locations;
-	// get the default location
-	while (defloc->next) {
-		defloc = defloc->next;
-	}
-	// if there is a pending location in addition to the default,
-	// update the pending location.
-	// set defaults
-	if (locations != defloc) {
-		locations->type |= TYPE_PROXY_PASS;
-		if (locations->passTo) {
-			free(locations->passTo);
-			doDebug("Duplicate proxy pass");
-		}
-		locations->passTo = passTo;
-		if (g.debug) {
-			fprintf(stderr,"Updated proxy pass host %s\n", host);
-		}
+	_upstreams *group = isUpstreamGroup(host);
+	if (group) {
+		proxyPassToUpstreamGroup(host, port, group);
 	} else {
-		_location *loc = (_location *)calloc(1, sizeof(_location));
-		memcpy(loc, defloc, sizeof(_location));
-		loc->next = locations;
-		locations = loc;
-		loc->passTo = passTo;
-		loc->type |= TYPE_PROXY_PASS;
-		if (g.debug) {
-			fprintf(stderr,"New proxy pass host %s\n", host);
-		}
+		proxyPassToHost(host, port);
 	}
 	free(host);		// no longer needed
 	return;

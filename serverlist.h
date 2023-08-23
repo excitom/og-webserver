@@ -15,6 +15,7 @@ typedef struct _log_file {
 #define TYPE_PROXY_PASS 1
 #define TYPE_DOC_ROOT 2
 #define TYPE_TRY_FILES 4
+#define TYPE_UPSTREAM_GROUP 8
 
 #define UNSET_MATCH -1
 #define EQUAL_MATCH 0
@@ -33,11 +34,13 @@ typedef struct _upstream {
 	struct _upstream *next;
 	char *host;
 	int port;
+	struct sockaddr_in *passTo;		// for upstream servers
 	int weight;		// -1 signifies a backup server
 }_upstream;
 
 typedef struct _upstreams {
 	struct _upstreams *next;
+	struct _upstream *currentServer;
 	char *name;
 	struct _upstream *servers;
 }_upstreams;
@@ -51,6 +54,7 @@ typedef struct _location {
 	int protocol;
 	_try_target *try_target;
 	struct sockaddr_in *passTo;		// for proxy_pass locations
+	struct _upstreams *group;		// for upstream groups
 	int expires;
 }_location;
 
