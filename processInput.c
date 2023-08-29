@@ -134,9 +134,9 @@ processInput(_request *req) {
 		}
 
 		//
-		// check for proxy_pass
+		// check for proxy_pass (to a single host or to an upstream group)
 		//
-		if (req->loc->type & TYPE_PROXY_PASS) {
+		if (req->loc->type & (TYPE_PROXY_PASS|TYPE_UPSTREAM_GROUP)) {
 			handleProxyPass(req);
 			return;
 		}

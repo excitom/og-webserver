@@ -384,7 +384,7 @@ isUpstreamGroup(char *host) {
  * Set up a `proxy_pass` to an upstream group
  */
 void
-proxyPassToUpstreamGroup(char *host, int port, _upstreams *group) {
+proxyPassToUpstreamGroup(char *host, _upstreams *group) {
 	_location *defloc = locations;
 	// get the default location
 	while (defloc->next) {
@@ -1082,7 +1082,7 @@ void
 f_proxy_pass(char *host, int port) {
 	_upstreams *group = isUpstreamGroup(host);
 	if (group) {
-		proxyPassToUpstreamGroup(host, port, group);
+		proxyPassToUpstreamGroup(host, group);
 	} else {
 		proxyPassToHost(host, port);
 	}
