@@ -40,9 +40,9 @@ typedef struct _upstream {
 
 typedef struct _upstreams {
 	struct _upstreams *next;
-	struct _upstream *currentServer;
+	_upstream *currentServer;
 	char *name;
-	struct _upstream *servers;
+	_upstream *servers;
 }_upstreams;
 
 typedef struct _location {
@@ -54,7 +54,7 @@ typedef struct _location {
 	int protocol;
 	_try_target *try_target;
 	struct sockaddr_in *passTo;		// for proxy_pass locations
-	struct _upstreams *group;		// for upstream groups
+	_upstreams *group;				// for upstream groups
 	int expires;
 }_location;
 

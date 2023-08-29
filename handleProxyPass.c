@@ -18,26 +18,53 @@
 #include "server.h"
 #include "global.h"
 
-void
-handleProxyPass(_request *req)
+int
+getUpstreamServer(_request *req)
 {
     struct sockaddr_in server;
-    server.sin_family      = req->loc->passTo->sin_family;
-    server.sin_port        = req->loc->passTo->sin_port;
-    server.sin_addr.s_addr = req->loc->passTo->sin_addr.s_addr;
+	if (req->loc->type & TYPE_UPSTREAM_GROUP) {
+		_upstreams *up = req->loc->group;
+		if (!up) {
+			doDebug("Missing upstream group");
+			return -1;
+		}
+    	server.sin_family      = up->currentServer->passTo->sin_family;
+    	server.sin_port        = up->currentServer->passTo->sin_port;
+    	server.sin_addr.s_addr = up->currentServer->passTo->sin_addr.s_addr;
+		up->currentServer = up->currentServer->next;
+		if (!up->currentServer) {
+			up->currentServer = up->servers;	// wrap at end of list
+		}
+
+	} else {
+    	server.sin_family      = req->loc->passTo->sin_family;
+    	server.sin_port        = req->loc->passTo->sin_port;
+    	server.sin_addr.s_addr = req->loc->passTo->sin_addr.s_addr;
+	}
 	int upstream;
     if ((upstream = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
 		doDebug("upstream socket failed.");
 		doDebug(strerror(errno));
-		return;
+		return -1;
     }
     if (connect(upstream, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		doDebug("upstream connect failed.");
 		doDebug(strerror(errno));
 		close(upstream);
-		return;
+		return -1;
     }
+	return upstream;
+}
+
+void
+handleProxyPass(_request *req)
+{
+	int upstream = getUpstreamServer(req);
+	if (upstream < 0) {
+		doDebug("upstream failed");
+		return;
+	}
 	// change the \r\n\r\n which marks the end of the headers to
 	// \r\n in order to add the `X-Forwarded-For` header
 	char *r = strstr(req->headers, "\r\n\r\n");
