@@ -24,7 +24,8 @@
 _server *getServerForHost(char *);
 
 void
-processInput(_request *req) {
+processInput(_request *req)
+{
 	req->path = NULL;
 	req->queryString = NULL;
 	char *host = NULL;
@@ -45,6 +46,11 @@ processInput(_request *req) {
 
 	snprintf(outbuff, BUFF_SIZE, "RECEIVED %d BYTES\n", (int)received);
 	doDebug(outbuff);
+	if (received == BUFF_SIZE) {
+		sprintf(stderr, "WARNING: request rejected due to size.");
+		sendErrorResponse(req, 413, "Bad Request", "Request too large");
+		return;
+	}
 	if (received <= 0) {
 		// no data to read
 		doDebug("NO DATA\n");
