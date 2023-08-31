@@ -1,4 +1,5 @@
 // config parser functions
+// which correspond to yacc parser actions.
 void f_pid(char *);
 void f_include(char *);
 void f_trace(int);
@@ -35,3 +36,28 @@ void f_workerProcesses(int);
 void f_workerConnections(int);
 void f_events();
 void f_config_complete();
+// utility functions for config file parsing
+void defaultAccessLog();
+void defaultErrorLog();
+void defaultPort();
+void defaultServerName();
+void defaultLocation();
+void defaultIndexFile();
+void defaultType();
+void defaultUpstreams();
+void checkConfig();
+void checkServers();
+void checkDocRoots(_server *);
+void checkServerNames(_server *);
+void checkIndexFiles(_server *);
+void checkAccessLogs(_server *);
+void checkErrorLogs(_server *);
+void checkCertFile(_server *);
+void checkKeyFile(_server *);
+int checkPorts(int, int);
+int portOk(_server *);
+int pathAlreadyOpened(char *, _log_file *);
+void openLogFiles();
+_upstreams *isUpstreamGroup(char *);
+void proxyPassToUpstgreamGroup(char *, _upstreams *);
+void proxyPassToHost(char *, int);

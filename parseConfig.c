@@ -17,8 +17,7 @@
 #include "serverlist.h"
 #include "server.h"
 #include "global.h"
-
-int portOk(_server *);
+#include "parseConfig.h"
 
 static _index_file *indexFiles = NULL;
 static _server_name *serverNames = NULL;
@@ -32,87 +31,47 @@ static int autoIndex = 0;
 static int protocol = PROTOCOL_UNSET;
 
 /**
- * Multiple servers may share the same log file(s). Share the file
- * descriptor in this case rather than re-openeing the file.
+ * This is the interface to generated parser code from yacc/lex.
  */
-int
-pathAlreadyOpened(char *path, _log_file *list) {
-	_log_file *log = list;
-	while(log) {
-		if ((strlen(path) == strlen(log->path))
-			&& (strcmp(path, log->path) == 0)) {
-			if (log->fd != -1) {
-				return log->fd;
-			}
-		}
-		log = log->next;
+extern FILE *yyin;
+int yyparse (void);
+char tempFile[] = "/tmp/ogws.conf";
+
+void
+parseConfig() {
+	yyin = expandIncludeFiles((char *)&tempFile);
+	defaultAccessLog();
+	defaultErrorLog();
+	defaultPort();
+	defaultServerName();
+	defaultLocation();
+	defaultIndexFile();
+	defaultType();
+	defaultUpstreams();
+	// call the parser
+	if (yyparse() != 0) {
+		fprintf(stderr, "Config file not parsed correctly, exiting.\n");
+		exit(1);
 	}
-	return -1;
+	unlink((char *)&tempFile);
 }
 
 /**
- * Open all the log files (access and error)
+ * Perform sanity checks on the configuration
  */
 void
-openLogFiles() {
-	_log_file *log = g.accessLogs;
-	while(log) {
-		log->fd = pathAlreadyOpened(log->path, g.accessLogs);
-		if (log->fd == -1) {
-			log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-		}
-		if (log->fd == -1) {
-			fprintf(stderr, "%s: ", log->path);
-			perror("access log not valid:");
-			exit(1);
-		}
-		log = log->next;
+checkConfig()
+{
+	FILE *fp = fopen(g.pidFile, "r");
+	if (fp == NULL) {
+		perror("pid log not valid:");
+		exit(1);
+	} else {
+		fclose(fp);
 	}
-	log = g.errorLogs;
-	while(log) {
-		log->fd = pathAlreadyOpened(log->path, g.errorLogs);
-		if (log->fd == -1) {
-			log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-		}
-		if (log->fd == -1) {
-			fprintf(stderr, "%s: ", log->path);
-			perror("error log not valid:");
-			exit(1);
-		}
-		log = log->next;
-	}
-}
 
-/**
- * Check sanity of the configuration
- */
-void
-checkDocRoots(_server *s) {
-	for(_location *loc = s->locations; loc != NULL; loc = loc->next) {
-		if (loc->type & TYPE_PROXY_PASS) {
-			if (!loc->passTo) {
-				perror("Proxy pass missing\n");
-				exit(1);
-			}
-		}
-		else if(loc->type & TYPE_DOC_ROOT) {
-			if (access(loc->root, R_OK) == -1) {
-				fprintf(stderr, "%s: ", loc->root);
-				perror("doc root not valid:");
-				exit(1);
-			}
-		}
-		else if (loc->type & TYPE_TRY_FILES) {
-			if (!loc->try_target) {
-				fprintf(stderr, "Try directive incomplete\n");
-				exit(1);
-			}
-		}
-		else {
-			fprintf(stderr, "Unknown location type %d\n", loc->type);
-			exit(1);
-		}
-	}
+	checkServers();
+	openLogFiles();
 }
 
 /**
@@ -214,24 +173,6 @@ checkServers() {
 }
 
 /**
- * Perform sanity checks on the configuration
- */
-void
-checkConfig()
-{
-	FILE *fp = fopen(g.pidFile, "r");
-	if (fp == NULL) {
-		perror("pid log not valid:");
-		exit(1);
-	} else {
-		fclose(fp);
-	}
-
-	checkServers();
-	openLogFiles();
-}
-
-/**
  * Check for a port defined as TLS for one server and non-TLS for another.
  * Return 1 = ok, 0 = not ok
  */
@@ -272,104 +213,11 @@ portOk(_server *server)
 }
 
 /**
- * Define a default access log
- */
-void
-defaultAccessLog() {
-	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
-	log->path = "/var/log/ogws/access.log";
-	log->fd = -1;
-	log->next = NULL;
-	g.accessLogs = log;
-}
-
-/**
- * Define a default error log
- */
-void
-defaultErrorLog() {
-	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
-	log->path = "/var/log/ogws/error.log";
-	log->fd = -1;
-	log->next = NULL;
-	g.errorLogs = log;
-}
-
-/**
- * Define a default listening port
- */
-void
-defaultPort() {
-	_port *p = (_port *)calloc(1, sizeof(_port));
-	p->portNum = 8080;
-	p->next = NULL;
-	ports = p;
-}
-
-/**
- * Define a default server name
- */
-void
-defaultServerName() {
-	_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
-	sn->serverName = "*";
-	sn->next = NULL;
-	serverNames = sn;
-}
-
-/**
- * Define a default document root which matches all locations
- */
-void
-defaultLocation() {
-	_location *loc = (_location *)calloc(1, sizeof(_location));
-	loc->type = TYPE_DOC_ROOT;
-	loc->matchType = PREFIX_MATCH;
-	loc->match = "/";
-	loc->root = "/var/www/ogws/html";
-	loc->try_target = NULL;
-	loc->passTo = NULL;	
-	loc->group = NULL;	
-	loc->expires = 0;
-	loc->next = locations;
-	locations = loc;
-	return;
-}
-
-/**
- * Define a default index file
- */
-void 
-defaultIndexFile() {
-	_index_file *index = (_index_file *)calloc(1, sizeof(_index_file));
-	index->indexFile = "index.html";
-	index->next = NULL;
-	indexFiles = index;
-}
-
-/**
- * Default MIME type for responses
- */
-void
-defaultType() {
-	char defType[] = "text/html";
-	g.defaultType = (char *)malloc(strlen(defType)+1);
-	strcpy(g.defaultType, defType);
-}
-
-/**
- * Default list of upstream servers
- */
-void
-defaultUpstreams() {
-	g.upstreams = NULL;
-}
-
-/**
  * check if a `proxy_pass` target is an upstream group
  */
 _upstreams *
-isUpstreamGroup(char *host) {
+isUpstreamGroup(char *host)
+{
 	_upstreams *group = g.upstreams;
 	while(group) {
 		if (strlen(host) == strlen(group->name) &&
@@ -385,7 +233,8 @@ isUpstreamGroup(char *host) {
  * Set up a `proxy_pass` to an upstream group
  */
 void
-proxyPassToUpstreamGroup(char *host, _upstreams *group) {
+proxyPassToUpstreamGroup(char *host, _upstreams *group)
+{
 	_location *defloc = locations;
 	// get the default location
 	while (defloc->next) {
@@ -436,7 +285,8 @@ proxyPassToUpstreamGroup(char *host, _upstreams *group) {
  * Set up a `proxy_pass` to a single host
  */
 void
-proxyPassToHost(char * host, int port) {
+proxyPassToHost(char * host, int port)
+{
 	struct sockaddr_in *passTo = (struct sockaddr_in *)calloc(1, sizeof(struct sockaddr_in));
 	struct hostent *hostName = gethostbyname(host);
 	if (hostName == (struct hostent *)0) {
@@ -478,9 +328,200 @@ proxyPassToHost(char * host, int port) {
 	}
 }
 
-// The following `f_` functions implement the config file keywords
-// The functions are called from the lex/yacc generated code as the 
-// config file is parsed.
+/**
+ * Define a default access log
+ */
+void
+defaultAccessLog()
+{
+	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
+	log->path = "/var/log/ogws/access.log";
+	log->fd = -1;
+	log->next = NULL;
+	g.accessLogs = log;
+}
+
+/**
+ * Define a default error log
+ */
+void
+defaultErrorLog()
+{
+	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
+	log->path = "/var/log/ogws/error.log";
+	log->fd = -1;
+	log->next = NULL;
+	g.errorLogs = log;
+}
+
+/**
+ * Define a default listening port
+ */
+void
+defaultPort()
+{
+	_port *p = (_port *)calloc(1, sizeof(_port));
+	p->portNum = 8080;
+	p->next = NULL;
+	ports = p;
+}
+
+/**
+ * Define a default server name
+ */
+void
+defaultServerName()
+{
+	_server_name *sn = (_server_name *)calloc(1, sizeof(_server_name));
+	sn->serverName = "*";
+	sn->next = NULL;
+	serverNames = sn;
+}
+
+/**
+ * Define a default document root which matches all locations
+ */
+void
+defaultLocation()
+{
+	_location *loc = (_location *)calloc(1, sizeof(_location));
+	loc->type = TYPE_DOC_ROOT;
+	loc->matchType = PREFIX_MATCH;
+	loc->match = "/";
+	loc->root = "/var/www/ogws/html";
+	loc->try_target = NULL;
+	loc->passTo = NULL;	
+	loc->group = NULL;	
+	loc->expires = 0;
+	loc->next = locations;
+	locations = loc;
+	return;
+}
+
+/**
+ * Define a default index file
+ */
+void 
+defaultIndexFile()
+{
+	_index_file *index = (_index_file *)calloc(1, sizeof(_index_file));
+	index->indexFile = "index.html";
+	index->next = NULL;
+	indexFiles = index;
+}
+
+/**
+ * Default MIME type for responses
+ */
+void
+defaultType()
+{
+	char defType[] = "text/html";
+	g.defaultType = (char *)malloc(strlen(defType)+1);
+	strcpy(g.defaultType, defType);
+}
+
+/**
+ * Default list of upstream servers
+ */
+void
+defaultUpstreams()
+{
+	g.upstreams = NULL;
+}
+
+/**
+ * Multiple servers may share the same log file(s). Share the file
+ * descriptor in this case rather than re-openeing the file.
+ */
+int
+pathAlreadyOpened(char *path, _log_file *list)
+{
+	_log_file *log = list;
+	while(log) {
+		if ((strlen(path) == strlen(log->path))
+			&& (strcmp(path, log->path) == 0)) {
+			if (log->fd != -1) {
+				return log->fd;
+			}
+		}
+		log = log->next;
+	}
+	return -1;
+}
+
+/**
+ * Open all the log files (access and error)
+ */
+void
+openLogFiles()
+{
+	_log_file *log = g.accessLogs;
+	while(log) {
+		log->fd = pathAlreadyOpened(log->path, g.accessLogs);
+		if (log->fd == -1) {
+			log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		}
+		if (log->fd == -1) {
+			fprintf(stderr, "%s: ", log->path);
+			perror("access log not valid:");
+			exit(1);
+		}
+		log = log->next;
+	}
+	log = g.errorLogs;
+	while(log) {
+		log->fd = pathAlreadyOpened(log->path, g.errorLogs);
+		if (log->fd == -1) {
+			log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		}
+		if (log->fd == -1) {
+			fprintf(stderr, "%s: ", log->path);
+			perror("error log not valid:");
+			exit(1);
+		}
+		log = log->next;
+	}
+}
+
+/**
+ * Check sanity of the configuration
+ */
+void
+checkDocRoots(_server *s)
+{
+	for(_location *loc = s->locations; loc != NULL; loc = loc->next) {
+		if (loc->type & TYPE_PROXY_PASS) {
+			if (!loc->passTo) {
+				perror("Proxy pass missing\n");
+				exit(1);
+			}
+		}
+		else if(loc->type & TYPE_DOC_ROOT) {
+			if (access(loc->root, R_OK) == -1) {
+				fprintf(stderr, "%s: ", loc->root);
+				perror("doc root not valid:");
+				exit(1);
+			}
+		}
+		else if (loc->type & TYPE_TRY_FILES) {
+			if (!loc->try_target) {
+				fprintf(stderr, "Try directive incomplete\n");
+				exit(1);
+			}
+		}
+		else {
+			fprintf(stderr, "Unknown location type %d\n", loc->type);
+			exit(1);
+		}
+	}
+}
+
+/**
+ * The following `f_` functions implement the config file keywords
+ * The functions are called from the lex/yacc generated code as the 
+ * config file is parsed.
+ */
 
 // specify the pid file location
 void
@@ -1151,28 +1192,4 @@ f_config_complete() {
 	if (g.debug) {
 		fprintf(stderr, "Config file parsing complete!\n");
 	}
-}
-
-// interface to generated code from yacc/lex
-extern FILE *yyin;
-int yyparse (void);
-char tempFile[] = "/tmp/ogws.conf";
-
-void
-parseConfig() {
-	yyin = expandIncludeFiles((char *)&tempFile);
-	defaultAccessLog();
-	defaultErrorLog();
-	defaultPort();
-	defaultServerName();
-	defaultLocation();
-	defaultIndexFile();
-	defaultType();
-	defaultUpstreams();
-	// call the parser
-	if (yyparse() != 0) {
-		fprintf(stderr, "Config file not parsed correctly, exiting.\n");
-		exit(1);
-	}
-	unlink((char *)&tempFile);
 }
