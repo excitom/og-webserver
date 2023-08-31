@@ -376,6 +376,7 @@ isUpstreamGroup(char *host) {
 				strcmp(host, group->name) == 0) {
 			return group;
 		}
+		group = group->next;
 	}
 	return NULL;
 }
