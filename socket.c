@@ -115,7 +115,7 @@ recvData(int fd, char* ptr, int nbytes)
  * Send data to a socket
  */
 int
-sendData(int fd, SSL *ssl, char* ptr, int nbytes)
+sendData(int fd, SSL *ssl, const char* ptr, int nbytes)
 {
 	doTrace( 'S', ptr, nbytes);
 	size_t nsent;

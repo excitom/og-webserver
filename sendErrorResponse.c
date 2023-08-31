@@ -22,7 +22,7 @@ sendErrorResponse( _request *req, int code, char *msg, char *path )
 {
 	doDebug(msg);
 	char buffer1[BUFF_SIZE];
-	char *responseBody = 
+	const char *responseBody = 
 "<html>\r\n"
 "<head><title>%d %s</title></head>\r\n"
 "<center><h1>%d %s</h1></center>\r\n"
@@ -38,7 +38,7 @@ sendErrorResponse( _request *req, int code, char *msg, char *path )
 	getTimestamp((char *)&ts, RESPONSE_FORMAT);
 
 	char buffer3[BUFF_SIZE];
-	char *responseHeaders = 
+	const char *responseHeaders = 
 "HTTP/1.1 %d %s\r\n"
 "Server: ogws/%s\r\n"
 "Date: %s\r\n"

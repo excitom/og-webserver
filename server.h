@@ -5,7 +5,7 @@ void daemonize();
 int epollCreate();
 int createBindAndListen(int, int);
 void cleanup(int);
-void doTrace (char, char*, int);
+void doTrace (char, const char*, int);
 void doDebug (char*);
 #include <openssl/ssl.h>
 void processInput(_request *);
@@ -14,7 +14,7 @@ _clientConnection *getClient(int);
 void configureContext(SSL_CTX*, int port);
 SSL_CTX *createContext();
 void ShowCerts(SSL*);
-int sendData(int, SSL*, char*, int);
+int sendData(int, SSL*, const char*, int);
 int recvData(int, char*, int);
 void sendFile(_request *, size_t size);
 void getTimestamp(char*, int);

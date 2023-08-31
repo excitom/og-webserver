@@ -71,7 +71,7 @@ doDebug(char* buffer) {
  * Verbose trace
  */
 void
-doTrace (char direction, char *p, int bytes)
+doTrace (char direction, const char *p, int bytes)
 {
 	if (!g.trace)
 		return;

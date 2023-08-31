@@ -52,13 +52,13 @@ showDirectoryListing(_request *req)
 		addFragment(req->fullPath, req->path, ep->d_name);
 	}
 	closedir(dp);
-	char *header =	"<html><head>"
-					"<title>Directory Listing</title>"
-					"<style type=\"text/css\">body {font-family: system-ui;}"
-					".sz {font-size: 10px;}</style>"
-					"</head>"
-					"<body><h1>Directory Listing</h1><ul>";
-	char *footer =	"</ul></body></html>";
+	const char *header ="<html><head>"
+						"<title>Directory Listing</title>"
+						"<style type=\"text/css\">body {font-family: system-ui;}"
+						".sz {font-size: 10px;}</style>"
+						"</head>"
+						"<body><h1>Directory Listing</h1><ul>";
+	const char *footer ="</ul></body></html>";
 	int contentLength = strlen(header) + strlen(footer);
 	_fragment *f = fragments;
 	while(f != NULL) {
@@ -68,7 +68,7 @@ showDirectoryListing(_request *req)
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, RESPONSE_FORMAT);
 	int httpCode = 200;
-	char *responseHeaders = 
+	const char *responseHeaders = 
 "HTTP/1.1 %d OK\r\n"
 "Server: ogws/0.1\r\n"
 "Date: %s\r\n"
