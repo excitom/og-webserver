@@ -47,7 +47,7 @@ processInput(_request *req)
 	snprintf(outbuff, BUFF_SIZE, "RECEIVED %d BYTES\n", (int)received);
 	doDebug(outbuff);
 	if (received == BUFF_SIZE) {
-		sprintf(stderr, "WARNING: request rejected due to size.");
+		fprintf(stderr, "WARNING: request rejected due to size.");
 		sendErrorResponse(req, 413, "Bad Request", "Request too large");
 		return;
 	}
