@@ -1,6 +1,6 @@
 #include "clients.h"
 
-void parseArgs(int, char**, char *);
+void parseArgs(int, char**, const char *);
 void daemonize();
 int epollCreate();
 int createBindAndListen(int, int);

@@ -435,7 +435,7 @@ defaultUpstreams()
  * descriptor in this case rather than re-openeing the file.
  */
 int
-pathAlreadyOpened(char *path, _log_file *list)
+pathAlreadyOpened(const char *path, _log_file *list)
 {
 	_log_file *log = list;
 	while(log) {
@@ -635,7 +635,7 @@ f_server() {
 	// 	  if there is only one item in the list, it is the default
 	// 		copy it to the server
 	// 	  else
-	// 	  	move the list to the server, exclude the default
+	// 	  	move the list to the server, excluding the default
 	if (!sn->next) {
 		_server_name *copysn = (_server_name *)calloc(1, sizeof(_server_name));
 		memcpy(copysn, sn, sizeof(_server_name));

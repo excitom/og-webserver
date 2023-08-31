@@ -35,13 +35,15 @@ void saveMimeType(char *, char *);
 _mimeTypes *addMimeTypeEntry();
 
 void
-parseMimeTypes() {
+parseMimeTypes()
+{
 	g.mimeTypes = NULL;		// start with an empty list
-	char *fileName = malloc(256);
+	const char mimeTypeFile[] = "/mime.types";
+	char *fileName = malloc(strlen(g.configFile)+strlen(mimeTypeFile)+1);
 	strcpy(fileName, g.configFile);
 	char *p = strrchr(fileName, '/');
 	*p = '\0';
-	strcat(fileName, "/mime.types");
+	strcat(fileName, mimeTypeFile);
 	int fd = open(fileName, O_RDONLY);
 	if (fd == -1) {
 		int e = errno;
@@ -114,7 +116,8 @@ parseMimeTypes() {
  * share the same mime type.
  */
 char *
-parseLine(char *p) {
+parseLine(char *p)
+{
 	char *q = strchr(p, ' ');
 	if (q == NULL) {
 		perror("Invalid mime.type file, malformed mime type.");

@@ -63,7 +63,8 @@ daemonize()
 		char path[256];
 		char *p = (char *)&path;
 		strcpy(p, g.configDir);
-		strcat(p, "/debug.out");
+		const char debugFile[] = "/debug.out";
+		strcat(p, debugFile);
 		int fd = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 		if (fd == -1) {
 			int e = errno;

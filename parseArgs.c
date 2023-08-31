@@ -15,10 +15,10 @@
 #include "server.h"
 #include "global.h"
 
-void initGlobals(char *);
+void initGlobals(const char *);
 
 void
-parseArgs(int argc, char* argv[], char *version)
+parseArgs(int argc, char* argv[], const char *version)
 {
 	initGlobals(version);
 	int c;
@@ -57,15 +57,14 @@ parseArgs(int argc, char* argv[], char *version)
 				printf("Unrecognized option %c ignored\n", (char)c);
 				break;
 		}
-	char buffer[BUFF_SIZE];
 	//
 	// config file path
 	//
 	if (optind >= argc) {
-		strcpy(buffer, "/etc/ogws/ogws.conf");
-		int len = strlen(buffer);
+		const char defaultConfigFile[] = "/etc/ogws/ogws.conf";
+		int len = strlen(defaultConfigFile);
 		g.configFile = malloc(len+1);
-		strcpy(g.configFile, buffer);
+		strcpy(g.configFile, defaultConfigFile);
 	} else {
 		int len = strlen(argv[optind]);
 		g.configFile = malloc(len+1);
@@ -87,7 +86,8 @@ parseArgs(int argc, char* argv[], char *version)
  * Initialize global variables
  */
 void
-initGlobals(char *version) {
+initGlobals(const char *version)
+{
 	g.version = (char *)malloc(strlen(version)+1);
 	strcpy(g.version, version);
 	g.foreground = 0;
@@ -101,10 +101,10 @@ initGlobals(char *version) {
 	g.signal = NULL;
 	g.servers = NULL;
 	g.portCount = 0;
-	char pidFile[] = "/etc/ogws/ogws.pid";
+	const char pidFile[] = "/etc/ogws/ogws.pid";
 	g.pidFile = (char *)malloc(strlen(pidFile)+1);
 	strcpy(g.pidFile, pidFile);
-	char user[] = "ogws";
+	const char user[] = "ogws";
 	g.user = (char *)malloc(strlen(user)+1);
 	strcpy(g.user, user);
 	g.group = (char *)malloc(strlen(user)+1);
