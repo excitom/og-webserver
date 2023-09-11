@@ -66,6 +66,7 @@ struct globalVars {
 	int showVersion;
 	int useSendfile;
 	int keepaliveTimeout;
+	int noDefaultServer;
 	char *configFile;
 	char *configDir;
 	char *pidFile;

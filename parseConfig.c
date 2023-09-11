@@ -153,9 +153,16 @@ checkKeyFile(_server *s) {
 
 /**
  * Loop through the servers and perform integrity checks
+ *
+ * Note: By default there is a default server that listens for
+ * any host name on port 8080. This can be overridden by a command
+ * line argument.
  */
 void
 checkServers() {
+	if (g.noDefaultServer) {
+		g.servers = g.servers->next;
+	}
 	for(_server *s = g.servers; s != NULL; s = s->next) {
 		if (!portOk(s)) {
 			exit(1);
@@ -777,7 +784,6 @@ f_root(char *root) {
 	}
 	// if there is a pending location in addition to the default,
 	// update the pending location.
-	// set defaults
 	if (locations != defloc) {
 		locations->type |= TYPE_DOC_ROOT;
 		if (locations->root) {
@@ -1185,7 +1191,7 @@ f_workerConnections(int workerConnections) {
 	}
 }
 
-// config file parse successfully
+// config file parsed successfully
 void
 f_config_complete() {
 	checkConfig();

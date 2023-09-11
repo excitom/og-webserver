@@ -28,17 +28,17 @@ char buff[BUFF_SIZE];
 char* buffer = (char *)&buff;
 
 void
-server(int port, int errorFd)
+server(int portNum, int errorFd)
 {
-	int epollfd = epollCreate();
+	int epollFd = epollCreate();
 	const int isTLS = 0;
-	int sockFd = createBindAndListen(isTLS, port);
+	int sockFd = createBindAndListen(isTLS, portNum);
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.u64 = 0LL;
 	ev.data.fd = sockFd;
 
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, sockFd, &ev) < 0) {
+	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, sockFd, &ev) < 0) {
 		snprintf(buffer, BUFF_SIZE, "Couldn't add server socket %d to epoll set: %m\n", sockFd);
 		doDebug(buffer);
 		cleanup(sockFd);	  
@@ -56,7 +56,7 @@ server(int port, int errorFd)
 		//
 		// Loop if interrupted by a signal
 		//
-		while ((rval = epoll_wait(epollfd, epoll_events, g.workerConnections, -1)) < 0) {
+		while ((rval = epoll_wait(epollFd, epoll_events, g.workerConnections, -1)) < 0) {
 			if ((rval < 0) && (errno != EINTR)) {
 				doDebug("epoll_wait failed");
 				cleanup(sockFd);
@@ -68,7 +68,7 @@ server(int port, int errorFd)
 		// Loop over returned events
 		//
 		for (int i = 0; i < rval; i++) {
-			int clientsfd;	  // descriptor for client connection
+			int clientFd;	  // descriptor for client connection
 			uint32_t events;	// events map
 			events = epoll_events[i].events;
 			int fd = epoll_events[i].data.fd;
@@ -98,27 +98,27 @@ server(int port, int errorFd)
 				// Input on the listening socket means a new incoming connection
 				//
 				if (fd == sockFd) {
-					struct sockaddr_in peeraddr;
-					socklen_t salen = sizeof(peeraddr);
-					while ((clientsfd = accept(sockFd, (struct sockaddr *) &peeraddr, &salen)) < 0) {
-						if ((clientsfd < 0) && (errno != EINTR)) {
+					struct sockaddr_in peerAddr;
+					socklen_t salen = sizeof(peerAddr);
+					while ((clientFd = accept(sockFd, (struct sockaddr *) &peerAddr, &salen)) < 0) {
+						if ((clientFd < 0) && (errno != EINTR)) {
 							snprintf(buffer, BUFF_SIZE, "Accept on socket %d failed: %m\n", sockFd);
 							doDebug(buffer);
 							cleanup(sockFd);
 							return;
 						}
 					}
-					queueClientConnection(clientsfd, peeraddr, NULL);
+					queueClientConnection(clientFd, peerAddr, NULL);
 
 					//
 					// Add a new event to listen for
 					//
 					ev.events = EPOLLIN;
 					ev.data.u64 = 0LL;
-					ev.data.fd = clientsfd;	
+					ev.data.fd = clientFd;	
 
-					if (epoll_ctl(epollfd, EPOLL_CTL_ADD, clientsfd, &ev) < 0) {
-						snprintf(buffer, BUFF_SIZE, "Couldn't add client socket %d to epoll set: %m\n", clientsfd);
+					if (epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &ev) < 0) {
+						snprintf(buffer, BUFF_SIZE, "Couldn't add client socket %d to epoll set: %m\n", clientFd);
 						doDebug(buffer);
 						cleanup(sockFd);	  
 						exit(1);
@@ -159,15 +159,15 @@ int
 epollCreate()
 {
 
-	const int pollsize = 1;   // deprecated parameter, but must be > 0
-	int epollfd = epoll_create(pollsize);
+	const int pollSize = 1;   // deprecated parameter, but must be > 0
+	int epollFd = epoll_create(pollSize);
 
-	if (epollfd < 0) {
+	if (epollFd < 0) {
 		snprintf(buffer, BUFF_SIZE, "Could not create the epoll fd: %m");
 		doDebug(buffer);
 		exit(1);
 	}
 	snprintf(buffer, BUFF_SIZE, "epoll fd created successfully");
 	doDebug(buffer);
-	return epollfd;
+	return epollFd;
 }

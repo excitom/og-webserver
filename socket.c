@@ -216,16 +216,14 @@ cleanup(int fd)
 		prev = c;
 		c = c->next;
 	}
-	if (c == NULL) {
-		doDebug("Missing client connection!");
-		exit(1);
-	}
-	if (c->ctx) {
-		SSL_CTX_free(c->ctx);
+	if (c) {
+		if (c->ctx) {
+			SSL_CTX_free(c->ctx);
+		}
+		free(c);
 	}
 	shutdown(fd, SHUT_RDWR);
 	close(fd);
-	free(c);
 	return;
 }
 

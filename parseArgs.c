@@ -22,7 +22,7 @@ parseArgs(int argc, char* argv[], const char *version)
 {
 	initGlobals(version);
 	int c;
-	while ((c = getopt(argc, argv, "dfhtvs:")) != EOF)
+	while ((c = getopt(argc, argv, "dfhntvs:")) != EOF)
 		switch(c) {
 			case 'd':
 				g.debug = 1;
@@ -36,6 +36,9 @@ parseArgs(int argc, char* argv[], const char *version)
 			case 'v':
 				g.showVersion = 1;
 				break;
+			case 'n':
+				g.noDefaultServer = 1;
+				break;
 			case 's':
 				g.signal = optarg;
 				break;
@@ -47,6 +50,7 @@ parseArgs(int argc, char* argv[], const char *version)
 				printf("	-s = send a signal to the process, options are:\n");
 				printf("	          stop | quit | reload | reopen\n");
 				printf("	-t = test the configuration\n");
+				printf("	-n = do not launch a default web server\n");
 				printf("	-h = print this message\n");
 				printf("	-v = show version\n");
 				printf("Positional paramter:\n");
@@ -92,6 +96,7 @@ initGlobals(const char *version)
 	strcpy(g.version, version);
 	g.foreground = 0;
 	g.debug = 0;
+	g.noDefaultServer = 0;
 	g.trace = 0;
 	g.testConfig = 0;
 	g.showVersion = 0;

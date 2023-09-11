@@ -45,17 +45,17 @@ tlsServer(int portNum, int errorFd)
 	SSL_CTX *ctx = createContext();
 	configureContext(ctx, portNum);
 	const int isTLS = 1;
-	int sockfd = createBindAndListen(isTLS, portNum);
+	int sockFd = createBindAndListen(isTLS, portNum);
 	while(1) {
 		struct sockaddr_in addr;
 		socklen_t len = sizeof(addr);
-		int clientfd = accept(sockfd, (struct sockaddr*)&addr, &len);
-		_clientConnection *client = queueClientConnection(clientfd, addr, ctx);
+		int clientFd = accept(sockFd, (struct sockaddr*)&addr, &len);
+		_clientConnection *client = queueClientConnection(clientFd, addr, ctx);
 		client->errorFd = errorFd;
 		pthread_t thread;
 		pthread_create(&thread, NULL, processRequest, (void *)client);
 	}
-	cleanup(sockfd);
+	cleanup(sockFd);
 }
 
 /**
