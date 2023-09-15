@@ -9,7 +9,7 @@ void doTrace (char, const char*, int);
 void doDebug (char*);
 #include <openssl/ssl.h>
 void processInput(_request *);
-_clientConnection *queueClientConnection(int fd, struct sockaddr_in, SSL_CTX *ctx);
+_clientConnection *queueClientConnection(int, int, struct sockaddr_in, SSL_CTX*);
 _clientConnection *getClient(int);
 void configureContext(SSL_CTX*, int port);
 SSL_CTX *createContext();

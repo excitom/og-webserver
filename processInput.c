@@ -41,7 +41,7 @@ processInput(_request *req)
 	if (req->ssl) {
 		SSL_read_ex(req->ssl, (void *)input, BUFF_SIZE, &received);
 	} else {
-		received = recvData(req->sockFd, input, BUFF_SIZE);
+		received = recvData(req->clientFd, input, BUFF_SIZE);
 	}
 
 	snprintf(outbuff, BUFF_SIZE, "RECEIVED %d BYTES\n", (int)received);

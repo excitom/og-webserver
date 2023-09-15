@@ -35,8 +35,8 @@ handleGetVerb(_request *req)
 	// if the path pointing to a directory?
 	if (req->isDir) {
 		// default to the index file if not specified
-		req->fd = openDefaultIndexFile(req);
-		if (req->fd == -1) {
+		req->localFd = openDefaultIndexFile(req);
+		if (req->localFd == -1) {
 			// if the path is a directory, and the index file is not present,
 			// do we want to show a directory listing?
 			if (req->server->autoIndex) {
@@ -51,8 +51,8 @@ handleGetVerb(_request *req)
 		}
 	} else {
 		// not a directory
-		req->fd = open(req->fullPath, O_RDONLY);
-		if (req->fd == -1) {
+		req->localFd = open(req->fullPath, O_RDONLY);
+		if (req->localFd == -1) {
 			if (g.debug) {
 				fprintf(stderr, "%s: file open failed: %s\n", req->fullPath, strerror(errno));
 			}
@@ -77,8 +77,8 @@ serveFile(_request *req)
 	getMimeType(req->fullPath, mimeType);
 
 	// get the content length
-	size_t size = lseek(req->fd, 0, SEEK_END);
-	lseek(req->fd, 0, SEEK_SET);
+	size_t size = lseek(req->localFd, 0, SEEK_END);
+	lseek(req->localFd, 0, SEEK_SET);
 
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, RESPONSE_FORMAT);
@@ -93,13 +93,13 @@ serveFile(_request *req)
 
 	char buffer[BUFF_SIZE];
 	size_t sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, g.version, ts, mimeType, size);
-	size_t sent = sendData(req->sockFd, req->ssl, buffer, sz);
+	size_t sent = sendData(req->clientFd, req->ssl, buffer, sz);
 	if (sent != sz) {
 		doDebug("Problem sending response headers");
 	}
 	sendFile(req, size);
-	accessLog(req->sockFd, req->server->accessLog->fd, "GET", httpCode, req->path, size);
-	close(req->fd);
+	accessLog(req->clientFd, req->server->accessLog->fd, "GET", httpCode, req->path, size);
+	close(req->localFd);
 	return;
 }
 

@@ -49,9 +49,17 @@ tlsServer(int portNum, int errorFd)
 	while(1) {
 		struct sockaddr_in addr;
 		socklen_t len = sizeof(addr);
-		int clientFd = accept(sockFd, (struct sockaddr*)&addr, &len);
-		_clientConnection *client = queueClientConnection(clientFd, addr, ctx);
-		client->errorFd = errorFd;
+		int clientFd;
+		while ((clientFd = accept(sockFd, (struct sockaddr *) &addr, &len)) < 0) {
+			if ((clientFd < 0) && (errno != EINTR)) {
+				fprintf(stderr, "Accept on socket %d failed: %m\n", sockFd);
+				cleanup(sockFd);
+				return;
+			} else {
+				fprintf(stderr, "Resuming interrupted `accept()`\n");
+			}
+		}
+		_clientConnection *client = queueClientConnection(clientFd, errorFd, addr, ctx);
 		pthread_t thread;
 		pthread_create(&thread, NULL, processRequest, (void *)client);
 	}
@@ -82,7 +90,7 @@ processRequest(void *param)
 			}
 		} else {
 			_request *req = (_request *)calloc(1,sizeof(_request));
-			req->fd = c->fd;
+			req->clientFd = c->fd;
 			req->errorFd = c->errorFd;
 			req->ssl = ssl;
 			processInput(req);

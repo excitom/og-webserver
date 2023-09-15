@@ -77,19 +77,19 @@ showDirectoryListing(_request *req)
 
 	int sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, ts, contentLength);
 	// send the response headers
-	sendData(req->sockFd, req->ssl, (char *)&buffer, sz);
+	sendData(req->clientFd, req->ssl, (char *)&buffer, sz);
 
 	// send the response body
-	sendData(req->sockFd, req->ssl, header, strlen(header));
+	sendData(req->clientFd, req->ssl, header, strlen(header));
 	while(fragments != NULL) {
 		_fragment *f = fragments;
 		fragments = f->next;
-		sendData(req->sockFd, req->ssl, f->fragment, f->len);
+		sendData(req->clientFd, req->ssl, f->fragment, f->len);
 		free(f->fragment);
 		free(f);
 	}
-	sendData(req->sockFd, req->ssl, footer, strlen(footer));
-	accessLog(req->sockFd, req->server->accessLog->fd, "GET", 200, req->path, contentLength);
+	sendData(req->clientFd, req->ssl, footer, strlen(footer));
+	accessLog(req->clientFd, req->server->accessLog->fd, "GET", 200, req->path, contentLength);
 	return;
 }
 

@@ -46,10 +46,10 @@ sendErrorResponse( _request *req, int code, char *msg, char *path )
 
 	int sz3 = snprintf(buffer3, BUFF_SIZE, responseHeaders, code, msg, g.version, ts);
 
-	sendData(req->sockFd, req->ssl, buffer3, sz3);
-	sendData(req->sockFd, req->ssl, buffer2, sz2);
-	sendData(req->sockFd, req->ssl, buffer1, sz1);
+	sendData(req->clientFd, req->ssl, buffer3, sz3);
+	sendData(req->clientFd, req->ssl, buffer2, sz2);
+	sendData(req->clientFd, req->ssl, buffer1, sz1);
 
-	errorLog(req->sockFd, req->errorFd, "GET", code, path, msg);
+	errorLog(req->clientFd, req->errorFd, "GET", code, path, msg);
 	return;
 }

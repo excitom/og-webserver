@@ -102,13 +102,20 @@ server(int portNum, int errorFd)
 					socklen_t salen = sizeof(peerAddr);
 					while ((clientFd = accept(sockFd, (struct sockaddr *) &peerAddr, &salen)) < 0) {
 						if ((clientFd < 0) && (errno != EINTR)) {
-							snprintf(buffer, BUFF_SIZE, "Accept on socket %d failed: %m\n", sockFd);
-							doDebug(buffer);
+							fprintf(stderr, "Accept on socket %d failed: %m\n", sockFd);
 							cleanup(sockFd);
 							return;
+						} else {
+							fprintf(stderr, "Resuming interrupted `accept()`\n");
 						}
 					}
-					queueClientConnection(clientFd, peerAddr, NULL);
+					// The TLS server is multi-threaded, hence can have 
+					// multiple client connections running concurrently.
+					// The non-TLS server (currently) only has one connection
+					// at a time. We queue the connection here, but don't need
+					// to keep track of the returned object since there is
+					// only one.
+					queueClientConnection(clientFd, errorFd, peerAddr, NULL);
 
 					//
 					// Add a new event to listen for
@@ -130,7 +137,7 @@ server(int portNum, int errorFd)
 					//
 					_request *req = (_request *)calloc(1,sizeof(_request));
 					req->errorFd = errorFd;
-					req->sockFd = fd;
+					req->clientFd = fd;
 					req->ssl = NULL;
 					processInput(req);
 					if (req->path) free(req->path);

@@ -56,8 +56,8 @@ serveDefaultFile(_request *req)
 			sendErrorResponse(req, 404, "Not Found", req->path);
 			doDebug("Try target is a directory not a file");
 		} else {
-			req->fd = open(req->fullPath, O_RDONLY);
-			if (req->fd == -1) {
+			req->localFd = open(req->fullPath, O_RDONLY);
+			if (req->localFd == -1) {
 				sendErrorResponse(req, 404, "Not Found", req->path);
 			} else {
 				serveFile(req);
@@ -116,16 +116,16 @@ handleTryFiles(_request *req)
 	}
 	// file exists and is a plain file
 	if (req->isDir == 0) {
-		req->fd = open(req->fullPath, O_RDONLY);
-		if (req->fd == -1) {
+		req->localFd = open(req->fullPath, O_RDONLY);
+		if (req->localFd == -1) {
 			serveDefaultFile(req);
 		} else {
 			serveFile(req);
 		}
 	} else {
 		// this is a directory
-		req->fd = openDefaultIndexFile(req);
-		if (req->fd == -1) {
+		req->localFd = openDefaultIndexFile(req);
+		if (req->localFd == -1) {
 			// the index file is not present,
 			// do we want to show a directory listing?
 			if (req->server->autoIndex) {

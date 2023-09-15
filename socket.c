@@ -152,9 +152,8 @@ sendFile(_request *req, size_t size)
 	off_t offset = 0;
 	size_t sent;
 	if (req->ssl) {
-		//sent = SSL_sendfile(sreq->sl, freq->d, offset, size, 0);
 		char *p = malloc(size);
-		read(req->fd, p, size);
+		read(req->localFd, p, size);
 		if (SSL_write_ex(req->ssl, p, size, &sent) == 0) {
 			if (g.debug) {
 				ERR_print_errors_fp(stderr);
@@ -162,7 +161,7 @@ sendFile(_request *req, size_t size)
 		}
 		free(p);
 	} else {
-		sent = sendfile(req->sockFd, req->fd, &offset, size);
+		sent = sendfile(req->clientFd, req->localFd, &offset, size);
 	}
 	if (sent != size) {
 		if (g.debug) {
@@ -175,10 +174,11 @@ sendFile(_request *req, size_t size)
  * Keep track of client connections
  */
 _clientConnection *
-queueClientConnection(int fd, struct sockaddr_in addr, SSL_CTX *ctx)
+queueClientConnection(int fd, int errorFd, struct sockaddr_in addr, SSL_CTX *ctx)
 {
 	_clientConnection *client = (_clientConnection *)malloc(sizeof(_clientConnection));
 	client->fd = fd;
+	client->errorFd = errorFd;
 	client->ctx = ctx;
 	char ip[INET_ADDRSTRLEN];
 	if (inet_ntop(AF_INET, &addr.sin_addr.s_addr, ip, INET_ADDRSTRLEN) != NULL) {

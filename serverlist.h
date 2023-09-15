@@ -100,9 +100,9 @@ typedef struct _request {
 	char *verb;
 	char *protocol;;
 	char *host;
-	int fd;
+	int localFd;	// file being served
 	int errorFd;
-	int sockFd;
+	int clientFd;	// socket connection to the client
 	int isDir;
 	SSL *ssl;
 	_server *server;

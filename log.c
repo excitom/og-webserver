@@ -18,14 +18,14 @@
 #include "global.h"
 
 void
-accessLog(int sockfd, int logFd,  char *verb, int httpCode, char *path, int size)
+accessLog(int clientFd, int logFd,  char *verb, int httpCode, char *path, int size)
 {
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, LOG_RECORD_FORMAT);
 
 	struct sockaddr_in peeraddr;
 	socklen_t len = sizeof(peeraddr);
-	getpeername(sockfd, (struct sockaddr*)&peeraddr, &len);
+	getpeername(clientFd, (struct sockaddr*)&peeraddr, &len);
 	char peerIp[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, peerIp, INET_ADDRSTRLEN);
 
@@ -35,14 +35,14 @@ accessLog(int sockfd, int logFd,  char *verb, int httpCode, char *path, int size
 }
 
 void
-errorLog(int sockfd, int logFd, char *verb, int httpCode, char *path, char *msg)
+errorLog(int clientFd, int logFd, char *verb, int httpCode, char *path, char *msg)
 {
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, LOG_RECORD_FORMAT);
 
 	struct sockaddr_in peeraddr;
 	socklen_t len = sizeof(peeraddr);
-	getpeername(sockfd, (struct sockaddr*)&peeraddr, &len);
+	getpeername(clientFd, (struct sockaddr*)&peeraddr, &len);
 	char peerIp[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, peerIp, INET_ADDRSTRLEN);
 

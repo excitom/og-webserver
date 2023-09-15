@@ -80,7 +80,7 @@ handleProxyPass(_request *req)
 	char buffer[BUFF_SIZE];
 	if (r) {
 		strcpy((char *)&buffer, "X-Forwarded-For: ");
-		_clientConnection *c = getClient(req->sockFd);
+		_clientConnection *c = getClient(req->clientFd);
 		strcat((char *)&buffer, c->ip);
 		strcat((char *)&buffer, "\r\n\r\n");
 		sendData(upstream, NULL, buffer, strlen(buffer));
@@ -102,7 +102,7 @@ handleProxyPass(_request *req)
 			break;
 		}
 		size += bytes;
-		sendData(req->sockFd, NULL, (char *)&buffer, bytes);
+		sendData(req->clientFd, NULL, (char *)&buffer, bytes);
 		if (startOfResponse) {
 			startOfResponse = 0;
 			// extract the HTTP responsse code
@@ -116,6 +116,6 @@ handleProxyPass(_request *req)
 	} while(bytes == BUFF_SIZE);
 	shutdown(upstream, SHUT_RDWR);
 	close(upstream);
-	accessLog(req->sockFd, req->server->accessLog->fd, req->verb, httpCode, req->path, size);
+	accessLog(req->clientFd, req->server->accessLog->fd, req->verb, httpCode, req->path, size);
 	return;
 }
