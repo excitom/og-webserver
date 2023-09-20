@@ -114,9 +114,15 @@ processInput(_request *req)
 			}
 		}
 		req->server = getServerForHost(host);
+		if (!req->server) {
+			doDebug("Can't find a server.");
+			sendErrorResponse(req, 404, "Bad request", "No server for this host");
+			return;
+		}
 		req->loc = getDocRoot(req->server, req->path);
 		if (!req->loc || !req->loc->root) {
 			doDebug("No doc root.");
+			sendErrorResponse(req, 500, "Bad configuration", "No doc root");
 			return;
 		}
 
@@ -201,5 +207,10 @@ getServerForHost(char *host)
 		server = server->next;
 	}
 	// no explicit matches, use the default
-	return g.servers;
+	// unless default server is disabled
+	if (g.noDefaultServer) {
+		return NULL;
+	} else {
+		return g.servers;
+	}
 }
