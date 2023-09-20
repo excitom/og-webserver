@@ -97,8 +97,13 @@ serveFile(_request *req)
 	if (sent != sz) {
 		doDebug("Problem sending response headers");
 	}
-	sendFile(req, size);
-	accessLog(req->clientFd, req->server->accessLog->fd, "GET", httpCode, req->path, size);
+	// only send the response body if the verb is GET
+	if (strcmp(req->verb, "GET") == 0) {
+		sendFile(req, size);
+		accessLog(req->clientFd, req->server->accessLog->fd, "GET", httpCode, req->path, size);
+	} else {
+		accessLog(req->clientFd, req->server->accessLog->fd, "HEAD", httpCode, req->path, size);
+	}
 	close(req->localFd);
 	return;
 }

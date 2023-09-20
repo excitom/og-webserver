@@ -23,6 +23,8 @@
 
 _server *getServerForHost(char *);
 
+int verbIs(char *, char *);
+
 void
 processInput(_request *req)
 {
@@ -153,18 +155,24 @@ processInput(_request *req)
 			return;
 		}
 
-		//
-		// Only support the GET verb at this time
-		// (except for proxy_pass)
-		//
-		if (strcmp(verb, "GET") != 0) {
+		if (verbIs(verb, "GET") || verbIs(verb, "HEAD")) {
+			handleGetVerb(req);
+		} else {
 			sendErrorResponse(req, 405, "Method Not Allowed", verb);
-			return;
 		}
-
-		handleGetVerb(req);
 	}
 	return;
+}
+
+int
+verbIs(char *verb, char *compare)
+{
+	if ((strlen(verb) == strlen(compare)) 
+		&& (strcmp(verb, compare) == 0)) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 /**
