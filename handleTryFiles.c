@@ -75,7 +75,7 @@ serveDefaultFile(_request *req)
 char *
 checkTryFilesFormat(_location *loc)
 {
-	_try_target *tt = loc->try_target;
+	_try_target *tt = loc->tryTarget;
 	if (!tt) {
 		return NULL;
 	}

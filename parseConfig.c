@@ -30,6 +30,15 @@ static char *keyFile = NULL;
 static int autoIndex = 0;
 static int protocol = PROTOCOL_UNSET;
 
+// common error exit
+void
+errorExit(char *msg)
+{
+	fprintf(stderr, msg);
+	fprintf(stderr, "Bad configuration, exiting\n");
+	exit(1);
+}
+
 /**
  * This is the interface to generated parser code from yacc/lex.
  */
@@ -50,8 +59,7 @@ parseConfig() {
 	defaultUpstreams();
 	// call the parser
 	if (yyparse() != 0) {
-		fprintf(stderr, "Config file not parsed correctly, exiting.\n");
-		exit(1);
+		errorExit("Config file not parsed correctly.\n");
 	}
 	unlink((char *)&tempFile);
 }
@@ -64,8 +72,8 @@ checkConfig()
 {
 	FILE *fp = fopen(g.pidFile, "r");
 	if (fp == NULL) {
-		perror("pid log not valid:");
-		exit(1);
+		perror("Can't open file");
+		errorExit("pid log not valid\n");
 	} else {
 		fclose(fp);
 	}
@@ -80,8 +88,7 @@ checkConfig()
 void
 checkServerNames(_server *s) {
 	if (s->serverNames == NULL) {
-		perror("missing server name");
-		exit(1);
+		errorExit("missing server name\n");
 	}
 }
 
@@ -91,8 +98,7 @@ checkServerNames(_server *s) {
 void
 checkIndexFiles(_server *s) {
 	if (s->indexFiles == NULL) {
-		perror("missing default index file");
-		exit(1);
+		errorExit("missing default index file\n");
 	}
 }
 
@@ -104,8 +110,7 @@ checkAccessLogs(_server *s) {
 	if (s->accessLog == NULL) {
 		// use default
 		if (g.servers->accessLog == NULL) {
-			perror("missing access log");
-			exit(1);
+			errorExit("missing access log\n");
 		}
 		s->accessLog = g.accessLogs;
 	}
@@ -119,8 +124,7 @@ checkErrorLogs(_server *s) {
 	if (s->errorLog == NULL) {
 		// use default
 		if (g.servers->errorLog == NULL) {
-			perror("missing error log");
-			exit(1);
+			errorExit("missing error log\n");
 		}
 	}
 }
@@ -133,8 +137,8 @@ void
 checkCertFile(_server *s) {
 	if (access(s->certFile, R_OK) == -1) {
 		fprintf(stderr, "%s: ", s->certFile);
-		perror("certificate file not valid:");
-		exit(1);
+		perror("can't open file");
+		errorExit("certificate file not valid\n");
 	}
 }
 
@@ -146,8 +150,8 @@ void
 checkKeyFile(_server *s) {
 	if (access(s->keyFile, R_OK) == -1) {
 		fprintf(stderr, "%s: ", s->keyFile);
-		perror("key file not valid:");
-		exit(1);
+		perror("can't open file");
+		errorExit("key file not valid");
 	}
 }
 
@@ -165,7 +169,7 @@ checkServers() {
 	}
 	for(_server *s = g.servers; s != NULL; s = s->next) {
 		if (!portOk(s)) {
-			exit(1);
+			errorExit("Invalid port configuration\n");
 		}
 		checkDocRoots(s);
 		checkServerNames(s);
@@ -242,15 +246,15 @@ isUpstreamGroup(char *host)
 void
 proxyPassToUpstreamGroup(char *host, _upstreams *group)
 {
-	_location *defloc = locations;
+	_location *defLoc = locations;
 	// get the default location
-	while (defloc->next) {
-		defloc = defloc->next;
+	while (defLoc->next) {
+		defLoc = defLoc->next;
 	}
 	// if there is a pending location in addition to the default,
 	// update the pending location.
 	// set defaults
-	if (locations != defloc) {
+	if (locations != defLoc) {
 		locations->type |= TYPE_UPSTREAM_GROUP;
 		if (locations->group) {
 			free(locations->group);
@@ -262,7 +266,7 @@ proxyPassToUpstreamGroup(char *host, _upstreams *group)
 		}
 	} else {
 		_location *loc = (_location *)calloc(1, sizeof(_location));
-		memcpy(loc, defloc, sizeof(_location));
+		memcpy(loc, defLoc, sizeof(_location));
 		loc->next = locations;
 		locations = loc;
 		loc->group = group;
@@ -277,8 +281,8 @@ proxyPassToUpstreamGroup(char *host, _upstreams *group)
 		struct sockaddr_in *passTo = (struct sockaddr_in *)calloc(1, sizeof(struct sockaddr_in));
 		struct hostent *hostName = gethostbyname(up->host);
 		if (hostName == (struct hostent *)0) {
-			doDebug("gethostbyname failed");
-			exit(1);
+			fprintf(stderr, "%s ", up->host);
+			errorExit("gethostbyname failed\n");
 		}
 		passTo->sin_family = AF_INET;
 		passTo->sin_port = htons(up->port);
@@ -297,22 +301,22 @@ proxyPassToHost(char * host, int port)
 	struct sockaddr_in *passTo = (struct sockaddr_in *)calloc(1, sizeof(struct sockaddr_in));
 	struct hostent *hostName = gethostbyname(host);
 	if (hostName == (struct hostent *)0) {
-		doDebug("gethostbyname failed");
-		exit(1);
+		fprintf(stderr, "%s ", host);
+		errorExit("gethostbyname failed\n");
 	}
 	passTo->sin_family = AF_INET;
 	passTo->sin_port = htons(port);
 	passTo->sin_addr.s_addr = *((unsigned long*)hostName->h_addr);
 
-	_location *defloc = locations;
+	_location *defLoc = locations;
 	// get the default location
-	while (defloc->next) {
-		defloc = defloc->next;
+	while (defLoc->next) {
+		defLoc = defLoc->next;
 	}
 	// if there is a pending location in addition to the default,
 	// update the pending location.
 	// set defaults
-	if (locations != defloc) {
+	if (locations != defLoc) {
 		locations->type |= TYPE_PROXY_PASS;
 		if (locations->passTo) {
 			free(locations->passTo);
@@ -324,7 +328,7 @@ proxyPassToHost(char * host, int port)
 		}
 	} else {
 		_location *loc = (_location *)calloc(1, sizeof(_location));
-		memcpy(loc, defloc, sizeof(_location));
+		memcpy(loc, defLoc, sizeof(_location));
 		loc->next = locations;
 		locations = loc;
 		loc->passTo = passTo;
@@ -396,7 +400,7 @@ defaultLocation()
 	loc->matchType = PREFIX_MATCH;
 	loc->match = "/";
 	loc->root = "/var/www/ogws/html";
-	loc->try_target = NULL;
+	loc->tryTarget = NULL;
 	loc->passTo = NULL;	
 	loc->group = NULL;	
 	loc->expires = 0;
@@ -471,8 +475,8 @@ openLogFiles()
 		}
 		if (log->fd == -1) {
 			fprintf(stderr, "%s: ", log->path);
-			perror("access log not valid:");
-			exit(1);
+			perror("can't open file");
+			errorExit("access log not valid\n");
 		}
 		log = log->next;
 	}
@@ -484,8 +488,8 @@ openLogFiles()
 		}
 		if (log->fd == -1) {
 			fprintf(stderr, "%s: ", log->path);
-			perror("error log not valid:");
-			exit(1);
+			perror("can't open file");
+			errorExit("error log not valid\n");
 		}
 		log = log->next;
 	}
@@ -500,26 +504,23 @@ checkDocRoots(_server *s)
 	for(_location *loc = s->locations; loc != NULL; loc = loc->next) {
 		if (loc->type & TYPE_PROXY_PASS) {
 			if (!loc->passTo) {
-				perror("Proxy pass missing\n");
-				exit(1);
+				errorExit("Proxy pass missing\n");
 			}
 		}
 		else if(loc->type & TYPE_DOC_ROOT) {
 			if (access(loc->root, R_OK) == -1) {
 				fprintf(stderr, "%s: ", loc->root);
-				perror("doc root not valid:");
-				exit(1);
+				errorExit("doc root not valid\n");
 			}
 		}
 		else if (loc->type & TYPE_TRY_FILES) {
-			if (!loc->try_target) {
-				fprintf(stderr, "Try directive incomplete\n");
-				exit(1);
+			if (!loc->tryTarget) {
+				errorExit("Try directive incomplete\n");
 			}
 		}
 		else {
-			fprintf(stderr, "Unknown location type %d\n", loc->type);
-			exit(1);
+			fprintf(stderr, "%d: ", loc->type);
+			errorExit("Unknown location type\n");
 		}
 	}
 }
@@ -635,8 +636,7 @@ f_server() {
 	g.servers = server;
 	_server_name *sn = serverNames;
 	if (!sn) {
-		fprintf(stderr, "No server name, bad config\n");
-		exit(1);
+		errorExit("No server name\n");
 	}
 	// for server names, ports, index file names, locations:
 	// 	  if there is only one item in the list, it is the default
@@ -661,9 +661,9 @@ f_server() {
 	}
 	_index_file *ifn = indexFiles;
 	if (!ifn->next) {
-		_index_file *copyifn = (_index_file *)calloc(1, sizeof(_index_file));
-		memcpy(copyifn, ifn, sizeof(_index_file));
-		server->indexFiles = copyifn;
+		_index_file *copyIfn = (_index_file *)calloc(1, sizeof(_index_file));
+		memcpy(copyIfn, ifn, sizeof(_index_file));
+		server->indexFiles = copyIfn;
 	} else {
 		while(ifn) {
 			if (!ifn->next) {
@@ -678,9 +678,9 @@ f_server() {
 	}
 	_port *port = ports;
 	if (!port->next) {
-		_port *copyport = (_port *)calloc(1, sizeof(_port));
-		memcpy(copyport, port, sizeof(_port));
-		server->ports = copyport;
+		_port *copyPort = (_port *)calloc(1, sizeof(_port));
+		memcpy(copyPort, port, sizeof(_port));
+		server->ports = copyPort;
 	} else {
 		while(port) {
 			if (!port->next) {
@@ -694,20 +694,20 @@ f_server() {
 		}
 	}
 	_location *loc = locations;
-	char *defroot = NULL;
+	char *defRoot = NULL;
 	if (!loc->next) {
-		_location *copyloc = (_location *)calloc(1, sizeof(_location));
-		memcpy(copyloc, loc, sizeof(_location));
-		server->locations = copyloc;
-		defroot = copyloc->root;
+		_location *copyLoc = (_location *)calloc(1, sizeof(_location));
+		memcpy(copyLoc, loc, sizeof(_location));
+		server->locations = copyLoc;
+		defRoot = copyLoc->root;
 	} else {
 		while(loc) {
 			if (!loc->next) {
 				// skip the default
 				break;
 			}
-			if (!defroot) {
-				defroot = loc->root;
+			if (!defRoot) {
+				defRoot = loc->root;
 			}
 			// preserve the order of the locations
 			if (server->locations) {
@@ -728,7 +728,7 @@ f_server() {
 	loc = server->locations;
 	while(loc) {
 		if (!loc->root) {
-			loc->root = defroot;
+			loc->root = defRoot;
 		}
 		loc = loc->next;
 	}
@@ -777,14 +777,14 @@ f_http() {
 // document root
 void
 f_root(char *root) {
-	_location *defloc = locations;
+	_location *defLoc = locations;
 	// get the default location
-	while (defloc->next) {
-		defloc = defloc->next;
+	while (defLoc->next) {
+		defLoc = defLoc->next;
 	}
 	// if there is a pending location in addition to the default,
 	// update the pending location.
-	if (locations != defloc) {
+	if (locations != defLoc) {
 		locations->type |= TYPE_DOC_ROOT;
 		if (locations->root) {
 			free(locations->root);
@@ -796,7 +796,7 @@ f_root(char *root) {
 		}
 	} else {
 		_location *loc = (_location *)calloc(1, sizeof(_location));
-		memcpy(loc, defloc, sizeof(_location));
+		memcpy(loc, defLoc, sizeof(_location));
 		loc->next = locations;
 		locations = loc;
 		loc->root = root;
@@ -1016,8 +1016,7 @@ f_location(int matchType, char *match) {
 	loc->protocol = protocol;
 	if (!loc->root) {
 		if (!loc->next || ! loc->next->root) {
-			fprintf(stderr, "Missing default location\n");
-			exit(1);
+			errorExit("Missing default location\n");
 		}
 		loc->root = loc->next->root;
 	}
@@ -1071,30 +1070,30 @@ f_try_target(char *target) {
 // try_files directive
 void
 f_try_files() {
-	_location *defloc = locations;
+	_location *defLoc = locations;
 	// get the default location
-	while (defloc->next) {
-		defloc = defloc->next;
+	while (defLoc->next) {
+		defLoc = defLoc->next;
 	}
 	// if there is a pending location in addition to the default,
 	// update the pending location.
 	// set defaults
-	if (locations != defloc) {
+	if (locations != defLoc) {
 		locations->type |= TYPE_TRY_FILES;
 		locations->matchType = UNSET_MATCH;
-		locations->try_target = tryTargets;
+		locations->tryTarget = tryTargets;
 		tryTargets = NULL;
 		if (g.debug) {
 			fprintf(stderr,"Updated try files\n");
 		}
 	} else {
 		_location *loc = (_location *)calloc(1, sizeof(_location));
-		memcpy(loc, defloc, sizeof(_location));
+		memcpy(loc, defLoc, sizeof(_location));
 		loc->next = locations;
 		locations = loc;
 		loc->type |= TYPE_TRY_FILES;
 		loc->matchType = UNSET_MATCH;
-		loc->try_target = tryTargets;
+		loc->tryTarget = tryTargets;
 		tryTargets = NULL;
 		if (g.debug) {
 			fprintf(stderr,"New try files\n");

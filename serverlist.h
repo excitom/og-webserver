@@ -52,7 +52,7 @@ typedef struct _location {
 	char *match;
 	char *root;
 	int protocol;
-	_try_target *try_target;
+	_try_target *tryTarget;
 	struct sockaddr_in *passTo;		// for proxy_pass locations
 	_upstreams *group;				// for upstream groups
 	int expires;
