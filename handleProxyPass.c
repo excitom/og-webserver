@@ -102,7 +102,7 @@ handleProxyPass(_request *req)
 			break;
 		}
 		size += bytes;
-		sendData(req->clientFd, NULL, (char *)&buffer, bytes);
+		sendData(req->clientFd, req->ssl, (char *)&buffer, bytes);
 		if (startOfResponse) {
 			startOfResponse = 0;
 			// extract the HTTP responsse code
