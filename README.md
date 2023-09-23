@@ -79,3 +79,8 @@ directory name that does not contain an index file. However, the config
 file can override this behavior and the server will return an HTML page
 containing a listing of the files in the directory.
 
+## Regular Expression Matching
+
+Some of the config file directives utilize regular expression matching.
+These are implemented using the `regex` C library.
+

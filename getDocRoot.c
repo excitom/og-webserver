@@ -55,26 +55,26 @@ regexMatch(char *pattern, char *location)
 	/* Compile regular expression */
 	ret = regcomp(&regex, pattern, 0);
 	if (ret) {
-    	doDebug("Could not compile regex\n");
-    	return 0;
+		doDebug("Could not compile regex\n");
+		return 0;
 	}
 
 	/* Execute regular expression */
 	ret = regexec(&regex, location, 0, NULL, 0);
 	if (!ret) {
 		regfree(&regex);
-    	return 1;
+		return 1;
 	}
 	else if (ret == REG_NOMATCH) {
 		regfree(&regex);
-    	return 0;
+		return 0;
 	}
 	else {
 		if (g.debug) {
-    		regerror(ret, &regex, msgbuf, sizeof(msgbuf));
-    		fprintf(stderr, "Regex match failed: %s\n", msgbuf);
+			regerror(ret, &regex, msgbuf, sizeof(msgbuf));
+			fprintf(stderr, "Regex match failed: %s\n", msgbuf);
 		}
 		regfree(&regex);
 	}
-    return 0;
+	return 0;
 }
