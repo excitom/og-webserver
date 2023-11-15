@@ -68,7 +68,6 @@ struct globalVars {
 	int keepaliveTimeout;
 	int noDefaultServer;
 	char *configFile;
-	char *fastCGIConfigFile;
 	char *configDir;
 	char *pidFile;
 	char *user;

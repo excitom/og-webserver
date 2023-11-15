@@ -66,6 +66,7 @@ expandFile(FILE *in, FILE *out) {
 			fputs(line, out);
 		}
 	}
+	fclose(in);
 	if (line) {
 		free(line);
 	}
@@ -93,20 +94,6 @@ expandIncludeFiles(char *tempFile) {
 		exit(1);
 	}
 	expandFile(fd, tempFd);
-	fclose(fd);
-	//
-	// expand the optional `fastcgi_params` file
-	//
-	if (g.fastCGIConfigFile) {
-		fd = fopen(g.fastCGIConfigFile, "r");
-		if (fd != NULL) {
-			expandFile(fd, tempFd);
-			fclose(fd);
-		}
-	}
-	//
-	// finish writing the temp config file and reopen it for further processing
-	//
 	fclose(tempFd);
 	return fopen(tempFile, "r");
 }

@@ -79,28 +79,11 @@ parseArgs(int argc, char* argv[], const char *version)
 		perror("config file not valid:");
 		exit(1);
 	}
-	//
-	// extract the config file directory name
-	//
 	char *p = (char *)malloc(strlen(g.configFile)+1);
 	strcpy(p, g.configFile);
 	char *q = strrchr(p, '/');
 	*++q = '\0';
 	g.configDir = p;
-	//
-	// look for an optional `fastcgi_params` file
-	//
-	const char fastCGIConfigFile[] = "/fastcgi_params";
-	int len = strlen(fastCGIConfigFile) + strlen(g.configDir);
-	g.fastCGIConfigFile = malloc(len+1);
-	strcpy(g.fastCGIConfigFile, g.configDir);
-	strcat(g.fastCGIConfigFile, fastCGIConfigFile);
-	if (access(g.fastCGIConfigFile, R_OK) == -1) {
-		// optional file not found
-		free(g.fastCGIConfigFile);
-		g.fastCGIConfigFile = NULL;
-	}
-	
 }
 
 /**
