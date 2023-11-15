@@ -59,5 +59,5 @@ int portOk(_server *);
 int pathAlreadyOpened(const char *, _log_file *);
 void openLogFiles();
 _upstreams *isUpstreamGroup(char *);
-void proxyPassToUpstgreamGroup(char *, _upstreams *);
-void proxyPassToHost(char *, int);
+void proxyPassToUpstgreamGroup(int, char *, _upstreams *);
+void proxyPassToHost(int, char *, int);

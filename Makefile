@@ -19,8 +19,10 @@ SRCS = ogws.c \
 	  sendErrorResponse.c \
 	  handleGetVerb.c \
 	  handleProxyPass.c \
+	  handleFastCGIPass.c \
 	  handleTryFiles.c \
 	  getDocRoot.c \
+	  getUpstreamServer.c \
 	  parseMimeTypes.c \
 	  parseArgs.c \
 	  parseConfig.c \

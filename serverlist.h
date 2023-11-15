@@ -16,6 +16,7 @@ typedef struct _log_file {
 #define TYPE_DOC_ROOT 2
 #define TYPE_TRY_FILES 4
 #define TYPE_UPSTREAM_GROUP 8
+#define TYPE_FASTCGI_PASS 16
 
 #define UNSET_MATCH -1
 #define EQUAL_MATCH 0

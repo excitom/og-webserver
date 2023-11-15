@@ -244,7 +244,7 @@ isUpstreamGroup(char *host)
  * Set up a `proxy_pass` to an upstream group
  */
 void
-proxyPassToUpstreamGroup(char *host, _upstreams *group)
+proxyPassToUpstreamGroup(int type, char *host, _upstreams *group)
 {
 	_location *defLoc = locations;
 	// get the default location
@@ -255,7 +255,7 @@ proxyPassToUpstreamGroup(char *host, _upstreams *group)
 	// update the pending location.
 	// set defaults
 	if (locations != defLoc) {
-		locations->type |= TYPE_UPSTREAM_GROUP;
+		locations->type |= type;
 		if (locations->group) {
 			free(locations->group);
 			doDebug("Duplicate upstream group");
@@ -296,7 +296,7 @@ proxyPassToUpstreamGroup(char *host, _upstreams *group)
  * Set up a `proxy_pass` to a single host
  */
 void
-proxyPassToHost(char * host, int port)
+proxyPassToHost(int type, char * host, int port)
 {
 	struct sockaddr_in *passTo = (struct sockaddr_in *)calloc(1, sizeof(struct sockaddr_in));
 	struct hostent *hostName = gethostbyname(host);
@@ -317,7 +317,7 @@ proxyPassToHost(char * host, int port)
 	// update the pending location.
 	// set defaults
 	if (locations != defLoc) {
-		locations->type |= TYPE_PROXY_PASS;
+		locations->type |= type;
 		if (locations->passTo) {
 			free(locations->passTo);
 			doDebug("Duplicate proxy pass");
@@ -1125,23 +1125,31 @@ f_protocol(char *p) {
 }
 
 // proxy_pass directive
+// note: proxy_pass and fastcgi_pass are handled basically the same.
+// a flag is passed at runtime to indicate the difference.
 void
 f_proxy_pass(char *host, int port) {
 	_upstreams *group = isUpstreamGroup(host);
 	if (group) {
-		proxyPassToUpstreamGroup(host, group);
+		proxyPassToUpstreamGroup(TYPE_PROXY_PASS, host, group);
 	} else {
-		proxyPassToHost(host, port);
+		proxyPassToHost(TYPE_PROXY_PASS, host, port);
 	}
 	free(host);		// no longer needed
 	return;
 }
 //
 // fastcgi_pass directive
-// to do: implement the fast CGI API. for now, just do a proxy_pass
 void
 f_fastcgi_pass(char *host, int port) {
-	f_proxy_pass(host, port);
+	_upstreams *group = isUpstreamGroup(host);
+	if (group) {
+		proxyPassToUpstreamGroup(TYPE_FASTCGI_PASS, host, group);
+	} else {
+		proxyPassToHost(TYPE_FASTCGI_PASS, host, port);
+	}
+	free(host);		// no longer needed
+	return;
 }
 
 // keepalive timeout

@@ -148,10 +148,18 @@ processInput(_request *req)
 		}
 
 		//
-		// check for proxy_pass (to a single host or to an upstream group)
+		// check for proxy_pass 
 		//
-		if (req->loc->type & (TYPE_PROXY_PASS|TYPE_UPSTREAM_GROUP)) {
+		if (req->loc->type & (TYPE_PROXY_PASS)) {
 			handleProxyPass(req);
+			return;
+		}
+
+		//
+		// check for fastcgi_pass 
+		//
+		if (req->loc->type & (TYPE_FASTCGI_PASS)) {
+			handleFastCGIPass(req);
 			return;
 		}
 

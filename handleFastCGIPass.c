@@ -1,7 +1,7 @@
 /**
- * Reverse-proxy a request to an upstream target.
+ * Reverse-proxy a request to an upstream target using FastCGI protocol.
  *
- * (c) Tom Lang 4/2023
+ * (c) Tom Lang 11/2023
  */
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,7 +19,7 @@
 #include "global.h"
 
 void
-handleProxyPass(_request *req)
+handleFastCGIPass(_request *req)
 {
 	int upstream = getUpstreamServer(req);
 	if (upstream < 0) {
