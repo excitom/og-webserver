@@ -57,6 +57,7 @@ expandFile(FILE *in, FILE *out) {
 						fprintf(stderr, "Including file %s\n", path);
 					}
 					expandFile(fd, out);
+					fclose(fd);
 				} else {
 					fprintf(stderr, "Invalid include file path %s, ignored\n", path);
 				}
@@ -66,7 +67,6 @@ expandFile(FILE *in, FILE *out) {
 			fputs(line, out);
 		}
 	}
-	fclose(in);
 	if (line) {
 		free(line);
 	}
@@ -94,6 +94,7 @@ expandIncludeFiles(char *tempFile) {
 		exit(1);
 	}
 	expandFile(fd, tempFd);
+	fclose(fd);
 	fclose(tempFd);
 	return fopen(tempFile, "r");
 }
