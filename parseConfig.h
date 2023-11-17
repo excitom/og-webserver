@@ -29,7 +29,7 @@ void f_proxy_pass(char *, int);
 void f_protocol(char *);
 void f_fastcgi_pass(char *, int);
 void f_fastcgi_index(char *);
-void f_fastcgi_param(char *, char *);
+void f_fastcgi_param(char *, char *, char *);
 void f_fastcgi_split_path_info(char *);
 void f_keepalive_timeout(int);
 void f_workerProcesses(int);

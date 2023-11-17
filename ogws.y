@@ -407,8 +407,16 @@ fastcgi_index
 	{f_fastcgi_index($2);}
 	;
 fastcgi_param
-	: FASTCGIPARAM NAME NAME EOL
-	{f_fastcgi_param($2, $3);}
+	: FASTCGIPARAM NAME VARIABLE EOL
+	{f_fastcgi_param($2, $3, NULL);}
+	| FASTCGIPARAM NAME PATH EOL
+	{f_fastcgi_param($2, $3, NULL);}
+	| FASTCGIPARAM NAME NUMBER EOL
+	{f_fastcgi_num_param($2, $3);}
+	| FASTCGIPARAM NAME VARIABLE VARIABLE EOL
+	{f_fastcgi_param($2, $3, $4);}
+	| FASTCGIPARAM NAME PATH VARIABLE EOL
+	{f_fastcgi_param($2, $3, $4);}
 	;
 try_files_directive
 	:

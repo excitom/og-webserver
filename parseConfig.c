@@ -1169,10 +1169,16 @@ f_fastcgi_index(char *file) {
 	free(file);
 }
 void
-f_fastcgi_param(char *name, char *value) {
+f_fastcgi_param(char *name, char *value, char *value2) {
 	fprintf(stderr, "fastcgi_param set %s to %s, unomplemented, ignored\n", name, value);
 	free(name);
 	free(value);
+	free(value2);
+}
+void
+f_fastcgi_num_param(char *name, int value) {
+	fprintf(stderr, "fastcgi_param set %s to %d, unomplemented, ignored\n", name, value);
+	free(name);
 }
 void
 f_fastcgi_split_path_info(char *regex) {
