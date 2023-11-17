@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -lm
 YFLAGS = -d --verbose
 YACC = bison
 LEX = flex

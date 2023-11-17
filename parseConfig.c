@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
+#include <math.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <sys/types.h>
@@ -1170,15 +1171,23 @@ f_fastcgi_index(char *file) {
 }
 void
 f_fastcgi_param(char *name, char *value, char *value2) {
-	fprintf(stderr, "fastcgi_param set %s to %s, unomplemented, ignored\n", name, value);
-	free(name);
-	free(value);
-	free(value2);
+	if (value2) {
+		size_t len = strlen(value)+strlen(value2)+1;
+		char *v = malloc(len);
+		strcpy(v, value);
+		strcat(v, value2);
+		free(value);
+		free(value2);
+		value = v;
+	}
+	checkParameter(name, value);
 }
 void
 f_fastcgi_num_param(char *name, int value) {
-	fprintf(stderr, "fastcgi_param set %s to %d, unomplemented, ignored\n", name, value);
-	free(name);
+	size_t len = (int)((ceil(log10(value))+1)*sizeof(char));
+	char *str = malloc(len);
+	sprintf(str, "%d", value);
+	checkParameter(name, str);
 }
 void
 f_fastcgi_split_path_info(char *regex) {

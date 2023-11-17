@@ -38,6 +38,7 @@ int openDefaultIndexFile(_request *);
 int pathExists(_request *, char *);
 void serveFile(_request *);
 FILE *expandIncludeFiles(char *);
+void checkParameter(char *, char *);
 
 #define FAIL    -1
 #define BUFF_SIZE 4096
