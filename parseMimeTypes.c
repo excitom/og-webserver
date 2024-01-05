@@ -92,14 +92,14 @@ parseMimeTypes()
 		}
 	}
 
-	//if (g.debug) {
-		//fprintf(stderr, "MIME Types:\n");
-		//_mimeTypes *mt = g.mimeTypes;
-		//while (mt != NULL) {
-			//fprintf(stderr, "MIME Type: %s -- Extension: %s\n", mt->mimeType, mt->extension);
-			//mt = mt->next;
-		//}
-	//}
+	if (g.debug) {
+		fprintf(stderr, "MIME Types:\n");
+		_mimeTypes *mt = g.mimeTypes;
+		while (mt != NULL) {
+			fprintf(stderr, "MIME Type: %s -- Extension: %s\n", mt->mimeType, mt->extension);
+			mt = mt->next;
+		}
+	}
 
 	// free up the space for the file and file name
 	free(data);
@@ -118,17 +118,20 @@ parseMimeTypes()
 char *
 parseLine(char *p)
 {
-	char *q = strchr(p, ' ');
+	char *q = strchr(p, '\t');
 	if (q == NULL) {
-		perror("Invalid mime.type file, malformed mime type.");
-		exit(1);
+		q = strchr(p, ' ');
+		if (q == NULL) {
+			perror("Invalid mime.type file, malformed mime type.");
+			exit(1);
+		}
 	}
 	*q = '\0';
 	char *mimeType = p;		// save string for later
 
 	// save the extension(s)
 	p = q+1;
-	while(*p == ' ') {
+	while(*p == ' ' || *p == '\t') {
 		p++;
 	}
 	if (*p == '\0') {
