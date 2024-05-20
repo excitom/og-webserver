@@ -53,7 +53,7 @@ expandFile(FILE *in, FILE *out) {
 				}
 				FILE *fd = fopen(path, "r");
 				if (fd != NULL) {
-					if (g.debug) {
+					if (isDebug()) {
 						fprintf(stderr, "Including file %s\n", path);
 					}
 					expandFile(fd, out);

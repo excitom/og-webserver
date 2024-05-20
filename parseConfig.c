@@ -165,7 +165,7 @@ checkKeyFile(_server *s) {
  */
 void
 checkServers() {
-	if (g.noDefaultServer) {
+	if (!isDefaultServer()) {
 		g.servers = g.servers->next;
 	}
 	for(_server *s = g.servers; s != NULL; s = s->next) {
@@ -262,7 +262,7 @@ proxyPassToUpstreamGroup(int type, char *host, _upstreams *group)
 			doDebug("Duplicate upstream group");
 		}
 		locations->group = group;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"Updated upstream group %s\n", host);
 		}
 	} else {
@@ -272,7 +272,7 @@ proxyPassToUpstreamGroup(int type, char *host, _upstreams *group)
 		locations = loc;
 		loc->group = group;
 		loc->type |= TYPE_UPSTREAM_GROUP;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"New upstream group %s\n", host);
 		}
 	}
@@ -324,7 +324,7 @@ proxyPassToHost(int type, char * host, int port)
 			doDebug("Duplicate proxy pass");
 		}
 		locations->passTo = passTo;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"Updated proxy pass host %s\n", host);
 		}
 	} else {
@@ -334,7 +334,7 @@ proxyPassToHost(int type, char * host, int port)
 		locations = loc;
 		loc->passTo = passTo;
 		loc->type |= TYPE_PROXY_PASS;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"New proxy pass host %s\n", host);
 		}
 	}
@@ -536,7 +536,7 @@ checkDocRoots(_server *s)
 void
 f_pid(char *pidFile) {
 	g.pidFile = pidFile;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"PID file location:  %s\n", g.pidFile);
 	}
 }
@@ -545,7 +545,7 @@ f_pid(char *pidFile) {
 // step expands all the include files.
 void
 f_include(char *path) {
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr, "Include file ignored %s\n", path);
 	}
 }
@@ -561,9 +561,9 @@ f_default_type(char *type) {
 
 // specify option for network trace
 void
-f_trace(int trace) {
-	g.trace = trace;
-	if (g.debug) {
+f_trace(bool trace) {
+	setTrace(trace);
+	if (isTrace()) {
 		if (trace) {
 			fprintf(stderr,"Show network trace ON\n");
 		} else {
@@ -576,7 +576,7 @@ f_trace(int trace) {
 void
 f_autoindex(int flag) {
 	autoIndex = flag;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"Auto index %s\n", autoIndex ? "On" : "Off");
 	}
 	return;
@@ -584,10 +584,10 @@ f_autoindex(int flag) {
 
 // specify if the `sendfile` system call should be used
 void
-f_sendfile(int sendFile) {
-	g.sendFile = sendFile;
-	if (g.debug) {
-		if (sendFile) {
+f_sendfile(bool sendFile) {
+	setSendFile(sendFile);
+	if (isDebug()) {
+		if (isSendFile()) {
 			fprintf(stderr,"Use sendfile system call ON\n");
 		} else {
 			fprintf(stderr,"Use sendfile system call OFF\n");
@@ -597,10 +597,10 @@ f_sendfile(int sendFile) {
 
 // specify if the `tcp_nopush` option
 void
-f_tcpnopush(int tcpNoPush) {
-	g.tcpNoPush = tcpNoPush;
-	if (g.debug) {
-		if (tcpNoPush) {
+f_tcpnopush(bool tcpNoPush) {
+	setTcpNoPush(tcpNoPush);
+	if (isDebug()) {
+		if (isTcpNoPush()) {
 			fprintf(stderr,"Use `tcp_nopush` option ON\n");
 		} else {
 			fprintf(stderr,"Use `tcp_nopush` option OFF\n");
@@ -615,7 +615,7 @@ f_user(char *user, char *group) {
 		free(g.user);
 	}
 	g.user = user;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"Run as user name %s\n", g.user);
 	}
 	if (group) {
@@ -623,7 +623,7 @@ f_user(char *user, char *group) {
 			free(g.group);
 		}
 		g.group = group;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"Run as group name %s\n", g.group);
 		}
 	}
@@ -750,7 +750,7 @@ f_server() {
 void
 f_http() {
 	if (!g.servers) {
-		if (g.debug) {
+		if (isDebug()) {
 			doDebug("Missing server block, using default\n");
 		}
 	}
@@ -792,7 +792,7 @@ f_root(char *root) {
 			doDebug("Duplicate doc root");
 		}
 		locations->root = root;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"Updated Document root path %s\n", locations->root);
 		}
 	} else {
@@ -802,7 +802,7 @@ f_root(char *root) {
 		locations = loc;
 		loc->root = root;
 		loc->type |= TYPE_DOC_ROOT;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"New Document root path %s\n", loc->root);
 		}
 	}
@@ -838,7 +838,7 @@ f_expires(char *expires) {
 			locations->expires = atoi(expires) * mult;
 		}
 	}
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"Expires directive %d\n", locations->expires);
 	}
 	free(expires);
@@ -873,7 +873,7 @@ f_server_name(char *serverName, int type) {
 		sn->next = serverNames;
 		serverNames = sn;
 	}
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"server name: %s\n", serverName);
 	}
 	return;
@@ -886,7 +886,7 @@ f_indexFile(char *indexFile) {
 	i->next = indexFiles;
 	indexFiles = i;
 	i->indexFile = indexFile;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr, "Index File name: %s\n", i->indexFile);
 	}
 	return;
@@ -900,7 +900,7 @@ f_error_log(char *path) {
 	log->fd = -1;
 	log->next = g.errorLogs;
 	g.errorLogs = log;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"Error log file path %s\n", log->path);
 	}
 	return;
@@ -915,7 +915,7 @@ f_access_log(char *path, int type) {
 	log->fd = -1;
 	log->next = g.accessLogs;
 	g.accessLogs = log;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"Access log file path %s\n", log->path);
 	}
 	if (type) {
@@ -933,7 +933,7 @@ f_ssl_certificate(char *path) {
 		return;
 	}
 	certFile = path;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"cert file: %s\n", certFile);
 	}
 	return;
@@ -948,7 +948,7 @@ f_ssl_certificate_key(char *path) {
 		return;
 	}
 	keyFile = path;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"key file: %s\n", keyFile);
 	}
 	return;
@@ -1084,7 +1084,7 @@ f_try_files() {
 		locations->matchType = UNSET_MATCH;
 		locations->tryTarget = tryTargets;
 		tryTargets = NULL;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"Updated try files\n");
 		}
 	} else {
@@ -1096,7 +1096,7 @@ f_try_files() {
 		loc->matchType = UNSET_MATCH;
 		loc->tryTarget = tryTargets;
 		tryTargets = NULL;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr,"New try files\n");
 		}
 	}
@@ -1119,7 +1119,7 @@ f_protocol(char *p) {
 		fprintf(stderr, "Unsupported protocol %s, ignored\n", p);
 		return;
 	}
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr, "Proxy pass to %s protocol\n", p);
 	}
 	return;
@@ -1157,7 +1157,7 @@ f_fastcgi_pass(char *host, int port) {
 void
 f_keepalive_timeout(int timeout) {
 	g.keepaliveTimeout = timeout;
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr,"Keepalive timeout: %d\n", g.keepaliveTimeout);
 	}
 }
@@ -1198,18 +1198,18 @@ f_fastcgi_split_path_info(char *regex) {
 // max worker processes
 void
 f_workerProcesses(int workerProcesses) {
-	g.workerProcesses = workerProcesses;
-	if (g.debug) {
-		fprintf(stderr,"Max worker processes %d\n", g.workerProcesses);
+	setWorkerProcesses(workerProcesses);
+	if (isDebug()) {
+		fprintf(stderr,"Max worker processes %d\n", getWorkerProcesses());
 	}
 }
 
 // max worker connections
 void
 f_workerConnections(int workerConnections) {
-	g.workerConnections = workerConnections;
-	if (g.debug) {
-		fprintf(stderr,"Max worker connections %d\n", g.workerConnections);
+	setWorkerConnections(workerConnections);
+	if (isDebug()) {
+		fprintf(stderr,"Max worker connections %d\n", getWorkerConnections());
 	}
 }
 
@@ -1217,7 +1217,7 @@ f_workerConnections(int workerConnections) {
 void
 f_config_complete() {
 	checkConfig();
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr, "Config file parsing complete!\n");
 	}
 }

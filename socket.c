@@ -121,7 +121,7 @@ sendData(int fd, SSL *ssl, const char* ptr, int nbytes)
 	size_t nsent;
 	if (ssl) {
 		if (SSL_write_ex(ssl, ptr, nbytes, &nsent) == 0) {
-			if (g.debug) {
+			if (isDebug()) {
 				ERR_print_errors_fp(stderr);
 			}
 		}
@@ -155,7 +155,7 @@ sendFile(_request *req, size_t size)
 		char *p = malloc(size);
 		read(req->localFd, p, size);
 		if (SSL_write_ex(req->ssl, p, size, &sent) == 0) {
-			if (g.debug) {
+			if (isDebug()) {
 				ERR_print_errors_fp(stderr);
 			}
 		}
@@ -164,7 +164,7 @@ sendFile(_request *req, size_t size)
 		sent = sendfile(req->clientFd, req->localFd, &offset, size);
 	}
 	if (sent != size) {
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr, "Problem sending response body: SIZE %d SENT %d\n", (int)size, (int)sent);
 		}
 	}

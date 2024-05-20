@@ -52,11 +52,11 @@ server(int portNum, int errorFd)
 		doDebug("Starting epoll_wait");
 
 		int rval;
-		struct epoll_event epoll_events[g.workerConnections];
+		struct epoll_event epoll_events[getWorkerConnections()];
 		//
 		// Loop if interrupted by a signal
 		//
-		while ((rval = epoll_wait(epollFd, epoll_events, g.workerConnections, -1)) < 0) {
+		while ((rval = epoll_wait(epollFd, epoll_events, getWorkerConnections(), -1)) < 0) {
 			if ((rval < 0) && (errno != EINTR)) {
 				doDebug("epoll_wait failed");
 				cleanup(sockFd);

@@ -2,10 +2,10 @@
 // which correspond to yacc parser actions.
 void f_pid(char *);
 void f_include(char *);
-void f_trace(int);
+void f_trace(bool);
 void f_autoindex(int);
-void f_sendfile(int);
-void f_tcpnopush(int);
+void f_sendfile(bool);
+void f_tcpnopush(bool);
 void f_user(char *, char *);
 void f_server();
 void f_http();
@@ -30,6 +30,7 @@ void f_protocol(char *);
 void f_fastcgi_pass(char *, int);
 void f_fastcgi_index(char *);
 void f_fastcgi_param(char *, char *, char *);
+void f_fastcgi_num_param(char *, int);
 void f_fastcgi_split_path_info(char *);
 void f_keepalive_timeout(int);
 void f_workerProcesses(int);

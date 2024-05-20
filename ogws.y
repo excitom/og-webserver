@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "serverlist.h"
 #include "parseConfig.h"
 extern int yylex();
@@ -122,10 +123,10 @@ include_directive
 	;
 trace_directive
 	: TRACE ON EOL
-	{f_trace(1);}
+	{f_trace(true);}
 	|
 	TRACE OFF EOL
-	{f_trace(0);}
+	{f_trace(false);}
 	;
 worker_processes_directive
 	: WORKERPROCESSES NUMBER EOL
@@ -190,18 +191,18 @@ default_type_directive
 sendfile_directive
 	:
 	SENDFILE ON EOL
-	{f_sendfile(1);}
+	{f_sendfile(true);}
 	|
 	SENDFILE OFF EOL
-	{f_sendfile(0);}
+	{f_sendfile(false);}
 	;
 tcp_nopush_directive
 	:
 	TCPNOPUSH ON EOL
-	{f_tcpnopush(1);}
+	{f_tcpnopush(true);}
 	|
 	TCPNOPUSH OFF EOL
-	{f_tcpnopush(0);}
+	{f_tcpnopush(false);}
 	;
 keepalive_directive
 	:
@@ -505,7 +506,7 @@ void f_pid(char *path) {
 void f_include(char *path) {
 	printf("Include file %s\n", path);
 }
-void f_trace(int flag) {
+void f_trace(bool flag) {
 	if (flag) {
 		printf("Trace ON\n");
 	} else {
@@ -526,7 +527,7 @@ void f_sendfile(int flag) {
 		printf("Sendfle OFF\n");
 	}
 }
-void f_tcpnopush(int flag) {
+void f_tcpnopush(bool flag) {
 	if (flag) {
 		printf("TCP no push ON\n");
 	} else {

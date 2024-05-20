@@ -29,7 +29,7 @@ daemonize()
 {
 	// TODO: implement new-style Linux daemon that works with systemd.
 	// This implementation is old-style SystemV/BSD.
-	if (!g.foreground) {
+	if (!isForeground()) {
 		// create background process
 		pid_t pid = fork();
 		if (pid == -1) {

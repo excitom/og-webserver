@@ -14,27 +14,28 @@ lex.yy.c:
 LEXYACCSRC = ogws.tab.c lex.yy.c
 
 SRCS = ogws.c \
-	  getTimestamp.c \
-	  processInput.c \
-	  sendErrorResponse.c \
-	  handleGetVerb.c \
-	  handleProxyPass.c \
-	  handleFastCGIPass.c \
-	  handleTryFiles.c \
-	  getDocRoot.c \
-	  getUpstreamServer.c \
-	  parseMimeTypes.c \
-	  parseArgs.c \
-	  parseConfig.c \
-	  expandIncludeFiles.c \
-	  log.c \
-	  daemonize.c \
-	  showDirectoryListing.c \
-	  server.c \
-	  tlsServer.c \
-	  socket.c \
-	  ogws.tab.c \
-	  lex.yy.c
+	serverState.c \
+	getTimestamp.c \
+	processInput.c \
+	sendErrorResponse.c \
+	handleGetVerb.c \
+	handleProxyPass.c \
+	handleFastCGIPass.c \
+	handleTryFiles.c \
+	getDocRoot.c \
+	getUpstreamServer.c \
+	parseMimeTypes.c \
+	parseArgs.c \
+	parseConfig.c \
+	expandIncludeFiles.c \
+	log.c \
+	daemonize.c \
+	showDirectoryListing.c \
+	server.c \
+	tlsServer.c \
+	socket.c \
+	ogws.tab.c \
+	lex.yy.c
 
 OBJS = $(SRCS:.c=.o)
 EXE = ogws

@@ -224,7 +224,7 @@ getServerForHost(char *host)
 	}
 	// no explicit matches, use the default
 	// unless default server is disabled
-	if (g.noDefaultServer) {
+	if (!isDefaultServer()) {
 		return NULL;
 	} else {
 		return g.servers;

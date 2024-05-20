@@ -1,4 +1,26 @@
 #include "clients.h"
+#include <stdbool.h>
+
+void setDebug(bool);
+bool isDebug();
+void setForeground(bool);
+bool isForeground();
+void setDefaultServer(bool);
+bool isDefaultServer();
+void setTrace(bool);
+bool isTrace();
+void setTestConfig(bool);
+bool isTestConfig();
+void setShowVersion(bool);
+bool isShowVersion();
+void setTcpNoPush(bool);
+bool isTcpNoPush();
+void setSendFile(bool);
+bool isSendFile();
+void setWorkerConnections(int);
+bool getWorkerConnections();
+void setWorkerProcesses(int);
+bool getWorkerProcesses();
 
 void parseArgs(int, char**, const char *);
 void daemonize();
@@ -58,18 +80,8 @@ typedef struct _mimeTypes {
 
 // global variables
 struct globalVars {
-	int debug;
-	int trace;
-	int testConfig;
-	int foreground;
-	int tcpNoPush;
-	int sendFile;
-	int workerConnections;
-	int workerProcesses;
-	int showVersion;
 	int useSendfile;
 	int keepaliveTimeout;
-	int noDefaultServer;
 	char *configFile;
 	char *configDir;
 	char *pidFile;

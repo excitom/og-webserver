@@ -37,7 +37,7 @@ main(int argc, char *argv[])
 {
 	setlocale(LC_NUMERIC, "");
 	parseArgs(argc, argv, version);
-	if (g.showVersion) {
+	if (isShowVersion()) {
 		printf("ogws web server version: %s\n", version);
 		exit(0);
 	}
@@ -48,7 +48,7 @@ main(int argc, char *argv[])
 		exit(0);
 	}
 	// exit if only testing the config
-	if (g.testConfig) {
+	if (isTestConfig()) {
 		printf("Config OK\n");
 		exit(0);
 	}
@@ -117,7 +117,7 @@ startProcesses()
 	for (_server *server = g.servers; server != NULL; server = server->next) {
 		for (_port *port = server->ports; port != NULL; port = port->next) {
 			if (uniquePort(port->portNum)) {
-				for (int i = 0; i < g.workerProcesses; i++) {
+				for (int i = 0; i < getWorkerProcesses(); i++) {
 					_procs *p = (_procs *)malloc(sizeof(_procs));
 					p->portNum = port->portNum;
 					p->tls = port->tls;
@@ -152,7 +152,7 @@ startProcesses()
 				perror("Can't link to parent signal");
 				exit(1);
 			}
-			if (g.debug) {
+			if (isDebug()) {
 				fprintf(stderr, "Server Starting, process: %d for port %d\n", pid, p->portNum);
 			}
 			break;

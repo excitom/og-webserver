@@ -57,7 +57,7 @@ errorLog(int clientFd, int logFd, char *verb, int httpCode, char *path, char *ms
  */
 void
 doDebug(char* buffer) {
-	if (!g.debug) {
+	if (!isDebug()) {
 		return;
 	}
 	fprintf(stderr, "PID: %d - ", getpid());
@@ -73,7 +73,7 @@ doDebug(char* buffer) {
 void
 doTrace (char direction, const char *p, int bytes)
 {
-	if (!g.trace)
+	if (!isTrace())
 		return;
 
 	int f, l, i;

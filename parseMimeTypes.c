@@ -68,7 +68,7 @@ parseMimeTypes()
 		fprintf(stderr, "Can't read mime types: %d != %d\n", size, sz);
 		exit(1);
 	}
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr, "MIME Type size: %d\n", size);
 	}
 
@@ -92,7 +92,7 @@ parseMimeTypes()
 		}
 	}
 
-	if (g.debug) {
+	if (isDebug()) {
 		fprintf(stderr, "MIME Types:\n");
 		_mimeTypes *mt = g.mimeTypes;
 		while (mt != NULL) {

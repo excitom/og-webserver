@@ -70,7 +70,7 @@ regexMatch(char *pattern, char *location)
 		return 0;
 	}
 	else {
-		if (g.debug) {
+		if (isDebug()) {
 			regerror(ret, &regex, msgbuf, sizeof(msgbuf));
 			fprintf(stderr, "Regex match failed: %s\n", msgbuf);
 		}

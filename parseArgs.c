@@ -25,19 +25,19 @@ parseArgs(int argc, char* argv[], const char *version)
 	while ((c = getopt(argc, argv, "dfhntvs:")) != EOF)
 		switch(c) {
 			case 'd':
-				g.debug = 1;
+				setDebug(true);
 				break;
 			case 't':
-				g.testConfig = 1;
+				setTestConfig(true);
 				break;
 			case 'f':
-				g.foreground = 1;
+				setForeground(true);
 				break;
 			case 'v':
-				g.showVersion = 1;
+				setShowVersion(true);
 				break;
 			case 'n':
-				g.noDefaultServer = 1;
+				setDefaultServer(false);
 				break;
 			case 's':
 				g.signal = optarg;
@@ -94,15 +94,6 @@ initGlobals(const char *version)
 {
 	g.version = (char *)malloc(strlen(version)+1);
 	strcpy(g.version, version);
-	g.foreground = 0;
-	g.debug = 0;
-	g.noDefaultServer = 0;
-	g.trace = 0;
-	g.testConfig = 0;
-	g.showVersion = 0;
-	g.workerConnections = 64;
-	g.workerProcesses = 1;
-	g.sendFile = 0;
 	g.signal = NULL;
 	g.servers = NULL;
 	g.portCount = 0;

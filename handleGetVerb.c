@@ -42,7 +42,7 @@ handleGetVerb(_request *req)
 			if (req->server->autoIndex) {
 				showDirectoryListing(req);
 			} else {
-				if (g.debug) {
+				if (isDebug()) {
 					fprintf(stderr, "%s: file open failed: %s\n", req->fullPath, strerror(errno));
 				}
 				sendErrorResponse(req, 404, "Not Found", req->path);
@@ -53,7 +53,7 @@ handleGetVerb(_request *req)
 		// not a directory
 		req->localFd = open(req->fullPath, O_RDONLY);
 		if (req->localFd == -1) {
-			if (g.debug) {
+			if (isDebug()) {
 				fprintf(stderr, "%s: file open failed: %s\n", req->fullPath, strerror(errno));
 			}
 			sendErrorResponse(req, 404, "Not Found", req->path);
@@ -177,7 +177,7 @@ pathExists(_request *req, char *path)
 	struct stat sb;
 	if (stat(req->fullPath, &sb) == -1) {
 		int e = errno;
-		if (g.debug) {
+		if (isDebug()) {
 			fprintf(stderr, "%s: file stat failed: %s\n", req->fullPath, strerror(e));
 		}
 		return -1;
