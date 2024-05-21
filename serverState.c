@@ -2,10 +2,12 @@
  * server state variables
  */
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 ////////////////////////////////////////
 // debug mode?
-bool debug = false;
+static bool debug = false;
 void
 setDebug(const bool d) {
 	debug = d;
@@ -17,7 +19,7 @@ isDebug() {
 
 ////////////////////////////////////////
 // run server in the foreground?
-bool foreground = false;
+static bool foreground = false;
 void
 setForeground(const bool f) {
 	foreground = f;
@@ -29,7 +31,7 @@ isForeground() {
 
 ////////////////////////////////////////
 // is there a default server?
-bool defaultServer = true;
+static bool defaultServer = true;
 void
 setDefaultServer(const bool d) {
 	defaultServer = d;
@@ -41,7 +43,7 @@ isDefaultServer() {
 
 ////////////////////////////////////////
 // is network trace enabled?
-bool trace = false;
+static bool trace = false;
 void
 setTrace(const bool t) {
 	trace = t;
@@ -53,7 +55,7 @@ isTrace() {
 
 ////////////////////////////////////////
 // test the configuration but don't start the server?
-bool testConfig = false;
+static bool testConfig = false;
 void
 setTestConfig(const bool t) {
 	testConfig = t;
@@ -65,7 +67,7 @@ isTestConfig() {
 
 ////////////////////////////////////////
 // show the server version but don't start the server?
-bool showVersion = false;
+static bool showVersion = false;
 void
 setShowVersion(const bool s) {
 	showVersion = s;
@@ -79,7 +81,7 @@ isShowVersion() {
 // Enables or disables the use of the TCP_NOPUSH socket option on FreeBSD
 // or the TCP_CORK socket option on Linux.
 // The options are enabled only when sendfile is used.
-bool tcpNoPush = false;
+static bool tcpNoPush = false;
 void
 setTcpNoPush(const bool t) {
 	tcpNoPush = t;
@@ -91,7 +93,7 @@ isTcpNoPush() {
 
 ////////////////////////////////////////
 // Enables or disables the use of the sendfile system call.
-bool useSendFile = false;
+static bool useSendFile = false;
 void
 setSendFile(const bool s) {
 	useSendFile = s;
@@ -103,25 +105,82 @@ isSendFile() {
 
 ////////////////////////////////////////
 // Keep track of the number of worker connections
-bool workerConnections = 64;
+static int workerConnections = 64;
 void
 setWorkerConnections(const int c) {
 	workerConnections = c;
 }
-bool
+int
 getWorkerConnections() {
 	return workerConnections;
 }
 
 ////////////////////////////////////////
 // Keep track of the number of worker proccesses
-bool workerProcesses = 1;
+static int workerProcesses = 1;
 void
 setWorkerProcesses(const int p) {
 	workerProcesses = p;
 }
-bool
+int
 getWorkerProcesses() {
 	return workerProcesses;
+}
+
+////////////////////////////////////////
+// Signal to be sent to the lead server process
+static char *signalName = NULL;
+void
+setSignalName(char *n) {
+	signalName = n;
+}
+char *
+getSignalName() {
+	return signalName;
+}
+
+////////////////////////////////////////
+// File which contains the lead process ID
+static char *pidFile = NULL;
+void
+setPidFile(char *n) {
+	if (pidFile != NULL) {
+		free(pidFile);
+	}
+	pidFile = n;
+}
+char *
+getPidFile() {
+	return pidFile;
+}
+
+////////////////////////////////////////
+// Version number of the server
+static char *version = NULL;
+void
+setVersion(char *v) {
+	if (version != NULL) {
+		free(version);
+	}
+	version = v;
+}
+char *
+getVersion() {
+	return version;
+}
+
+////////////////////////////////////////
+// Linked list of server configurations
+static _server *servers;
+void
+setServerList(char *s) {
+	if (version != NULL) {
+		free(version);
+	}
+	version = v;
+}
+char *
+getServerList() {
+	return version;
 }
 

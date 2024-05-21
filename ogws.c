@@ -8,7 +8,7 @@
   * (c) Tom Lang 2/2023
   */
 
-const char version[] = "0.3.0";
+const char version[] = "0.4.0";
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,7 +26,7 @@ const char version[] = "0.3.0";
 // global variables
 struct globalVars g;
 
-void sendSignal(void);
+void sendSignal(const char *);
 void startProcesses(void);
 
 /**
@@ -43,8 +43,9 @@ main(int argc, char *argv[])
 	}
 	parseConfig();
 	// check if a signal should be sent
-	if (g.signal != NULL) {
-		sendSignal();
+	const char *sn = getSignalName();
+	if (sn != NULL) {
+		sendSignal(sn);
 		exit(0);
 	}
 	// exit if only testing the config
@@ -174,9 +175,10 @@ startProcesses()
 #define PID_SIZE 10
 
 void
-sendSignal()
+sendSignal(const char *sn)
 {
-	FILE *fp = fopen(g.pidFile, "r");
+	const char *pidFile = getPidFile();
+	FILE *fp = fopen(pidFile, "r");
 	if (fp == NULL) {
 		perror("No daemon process found.");
 		exit(1);
@@ -184,27 +186,30 @@ sendSignal()
 	char buff[PID_SIZE];
 	if (fgets((char *)&buff, PID_SIZE, fp) == NULL) {
 		perror("No daemon process found.");
+		unlink(pidFile);
 		exit(1);
 	}
 	fclose(fp);
 	pid_t pid = atoi(buff);
 
-	if (strcmp(g.signal, "stop") == 0) {
+	if (strcmp(sn, "stop") == 0) {
 		kill(pid, SIGKILL);
+		unlink(pidFile);
 		return;
 	}
-	else if (strcmp(g.signal, "quit") == 0) {
+	else if (strcmp(sn, "quit") == 0) {
 		kill(pid, SIGINT);
+		unlink(pidFile);
 		return;
 	}
-	else if (strcmp(g.signal, "reload") == 0) {
+	else if (strcmp(sn, "reload") == 0) {
 		printf("reload not yet implemented\n");
 		return;
 	}
-	else if (strcmp(g.signal, "reopen") == 0) {
+	else if (strcmp(sn, "reopen") == 0) {
 		printf("reopen not yet implemented\n");
 		return;
 	}
-	printf("Unrecognized signal \"%s\"\n", g.signal);
+	printf("Unrecognized signal \"%s\"\n", sn);
 	return;
 }

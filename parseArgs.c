@@ -40,7 +40,7 @@ parseArgs(int argc, char* argv[], const char *version)
 				setDefaultServer(false);
 				break;
 			case 's':
-				g.signal = optarg;
+				setSignalName(optarg);
 				break;
 			case 'h':
 				printf("Tom's OG web server\n");
@@ -92,19 +92,19 @@ parseArgs(int argc, char* argv[], const char *version)
 void
 initGlobals(const char *version)
 {
-	g.version = (char *)malloc(strlen(version)+1);
-	strcpy(g.version, version);
-	g.signal = NULL;
-	g.servers = NULL;
-	g.portCount = 0;
 	const char pidFile[] = "/etc/ogws/ogws.pid";
-	g.pidFile = (char *)malloc(strlen(pidFile)+1);
-	strcpy(g.pidFile, pidFile);
+	char *pf = (char *)malloc(strlen(pidFile)+1);
+	setPidFile(pf);
+
+	char *ver = (char *)malloc(strlen(version)+1);
+	strcpy(ver, version);
+	setVersion(ver);
+
+	g.portCount = 0;
 	const char user[] = "ogws";
 	g.user = (char *)malloc(strlen(user)+1);
 	strcpy(g.user, user);
 	g.group = (char *)malloc(strlen(user)+1);
 	strcpy(g.group, user);
-	g.accessLogs = NULL;
 	g.errorLogs = NULL;
 }

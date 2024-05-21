@@ -92,7 +92,7 @@ serveFile(_request *req)
 "Content-Length: %d\r\n\r\n";
 
 	char buffer[BUFF_SIZE];
-	size_t sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, g.version, ts, mimeType, size);
+	size_t sz = snprintf(buffer, BUFF_SIZE, responseHeaders, httpCode, getVersion(), ts, mimeType, size);
 	size_t sent = sendData(req->clientFd, req->ssl, buffer, sz);
 	if (sent != sz) {
 		doDebug("Problem sending response headers");

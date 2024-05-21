@@ -44,7 +44,7 @@ sendErrorResponse( _request *req, int code, char *msg, char *path )
 "Date: %s\r\n"
 "Content-Type: text/html\r\n";
 
-	int sz3 = snprintf(buffer3, BUFF_SIZE, responseHeaders, code, msg, g.version, ts);
+	int sz3 = snprintf(buffer3, BUFF_SIZE, responseHeaders, code, msg, getVersion(), ts);
 
 	sendData(req->clientFd, req->ssl, buffer3, sz3);
 	sendData(req->clientFd, req->ssl, buffer2, sz2);

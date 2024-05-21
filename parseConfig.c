@@ -71,7 +71,8 @@ parseConfig() {
 void
 checkConfig()
 {
-	FILE *fp = fopen(g.pidFile, "r");
+	const char *pidFile = getPidFile();
+	FILE *fp = fopen(pidFile, "r");
 	if (fp == NULL) {
 		perror("Can't open file");
 		errorExit("pid log not valid\n");
@@ -108,12 +109,13 @@ checkIndexFiles(_server *s) {
  */
 void
 checkAccessLogs(_server *s) {
+	_server *default = getServerList();
 	if (s->accessLog == NULL) {
 		// use default
-		if (g.servers->accessLog == NULL) {
+		if (default->accessLog == NULL) {
 			errorExit("missing access log\n");
 		}
-		s->accessLog = g.accessLogs;
+		s->accessLog = default->accessLog;
 	}
 }
 
@@ -535,9 +537,9 @@ checkDocRoots(_server *s)
 // specify the pid file location
 void
 f_pid(char *pidFile) {
-	g.pidFile = pidFile;
+	setPidFile(pidFile);
 	if (isDebug()) {
-		fprintf(stderr,"PID file location:  %s\n", g.pidFile);
+		fprintf(stderr,"PID file location:  %s\n", pidFile);
 	}
 }
 

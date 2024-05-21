@@ -80,7 +80,8 @@ daemonize()
 	}
 
 	// save the pid in a file
-	FILE *fp = fopen(g.pidFile, "w+");
+	const char *pidFile = getPidFile();
+	FILE *fp = fopen(pidFile, "w+");
 	if (fp == NULL) {
 		perror("pid log not valid:");
 		exit(1);
