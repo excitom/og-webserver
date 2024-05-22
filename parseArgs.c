@@ -100,11 +100,11 @@ initGlobals(const char *version)
 	strcpy(ver, version);
 	setVersion(ver);
 
-	g.portCount = 0;
-	const char user[] = "ogws";
-	g.user = (char *)malloc(strlen(user)+1);
-	strcpy(g.user, user);
-	g.group = (char *)malloc(strlen(user)+1);
-	strcpy(g.group, user);
-	g.errorLogs = NULL;
+	const char u[] = "ogws";
+	user = (char *)malloc(strlen(u)+1);
+	strcpy(user, u);
+	setUser(user);
+	group = (char *)malloc(strlen(u)+1);
+	strcpy(group, u);
+	setGroup(group);
 }

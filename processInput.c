@@ -202,7 +202,7 @@ hasPort(int portNum, _server *server)
 _server *
 getServerForHost(char *host)
 {
-	_server *server = g.servers;	// default server
+	_server *server = getServerList();		// default server
 	char *p = strchr(host, ':');
 	int portNum = server->ports->portNum;
 	if (p) {
@@ -227,6 +227,6 @@ getServerForHost(char *host)
 	if (!isDefaultServer()) {
 		return NULL;
 	} else {
-		return g.servers;
+		return getServerList();
 	}
 }

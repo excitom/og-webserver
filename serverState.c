@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include "serverlist.h"
 
 ////////////////////////////////////////
 // debug mode?
@@ -170,17 +171,90 @@ getVersion() {
 }
 
 ////////////////////////////////////////
-// Linked list of server configurations
-static _server *servers;
+// user name of the server
+static char *user = NULL;
 void
-setServerList(char *s) {
-	if (version != NULL) {
-		free(version);
+setUser(char *u) {
+	if (user != NULL) {
+		free(user);
 	}
-	version = v;
+	user = u;
 }
 char *
+getUser() {
+	return user;
+}
+
+////////////////////////////////////////
+// group name of the server
+static char *group = NULL;
+void
+setGroup(char *g) {
+	if (group != NULL) {
+		free(group);
+	}
+	group = g;
+}
+char *
+getGroup() {
+	return group;
+}
+
+////////////////////////////////////////
+// Linked list of server configurations
+static _server *servers = NULL;
+void
+setServerList(_server *server) {
+	_server *s = servers;
+	if (s) {
+		while(s->next) {
+			s = s->next;
+		}
+		s->next = server;
+	} else {
+		servers = server;
+	}
+	server->next = NULL;
+}
+_server *
 getServerList() {
-	return version;
+	return servers;
+}
+_server *
+popServer() {
+	_server *s = servers;
+	servers = s->next;
+	if (s->accessLog) {
+		free(s->accessLog);
+	}
+	if (s->errorLog) {
+		free(s->errorLog);
+	}
+	free(s);
+	return servers;
+}
+
+////////////////////////////////////////
+// Default access log
+static _log_file *accessLog = NULL;
+void
+setDefaultAccessLog(_log_file * log) {
+	accessLog = log;
+}
+_log_file *
+getDefaultAccessLog() {
+	return accessLog;
+}
+
+////////////////////////////////////////
+// Default error log
+static _log_file *errorLog = NULL;
+void
+setDefaultErrorLog(_log_file * log) {
+	errorLog = log;
+}
+_log_file *
+getDefaultErrorLog() {
+	return errorLog;
 }
 

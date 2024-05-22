@@ -115,7 +115,7 @@ startProcesses()
 {
 	// figure out what ports to assign to the processes
 	int pcount = 0;
-	for (_server *server = g.servers; server != NULL; server = server->next) {
+	for (_server *server = getServerList(); server != NULL; server = server->next) {
 		for (_port *port = server->ports; port != NULL; port = port->next) {
 			if (uniquePort(port->portNum)) {
 				for (int i = 0; i < getWorkerProcesses(); i++) {

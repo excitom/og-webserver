@@ -27,8 +27,16 @@ void setPidFile(char *);
 char *getPidFile();
 void setVersion(char *);
 char *getVersion();
+void setUser(char *);
+char *getUser();
+void setGroup(char *);
+char *getGroup();
 void setServerList(char *);
 char *getServerList();
+void setDefaultAccessLog(_log_file *);
+_log_file *getDefaultAccessLog();
+void setDefaultErrorLog(_log_file *);
+_log_file *getDefaultErrorLog();
 
 void parseArgs(int, char**, const char *);
 void daemonize();
@@ -97,7 +105,6 @@ struct globalVars {
 	char *defaultType;
 	_log_file *errorLogs;
 	_clientConnection *clients;
-	int portCount;
 	struct _mimeTypes *mimeTypes;
 	struct _upstreams *upstreams;
 };

@@ -108,14 +108,13 @@ checkIndexFiles(_server *s) {
  * Make sure each server has an access log
  */
 void
-checkAccessLogs(_server *s) {
-	_server *default = getServerList();
+checkAccessLog(_server *s) {
 	if (s->accessLog == NULL) {
 		// use default
-		if (default->accessLog == NULL) {
-			errorExit("missing access log\n");
+		s->accessLog = getDefaultAccessLog();
+		if (s->accessLog == NULL) {
+			errorExit("missing default access log\n");
 		}
-		s->accessLog = default->accessLog;
 	}
 }
 
@@ -123,11 +122,12 @@ checkAccessLogs(_server *s) {
  * Make sure each server has an error log
  */
 void
-checkErrorLogs(_server *s) {
+checkErrorLog(_server *s) {
 	if (s->errorLog == NULL) {
 		// use default
-		if (g.servers->errorLog == NULL) {
-			errorExit("missing error log\n");
+		s->errorLog = getDefaultErrorLog();
+		if (s->errorLog == NULL) {
+			errorExit("missing default error log\n");
 		}
 	}
 }
@@ -167,22 +167,27 @@ checkKeyFile(_server *s) {
  */
 void
 checkServers() {
+	_server *s = getServerList();
 	if (!isDefaultServer()) {
-		g.servers = g.servers->next;
+		// The first server in the list is the default server.
+		// If the configuration doesn't want a defaults server,
+		// then remove the first (default) server.
+		s = popServer();
 	}
-	for(_server *s = g.servers; s != NULL; s = s->next) {
+	while(s) {
 		if (!portOk(s)) {
 			errorExit("Invalid port configuration\n");
 		}
 		checkDocRoots(s);
 		checkServerNames(s);
 		checkIndexFiles(s);
-		checkAccessLogs(s);
-		checkErrorLogs(s);
+		checkAccessLog(s);
+		checkErrorLog(s);
 		if (s->tls) {
 			checkCertFile(s);
 			checkKeyFile(s);
 		}
+		s = s->next;
 	}
 }
 
@@ -349,10 +354,12 @@ void
 defaultAccessLog()
 {
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
-	log->path = "/var/log/ogws/access.log";
+	char path[] = "/var/log/ogws/access.log";
+	log->path = (char *)calloc(1, strlen(path)+1);
+	strcpy(log->path, path);
 	log->fd = -1;
 	log->next = NULL;
-	g.accessLogs = log;
+	setDefaultAccessLog(log);
 }
 
 /**
@@ -362,10 +369,12 @@ void
 defaultErrorLog()
 {
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
-	log->path = "/var/log/ogws/error.log";
+	char path[] = "/var/log/ogws/error.log";
+	log->path = (char *)calloc(1, strlen(path)+1);
+	strcpy(log->path, path);
 	log->fd = -1;
 	log->next = NULL;
-	g.errorLogs = log;
+	setDefaultErrorLog(log);
 }
 
 /**
@@ -613,20 +622,14 @@ f_tcpnopush(bool tcpNoPush) {
 // specify the user name to be used for the server process
 void
 f_user(char *user, char *group) {
-	if (g.user) {
-		free(g.user);
-	}
-	g.user = user;
+	setUser(user);
 	if (isDebug()) {
-		fprintf(stderr,"Run as user name %s\n", g.user);
+		fprintf(stderr,"Run as user name %s\n", user);
 	}
 	if (group) {
-		if (g.group) {
-			free(g.group);
-		}
-		g.group = group;
+		setGroup(group);
 		if (isDebug()) {
-			fprintf(stderr,"Run as group name %s\n", g.group);
+			fprintf(stderr,"Run as group name %s\n", group);
 		}
 	}
 }
