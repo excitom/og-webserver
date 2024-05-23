@@ -170,7 +170,7 @@ checkServers() {
 	_server *s = getServerList();
 	if (!isDefaultServer()) {
 		// The first server in the list is the default server.
-		// If the configuration doesn't want a defaults server,
+		// If the configuration doesn't want a default server,
 		// then remove the first (default) server.
 		s = popServer();
 	}
@@ -197,7 +197,7 @@ checkServers() {
  */
 int
 checkPorts(int portNum, int tlsFlag) {
-	_server *s= g.servers;
+	_server *s= getServerList();
 	while(s) {
 		_port *p = s->ports;
 		while(p) {
@@ -215,7 +215,7 @@ checkPorts(int portNum, int tlsFlag) {
 int
 portOk(_server *server)
 {
-	_server *s= g.servers;
+	_server *s = getServerList();
 	while(s) {
 		_port *p = server->ports;
 		while(p) {
@@ -359,7 +359,7 @@ defaultAccessLog()
 	strcpy(log->path, path);
 	log->fd = -1;
 	log->next = NULL;
-	setDefaultAccessLog(log);
+	setAccessLog(log);
 }
 
 /**
@@ -374,7 +374,7 @@ defaultErrorLog()
 	strcpy(log->path, path);
 	log->fd = -1;
 	log->next = NULL;
-	setDefaultErrorLog(log);
+	setErrorLog(log);
 }
 
 /**
@@ -479,9 +479,10 @@ pathAlreadyOpened(const char *path, _log_file *list)
 void
 openLogFiles()
 {
-	_log_file *log = g.accessLogs;
+	// list of one or more access logs starting with the default
+	_log_file *log = getDefaultAccessLog();	
 	while(log) {
-		log->fd = pathAlreadyOpened(log->path, g.accessLogs);
+		log->fd = pathAlreadyOpened(log->path, getDefaultAccessLog());
 		if (log->fd == -1) {
 			log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
 		}
@@ -492,9 +493,10 @@ openLogFiles()
 		}
 		log = log->next;
 	}
-	log = g.errorLogs;
+	// list of one or more error logs starting with the default
+	log = getDefaultErrorLog();	
 	while(log) {
-		log->fd = pathAlreadyOpened(log->path, g.errorLogs);
+		log->fd = pathAlreadyOpened(log->path, getDefaultErrorLog());
 		if (log->fd == -1) {
 			log->fd = open(log->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
 		}
@@ -638,8 +640,7 @@ f_user(char *user, char *group) {
 void
 f_server() {
 	_server *server = (_server *)calloc(1, sizeof(_server));
-	server->next = g.servers;
-	g.servers = server;
+	setServerList(server);
 	_server_name *sn = serverNames;
 	if (!sn) {
 		errorExit("No server name\n");
@@ -746,15 +747,15 @@ f_server() {
 	certFile = NULL;
 	keyFile = NULL;
 	// pick the top of the stack but don't pop
-	server->accessLog = g.accessLogs;
-	server->errorLog = g.errorLogs;
+	server->accessLog = getDefaultAccessLog();
+	server->errorLog = getDefaultErrorLog();
 	return;
 }
 
 // process the http section
 void
 f_http() {
-	if (!g.servers) {
+	if (!getServerList()) {
 		if (isDebug()) {
 			doDebug("Missing server block, using default\n");
 		}
@@ -762,8 +763,7 @@ f_http() {
 	// create a default server, even if there are servers, in case one of
 	// them didn't define all the defaults.
 	_server *server = (_server *)calloc(1, sizeof(_server));
-	server->next = g.servers;
-	g.servers = server;
+	setServerList(server);
 	_server_name *sn = serverNames;
 	server->serverNames = sn;
 	_index_file *i = indexFiles;
@@ -775,8 +775,8 @@ f_http() {
 	server->autoIndex = 0;
 	server->certFile = certFile;
 	server->keyFile = keyFile;
-	server->accessLog = g.accessLogs;
-	server->errorLog = g.errorLogs;
+	server->accessLog = getDefaultAccessLog();
+	server->errorLog = getDefaultErrorLog();
 	return;
 }
 
@@ -903,8 +903,7 @@ f_error_log(char *path) {
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = path;
 	log->fd = -1;
-	log->next = g.errorLogs;
-	g.errorLogs = log;
+	setErrorLog(log);
 	if (isDebug()) {
 		fprintf(stderr,"Error log file path %s\n", log->path);
 	}
@@ -918,8 +917,7 @@ f_access_log(char *path, int type) {
 	log->path = path;
 	log->type = type;
 	log->fd = -1;
-	log->next = g.accessLogs;
-	g.accessLogs = log;
+	setAccessLog(log);
 	if (isDebug()) {
 		fprintf(stderr,"Access log file path %s\n", log->path);
 	}

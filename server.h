@@ -31,11 +31,12 @@ void setUser(char *);
 char *getUser();
 void setGroup(char *);
 char *getGroup();
-void setServerList(char *);
-char *getServerList();
-void setDefaultAccessLog(_log_file *);
+void setServerList(_server *);
+_server *getServerList();
+_server *popServer();
+void setAccessLog(_log_file *);
 _log_file *getDefaultAccessLog();
-void setDefaultErrorLog(_log_file *);
+void setErrorLog(_log_file *);
 _log_file *getDefaultErrorLog();
 
 void parseArgs(int, char**, const char *);

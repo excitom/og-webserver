@@ -235,11 +235,20 @@ popServer() {
 }
 
 ////////////////////////////////////////
-// Default access log
+// List of access log files
 static _log_file *accessLog = NULL;
 void
-setDefaultAccessLog(_log_file * log) {
-	accessLog = log;
+setAccessLog(_log_file *log) {
+	_log_file * l = accessLog;
+	if (l) {
+		while (l->next) {
+			l = l->next;
+		}
+		l->next = log;
+	} else {
+		accessLog = log;
+	}
+	log->next = NULL;
 }
 _log_file *
 getDefaultAccessLog() {
@@ -247,11 +256,20 @@ getDefaultAccessLog() {
 }
 
 ////////////////////////////////////////
-// Default error log
+// List of error log files
 static _log_file *errorLog = NULL;
 void
-setDefaultErrorLog(_log_file * log) {
-	errorLog = log;
+setErrorLog(_log_file *log) {
+	_log_file * l = errorLog;
+	if (l) {
+		while (l->next) {
+			l = l->next;
+		}
+		l->next = log;
+	} else {
+		errorLog = log;
+	}
+	log->next = NULL;
 }
 _log_file *
 getDefaultErrorLog() {

@@ -101,10 +101,10 @@ initGlobals(const char *version)
 	setVersion(ver);
 
 	const char u[] = "ogws";
-	user = (char *)malloc(strlen(u)+1);
+	char *user = (char *)malloc(strlen(u)+1);
 	strcpy(user, u);
 	setUser(user);
-	group = (char *)malloc(strlen(u)+1);
+	char *group = (char *)malloc(strlen(u)+1);
 	strcpy(group, u);
 	setGroup(group);
 }

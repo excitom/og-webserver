@@ -146,7 +146,7 @@ createContext()
 void
 configureContext(SSL_CTX *ctx, int portNum)
 {
-	_server *server = g.servers;
+	_server *server = getServerList();
 	while (server) {
 		_port *p = server->ports;
 		while (p) {
