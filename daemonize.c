@@ -62,7 +62,7 @@ daemonize()
 		// create a file for debug and trace information
 		char path[256];
 		char *p = (char *)&path;
-		strcpy(p, g.configDir);
+		strcpy(p, getConfigDir());
 		const char debugFile[] = "/debug.out";
 		strcat(p, debugFile);
 		int fd = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);

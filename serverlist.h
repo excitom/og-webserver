@@ -1,3 +1,5 @@
+#ifndef __SERVER_LIST
+#define __SERVER_LIST
 /**
  * Define the datastructures for maintaining server (virtual host)
  * configurations.
@@ -109,3 +111,4 @@ typedef struct _request {
 	_server *server;
 	_location *loc;
 }_request;
+#endif

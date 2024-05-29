@@ -20,6 +20,7 @@
 #include "serverlist.h"
 #include "server.h"
 #include "global.h"
+#include "mimeTypes.h"
 
 void
 handleGetVerb(_request *req)
@@ -119,7 +120,7 @@ getMimeType(char *name, char *mimeType)
 	char *p = strrchr(name, '.');
 	if (p != NULL) {
 		p++;
-		struct _mimeTypes *mt = g.mimeTypes;
+		struct _mimeTypes *mt = getMimeTypes();
 		while (mt != NULL) {
 			if (strcmp(p, mt->extension) == 0) {
 				strcpy(mimeType, mt->mimeType);

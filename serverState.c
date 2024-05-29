@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "serverlist.h"
+#include "mimeTypes.h"
 
 ////////////////////////////////////////
 // debug mode?
@@ -274,5 +275,60 @@ setErrorLog(_log_file *log) {
 _log_file *
 getDefaultErrorLog() {
 	return errorLog;
+}
+
+////////////////////////////////////////
+// config file path
+static char *configFile = NULL;
+void
+setConfigFile(char *p) {
+	if (configFile) {
+		fprintf(stderr, "Config file already set");
+		exit(1);
+	}
+	configFile = p;
+}
+char *
+getConfigFile() {
+	return configFile;
+}
+
+static char *configDir = NULL;
+void
+setConfigDir(char *p) {
+	if (configDir) {
+		fprintf(stderr, "Config path already set");
+		exit(1);
+	}
+	if (p[strlen(p)-1] != '/') {
+		fprintf(stderr, "Config dir missing trailing path");
+		exit(1);
+	}
+	configDir = p;
+}
+char *
+getConfigDir() {
+	return configDir;
+}
+
+////////////////////////////////////////
+// List of mime types
+static _mimeTypes *mimeTypes = NULL;
+void
+setMimeType(_log_file *mimeType) {
+	_mimeTypes *m = mimeTypes;
+	if (m) {
+		while (m->next) {
+			m = m->next;
+		}
+		m->next = mimeType;
+	} else {
+		mimeTypes = mimeType;
+	}
+	mimeType->next = NULL;
+}
+_log_file *
+getMimeTypes() {
+	return mimeTypes;
 }
 

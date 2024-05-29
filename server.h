@@ -1,5 +1,8 @@
+#ifndef __SERVER
+#define __SERVER
 #include "clients.h"
 #include <stdbool.h>
+#include "mimeTypes.h"
 
 void setDebug(bool);
 bool isDebug();
@@ -38,6 +41,12 @@ void setAccessLog(_log_file *);
 _log_file *getDefaultAccessLog();
 void setErrorLog(_log_file *);
 _log_file *getDefaultErrorLog();
+void setConfigFile(char *);
+char * getConfigFile();
+void setConfigDir(char *);
+char * getConfigDir();
+void setMimeType(_mimeTypes *);
+_mimeTypes *getMimeTypes();
 
 void parseArgs(int, char**, const char *);
 void daemonize();
@@ -88,24 +97,15 @@ void checkParameter(char *, char *);
 #define LOG_FILE_FORMAT 1
 #define LOG_RECORD_FORMAT 2
 
-// mime types list
-typedef struct _mimeTypes {
-	struct _mimeTypes *next;
-	char *mimeType;
-	char *extension;
-}_mimeTypes;
-
 // global variables
 struct globalVars {
 	int useSendfile;
 	int keepaliveTimeout;
-	char *configFile;
-	char *configDir;
 	char *user;
 	char *group;
 	char *defaultType;
 	_log_file *errorLogs;
 	_clientConnection *clients;
-	struct _mimeTypes *mimeTypes;
 	struct _upstreams *upstreams;
 };
+#endif

@@ -64,26 +64,30 @@ parseArgs(int argc, char* argv[], const char *version)
 	//
 	// config file path
 	//
+	char *configFile;
 	if (optind >= argc) {
 		const char defaultConfigFile[] = "/etc/ogws/ogws.conf";
 		int len = strlen(defaultConfigFile);
-		g.configFile = malloc(len+1);
-		strcpy(g.configFile, defaultConfigFile);
+		configFile = malloc(len+1);
+		strcpy(configFile, defaultConfigFile);
 	} else {
 		int len = strlen(argv[optind]);
-		g.configFile = malloc(len+1);
-		strcpy(g.configFile, argv[optind]);
+		configFile = malloc(len+1);
+		strcpy(configFile, argv[optind]);
 		optind++;
 	}
-	if (access(g.configFile, R_OK) == -1) {
+	if (access(configFile, R_OK) == -1) {
 		perror("config file not valid:");
 		exit(1);
 	}
-	char *p = (char *)malloc(strlen(g.configFile)+1);
-	strcpy(p, g.configFile);
-	char *q = strrchr(p, '/');
+	char *p = (char *)malloc(strlen(configFile)+1);
+	strcpy(p, configFile);
+	setConfigFile(p);
+	char *q = strrchr(configFile, '/');
 	*++q = '\0';
-	g.configDir = p;
+	p = (char *)malloc(strlen(configFile)+1);
+	strcpy(p, configFile);
+	setConfigDir(p);
 }
 
 /**
@@ -94,6 +98,7 @@ initGlobals(const char *version)
 {
 	const char pidFile[] = "/etc/ogws/ogws.pid";
 	char *pf = (char *)malloc(strlen(pidFile)+1);
+	strcpy(pf, pidFile);
 	setPidFile(pf);
 
 	char *ver = (char *)malloc(strlen(version)+1);

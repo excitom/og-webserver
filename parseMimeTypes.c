@@ -37,10 +37,10 @@ _mimeTypes *addMimeTypeEntry();
 void
 parseMimeTypes()
 {
-	g.mimeTypes = NULL;		// start with an empty list
 	const char mimeTypeFile[] = "/mime.types";
-	char *fileName = malloc(strlen(g.configFile)+strlen(mimeTypeFile)+1);
-	strcpy(fileName, g.configFile);
+	const char *configFile = getConfigFile();
+	char *fileName = malloc(strlen(configFile)+strlen(mimeTypeFile)+1);
+	strcpy(fileName, configFile);
 	char *p = strrchr(fileName, '/');
 	*p = '\0';
 	strcat(fileName, mimeTypeFile);
@@ -94,7 +94,7 @@ parseMimeTypes()
 
 	if (isDebug()) {
 		fprintf(stderr, "MIME Types:\n");
-		_mimeTypes *mt = g.mimeTypes;
+		_mimeTypes *mt = getMimeTypes();
 		while (mt != NULL) {
 			fprintf(stderr, "MIME Type: %s -- Extension: %s\n", mt->mimeType, mt->extension);
 			mt = mt->next;
@@ -182,17 +182,6 @@ _mimeTypes *
 addMimeTypeEntry()
 {
 	_mimeTypes *mt = malloc(sizeof(_mimeTypes));
-	mt->next = NULL;
-	if (g.mimeTypes == NULL) {
-		g.mimeTypes = mt;
-	} else {
-		_mimeTypes *list = g.mimeTypes;
-		_mimeTypes *prev;
-		while(list != NULL) {
-			prev = list;
-			list = list->next;
-		}
-		prev->next = mt;
-	}
+	setMimeType(mt);
 	return mt;
 }

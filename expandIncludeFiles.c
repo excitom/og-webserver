@@ -43,12 +43,14 @@ expandFile(FILE *in, FILE *out) {
 				fprintf(stderr, "Invalid 'include' directive, missing semicolon, ignored.\n");
 			} else {
 				*p = '\0';
+				// if the file an absolute path?
 				if (file[0] == '/') {
 					path = (char *)malloc(strlen(file)+1);
 					strcpy(path, file);
 				} else {
-					path = (char *)malloc(strlen(g.configDir)+strlen(file)+1);
-					strcpy(path, g.configDir);
+					const char *dir = getConfigDir();
+					path = (char *)malloc(strlen(dir)+strlen(file)+1);
+					strcpy(path, dir);
 					strcat(path, file);
 				}
 				FILE *fd = fopen(path, "r");
@@ -87,10 +89,11 @@ expandIncludeFiles(char *tempFile) {
 		fprintf(stderr, "Cannot create temporary file.\n%s: file open failed: %s\nExiting.\n", tempFile, strerror(e));
 		exit(1);
 	}
-	FILE *fd = fopen(g.configFile, "r");
+	const char *file = getConfigFile();
+	FILE *fd = fopen(file, "r");
 	if (fd == NULL) {
 		int e = errno;
-		fprintf(stderr, "Cannot process the configuration.\n%s: file open failed: %s\nExiting.\n", g.configFile, strerror(e));
+		fprintf(stderr, "Cannot process the configuration.\n%s: file open failed: %s\nExiting.\n", file, strerror(e));
 		exit(1);
 	}
 	expandFile(fd, tempFd);
