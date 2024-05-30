@@ -315,7 +315,7 @@ getConfigDir() {
 // List of mime types
 static _mimeTypes *mimeTypes = NULL;
 void
-setMimeType(_log_file *mimeType) {
+setMimeType(_mimeTypes *mimeType) {
 	_mimeTypes *m = mimeTypes;
 	if (m) {
 		while (m->next) {
@@ -327,7 +327,7 @@ setMimeType(_log_file *mimeType) {
 	}
 	mimeType->next = NULL;
 }
-_log_file *
+_mimeTypes *
 getMimeTypes() {
 	return mimeTypes;
 }
