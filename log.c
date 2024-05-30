@@ -15,7 +15,6 @@
 #include <arpa/inet.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 void
 accessLog(int clientFd, int logFd,  char *verb, int httpCode, char *path, int size)

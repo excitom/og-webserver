@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 void
 getTimestamp(char *buf, int opt)

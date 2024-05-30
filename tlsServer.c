@@ -25,7 +25,6 @@
 #include <pthread.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 int isRetryable(SSL *, int);
 

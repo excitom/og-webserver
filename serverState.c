@@ -1,5 +1,7 @@
 /**
- * server state variables
+ * This is a collection of all the globally accessible state 
+ * variables. Setters and getters are used to control access
+ * rather than exposing the variables.
  */
 #include <stdbool.h>
 #include <stddef.h>
@@ -236,6 +238,27 @@ popServer() {
 }
 
 ////////////////////////////////////////
+// Linked list of upstream servers
+static _upstreams *upstreams = NULL;
+void
+setUpstreamList(_upstreams *upstream) {
+	_upstreams *u = upstreams;
+	if (u) {
+		while(u->next) {
+			u = u->next;
+		}
+		u->next = upstream;
+	} else {
+		upstreams = upstream;
+	}
+	upstream->next = NULL;
+}
+_upstreams *
+getUpstreamList() {
+	return upstreams;
+}
+
+////////////////////////////////////////
 // List of access log files
 static _log_file *accessLog = NULL;
 void
@@ -315,7 +338,7 @@ getConfigDir() {
 // List of mime types
 static _mimeTypes *mimeTypes = NULL;
 void
-setMimeType(_mimeTypes *mimeType) {
+setMimeTypeList(_mimeTypes *mimeType) {
 	_mimeTypes *m = mimeTypes;
 	if (m) {
 		while (m->next) {
@@ -328,7 +351,22 @@ setMimeType(_mimeTypes *mimeType) {
 	mimeType->next = NULL;
 }
 _mimeTypes *
-getMimeTypes() {
+getMimeTypeList() {
 	return mimeTypes;
+}
+
+////////////////////////////////////////
+// Default MIME type for responses
+static char *defaultType = NULL;
+void
+setDefaultType(char *t) {
+	if (defaultType != NULL) {
+		free(defaultType);
+	}
+	defaultType = t;
+}
+char *
+getDefaultType() {
+	return defaultType;
 }
 

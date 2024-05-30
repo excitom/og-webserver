@@ -19,7 +19,6 @@
 #include <openssl/ssl.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 /**
  * Create a socket for listening, bind it to an address and port,

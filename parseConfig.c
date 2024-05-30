@@ -17,7 +17,6 @@
 #include <sys/types.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 #include "parseConfig.h"
 
 static _index_file *indexFiles = NULL;
@@ -57,7 +56,6 @@ parseConfig() {
 	defaultLocation();
 	defaultIndexFile();
 	defaultType();
-	defaultUpstreams();
 	// call the parser
 	if (yyparse() != 0) {
 		errorExit("Config file not parsed correctly.\n");
@@ -237,7 +235,7 @@ portOk(_server *server)
 _upstreams *
 isUpstreamGroup(char *host)
 {
-	_upstreams *group = g.upstreams;
+	_upstreams *group = getUpstreamList();
 	while(group) {
 		if (strlen(host) == strlen(group->name) &&
 				strcmp(host, group->name) == 0) {
@@ -422,6 +420,17 @@ defaultLocation()
 }
 
 /**
+ * Set the default MIME type for responses
+ */
+void
+defaultType() {
+	d[] = "text/html";
+	char *dt = (char *)calloc(1, strlen(d)+1);
+	strcpy(dt, d);
+	setDefaultType(dt);
+}
+
+/**
  * Define a default index file
  */
 void 
@@ -431,26 +440,6 @@ defaultIndexFile()
 	index->indexFile = "index.html";
 	index->next = NULL;
 	indexFiles = index;
-}
-
-/**
- * Default MIME type for responses
- */
-void
-defaultType()
-{
-	char defType[] = "text/html";
-	g.defaultType = (char *)malloc(strlen(defType)+1);
-	strcpy(g.defaultType, defType);
-}
-
-/**
- * Default list of upstream servers
- */
-void
-defaultUpstreams()
-{
-	g.upstreams = NULL;
 }
 
 /**
@@ -566,10 +555,7 @@ f_include(char *path) {
 // set the default MIME type for responses
 void
 f_default_type(char *type) {
-	if (g.defaultType) {
-		free(g.defaultType);
-	}
-	g.defaultType = type;
+	setDefaultType(type);
 }
 
 // specify option for network trace
@@ -1034,8 +1020,7 @@ f_location(int matchType, char *match) {
 void
 f_upstreams(char *name) {
 	_upstreams *up = (_upstreams *)calloc(1, sizeof(_upstreams));
-	up->next = g.upstreams;
-	g.upstreams = up;
+	setUpstreamList(up);
 	up->name = name;
 	up->servers = up->currentServer = servers;
 }

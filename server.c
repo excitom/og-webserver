@@ -22,7 +22,6 @@
 #include <locale.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 char buff[BUFF_SIZE];
 char* buffer = (char *)&buff;

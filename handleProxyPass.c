@@ -16,7 +16,6 @@
 #include <netdb.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 void
 handleProxyPass(_request *req)

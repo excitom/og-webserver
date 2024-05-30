@@ -19,7 +19,6 @@
 #include <openssl/err.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 _server *getServerForHost(char *);
 

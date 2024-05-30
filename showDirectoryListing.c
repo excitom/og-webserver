@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 typedef struct _fragment {
 	struct _fragment *next;

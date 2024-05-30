@@ -19,7 +19,6 @@
 #include <openssl/ssl.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 #include "mimeTypes.h"
 
 void
@@ -116,11 +115,11 @@ serveFile(_request *req)
 void
 getMimeType(char *name, char *mimeType)
 {
-	strcpy(mimeType, g.defaultType);	// default
+	strcpy(mimeType, getDefaultType());	// default
 	char *p = strrchr(name, '.');
 	if (p != NULL) {
 		p++;
-		struct _mimeTypes *mt = getMimeTypes();
+		struct _mimeTypes *mt = getMimeTypeList();
 		while (mt != NULL) {
 			if (strcmp(p, mt->extension) == 0) {
 				strcpy(mimeType, mt->mimeType);

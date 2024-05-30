@@ -15,7 +15,6 @@
 #include <sys/stat.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 void
 expandFile(FILE *in, FILE *out) {

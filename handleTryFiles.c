@@ -32,7 +32,6 @@
 #include <openssl/ssl.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 static char *tryTarget;
 

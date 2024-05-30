@@ -45,8 +45,10 @@ void setConfigFile(char *);
 char * getConfigFile();
 void setConfigDir(char *);
 char * getConfigDir();
-void setMimeType(_mimeTypes *);
-_mimeTypes *getMimeTypes();
+void setMimeTypeList(_mimeTypes *);
+_mimeTypes *getMimeTypeList();
+void setDefaultType(char *);
+char *getDefaultType();
 
 void parseArgs(int, char**, const char *);
 void daemonize();
@@ -103,7 +105,6 @@ struct globalVars {
 	int keepaliveTimeout;
 	char *user;
 	char *group;
-	char *defaultType;
 	_log_file *errorLogs;
 	_clientConnection *clients;
 	struct _upstreams *upstreams;

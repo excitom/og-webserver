@@ -8,7 +8,6 @@
 #include <arpa/inet.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 int
 getUpstreamServer(_request *req)

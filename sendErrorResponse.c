@@ -15,7 +15,6 @@
 #include <arpa/inet.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 void
 sendErrorResponse( _request *req, int code, char *msg, char *path )

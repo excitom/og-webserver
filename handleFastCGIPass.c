@@ -16,7 +16,6 @@
 #include <netdb.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 typedef struct _param {
 	char *key;
 	char *paramName;

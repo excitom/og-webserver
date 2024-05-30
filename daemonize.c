@@ -22,7 +22,6 @@
 #include <pwd.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 void
 daemonize()

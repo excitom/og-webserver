@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include "serverlist.h"
 #include "server.h"
-#include "global.h"
 
 char *parseLine(char *);
 void saveMimeType(char *, char *);
