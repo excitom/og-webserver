@@ -2,15 +2,22 @@
  * This is a collection of all the globally accessible state 
  * variables. Setters and getters are used to control access
  * rather than exposing the variables.
+ *
+ * Some of the objects are linked lists of objects, some are single values.
+ *
+ * Some variables can be changed from their default based on a config file
+ * setting but otherwise the server does not support changing its configuration
+ * other then killing and restarting the process.
  */
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include "serverlist.h"
 #include "mimeTypes.h"
+#include "clients.h"
 
 ////////////////////////////////////////
-// debug mode?
+// Debug mode?
 static bool debug = false;
 void
 setDebug(const bool d) {
@@ -22,7 +29,7 @@ isDebug() {
 }
 
 ////////////////////////////////////////
-// run server in the foreground?
+// Run server in the foreground? (not a daemon process)
 static bool foreground = false;
 void
 setForeground(const bool f) {
@@ -34,7 +41,7 @@ isForeground() {
 }
 
 ////////////////////////////////////////
-// is there a default server?
+// Is there a default server?
 static bool defaultServer = true;
 void
 setDefaultServer(const bool d) {
@@ -46,7 +53,7 @@ isDefaultServer() {
 }
 
 ////////////////////////////////////////
-// is network trace enabled?
+// Is network trace enabled?
 static bool trace = false;
 void
 setTrace(const bool t) {
@@ -58,7 +65,7 @@ isTrace() {
 }
 
 ////////////////////////////////////////
-// test the configuration but don't start the server?
+// Test the configuration but don't start the server?
 static bool testConfig = false;
 void
 setTestConfig(const bool t) {
@@ -70,7 +77,7 @@ isTestConfig() {
 }
 
 ////////////////////////////////////////
-// show the server version but don't start the server?
+// Show the server version but don't start the server?
 static bool showVersion = false;
 void
 setShowVersion(const bool s) {
@@ -132,10 +139,26 @@ getWorkerProcesses() {
 }
 
 ////////////////////////////////////////
+// The keepalive timeout value
+static int keepaliveTimeout = 1;
+void
+setKeepaliveTimeout(const int t) {
+	keepaliveTimeout = t;
+}
+int
+getKeepaliveTimeout() {
+	return keepaliveTimeout;
+}
+
+////////////////////////////////////////
 // Signal to be sent to the lead server process
 static char *signalName = NULL;
 void
 setSignalName(char *n) {
+	if (signalName) {
+		fprintf(stderr, "Duplicate setting of the signal name\n");
+		exit(1);
+	}
 	signalName = n;
 }
 char *
@@ -148,6 +171,7 @@ getSignalName() {
 static char *pidFile = NULL;
 void
 setPidFile(char *n) {
+	// The default can be changed
 	if (pidFile != NULL) {
 		free(pidFile);
 	}
@@ -163,6 +187,7 @@ getPidFile() {
 static char *version = NULL;
 void
 setVersion(char *v) {
+	// The default can be changed
 	if (version != NULL) {
 		free(version);
 	}
@@ -178,6 +203,7 @@ getVersion() {
 static char *user = NULL;
 void
 setUser(char *u) {
+	// The default can be changed
 	if (user != NULL) {
 		free(user);
 	}
@@ -193,6 +219,7 @@ getUser() {
 static char *group = NULL;
 void
 setGroup(char *g) {
+	// The default can be changed
 	if (group != NULL) {
 		free(group);
 	}
@@ -204,7 +231,8 @@ getGroup() {
 }
 
 ////////////////////////////////////////
-// Linked list of server configurations
+// Linked list of server configurations.
+// The order matters so the list is kept first in, last out.
 static _server *servers = NULL;
 void
 setServerList(_server *server) {
@@ -223,6 +251,11 @@ _server *
 getServerList() {
 	return servers;
 }
+//
+// The first server in the list is the default server. If the config file
+// specifies there shouldn't be a default server then pop the first one
+// (the default) from the list.
+//
 _server *
 popServer() {
 	_server *s = servers;
@@ -238,7 +271,8 @@ popServer() {
 }
 
 ////////////////////////////////////////
-// Linked list of upstream servers
+// Linked list of upstream servers.
+// The order matters so the list is kept first in, last out.
 static _upstreams *upstreams = NULL;
 void
 setUpstreamList(_upstreams *upstream) {
@@ -256,6 +290,47 @@ setUpstreamList(_upstreams *upstream) {
 _upstreams *
 getUpstreamList() {
 	return upstreams;
+}
+
+////////////////////////////////////////
+// Linked list of client connections.
+// The order doesn't matter.
+// Client connections come and go so this variable has a remove method.
+// The client removed depends on the client's file descriptor.
+static _clientConnection *clients = NULL;
+void
+setClientConnection(_clientConnection *client) {
+	client->next = clients;
+	clients = client;
+}
+_clientConnection *
+getClientConnection(int fd) {
+	_clientConnection *c = clients;
+	while(c) {
+		if (c->fd == fd) {
+			break;
+		}
+		c = c->next;
+	}
+	return c;
+}
+_clientConnection *
+removeClientConnection(int fd) {
+	_clientConnection *c = clients;
+	_clientConnection *prev = NULL;
+	while(c) {
+		if (c->fd == fd) {
+			if (prev) {
+				prev->next = c->next;
+			} else {
+				clients = c->next;
+			}
+			break;
+		}
+		prev = c;
+		c = c->next;
+	}
+	return c;
 }
 
 ////////////////////////////////////////

@@ -93,7 +93,7 @@ parseMimeTypes()
 
 	if (isDebug()) {
 		fprintf(stderr, "MIME Types:\n");
-		_mimeTypes *mt = getMimeTypes();
+		_mimeTypes *mt = getMimeTypeList();
 		while (mt != NULL) {
 			fprintf(stderr, "MIME Type: %s -- Extension: %s\n", mt->mimeType, mt->extension);
 			mt = mt->next;
@@ -181,6 +181,6 @@ _mimeTypes *
 addMimeTypeEntry()
 {
 	_mimeTypes *mt = malloc(sizeof(_mimeTypes));
-	setMimeType(mt);
+	setMimeTypeList(mt);
 	return mt;
 }

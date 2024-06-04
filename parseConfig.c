@@ -424,7 +424,7 @@ defaultLocation()
  */
 void
 defaultType() {
-	d[] = "text/html";
+	char d[] = "text/html";
 	char *dt = (char *)calloc(1, strlen(d)+1);
 	strcpy(dt, d);
 	setDefaultType(dt);
@@ -1144,9 +1144,9 @@ f_fastcgi_pass(char *host, int port) {
 // keepalive timeout
 void
 f_keepalive_timeout(int timeout) {
-	g.keepaliveTimeout = timeout;
+	setKeepaliveTimeout(timeout);
 	if (isDebug()) {
-		fprintf(stderr,"Keepalive timeout: %d\n", g.keepaliveTimeout);
+		fprintf(stderr,"Keepalive timeout: %d\n", timeout);
 	}
 }
 

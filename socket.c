@@ -189,9 +189,7 @@ queueClientConnection(int fd, int errorFd, struct sockaddr_in addr, SSL_CTX *ctx
 		perror("Failed to convert address from binary to text form");
 		exit(1);
 	}
-	_clientConnection *c = g.clients;
-	client->next = c;
-	g.clients = client;
+	setClientConnection(client);
 	return client;
 }
 
@@ -201,20 +199,7 @@ queueClientConnection(int fd, int errorFd, struct sockaddr_in addr, SSL_CTX *ctx
 void
 cleanup(int fd)
 {
-	_clientConnection *c = g.clients;
-	_clientConnection *prev = NULL;
-	while(c) {
-		if (c->fd == fd) {
-			if (prev) {
-				prev->next = c->next;
-			} else {
-				g.clients = c->next;
-			}
-			break;
-		}
-		prev = c;
-		c = c->next;
-	}
+	_clientConnection *c = removeClientConnection(fd);
 	if (c) {
 		if (c->ctx) {
 			SSL_CTX_free(c->ctx);
@@ -232,14 +217,8 @@ cleanup(int fd)
 _clientConnection *
 getClient(int fd)
 {
-	_clientConnection *c = g.clients;
-	while(c) {
-		if (c->fd == fd) {
-			break;
-		}
-		c = c->next;
-	}
-	if (c ==NULL) {
+	_clientConnection *c = getClientConnection(fd);
+	if (c == NULL) {
 		doDebug("Missing client connection!");
 		exit(1);
 	}
