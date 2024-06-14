@@ -148,6 +148,9 @@ sendData(int fd, SSL *ssl, const char* ptr, int nbytes)
 void
 sendFile(_request *req, size_t size)
 {
+	if (isDebug()) {
+		fprintf(stderr, "Sending response body: SIZE %d\n", (int)size);
+	}
 	off_t offset = 0;
 	size_t sent;
 	if (req->ssl) {
