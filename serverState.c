@@ -65,6 +65,18 @@ isTrace() {
 }
 
 ////////////////////////////////////////
+// Are server tokens enabled? (show the version number in response header)
+static bool tokens = true;
+void
+setServerTokens(const bool t) {
+	tokens = t;
+}
+bool
+isServerTokensOn() {
+	return tokens;
+}
+
+////////////////////////////////////////
 // Test the configuration but don't start the server?
 static bool testConfig = false;
 void
@@ -195,7 +207,11 @@ setVersion(char *v) {
 }
 char *
 getVersion() {
-	return version;
+	if (isServerTokensOn()) {
+		return version;
+	} else {
+		return "";
+	}
 }
 
 ////////////////////////////////////////

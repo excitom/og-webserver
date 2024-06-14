@@ -12,6 +12,7 @@ void f_http();
 void f_root(char *);
 void f_expires(char *);
 void f_server_name(char *, int);
+void f_server_tokens(bool);
 void f_indexFile(char *);
 void f_error_log(char *);
 void f_access_log(char *, int);

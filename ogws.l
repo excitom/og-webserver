@@ -22,6 +22,7 @@ default_server	{yylval.str = strdup(yytext); return DEFAULTSERVER;}
 fastcgi_index	{yylval.str = strdup(yytext); return FASTCGIINDEX;}
 fastcgi_param	{yylval.str = strdup(yytext); return FASTCGIPARAM;}
 log_not_found	{yylval.str = strdup(yytext); return LOGNOTFOUND;}
+server_tokens	{yylval.str = strdup(yytext); return SERVERTOKENS;}
 fastcgi_pass	{yylval.str = strdup(yytext); return FASTCGIPASS;}
 default_type	{yylval.str = strdup(yytext); return DEFAULTTYPE;}
 server_name	{yylval.str = strdup(yytext); return SERVERNAME;}

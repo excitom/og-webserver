@@ -13,7 +13,8 @@ lex.yy.c:
 
 LEXYACCSRC = ogws.tab.c lex.yy.c
 
-SRCS = ogws.c \
+SRCS = ogws.tab.c \
+	ogws.c \
 	serverState.c \
 	getTimestamp.c \
 	processInput.c \
@@ -34,7 +35,6 @@ SRCS = ogws.c \
 	server.c \
 	tlsServer.c \
 	socket.c \
-	ogws.tab.c \
 	lex.yy.c
 
 OBJS = $(SRCS:.c=.o)

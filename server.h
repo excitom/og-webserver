@@ -12,6 +12,8 @@ void setDefaultServer(bool);
 bool isDefaultServer();
 void setTrace(bool);
 bool isTrace();
+void setServerTokens(bool);
+bool isServerTokensOn();
 void setTestConfig(bool);
 bool isTestConfig();
 void setShowVersion(bool);

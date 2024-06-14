@@ -45,6 +45,7 @@ void yyerror( const char * );
 %token <iValue>  HASHBUCKET;
 %token <str>  LISTEN;
 %token <str>  SERVERNAME;
+%token <str>  SERVERTOKENS;
 %token <str>  DEFAULTSERVER;
 %token <str>  LOCATION;
 %token <str>  UPSTREAM;
@@ -241,6 +242,7 @@ server_directives
 	;
 server_directive
 	: server_name_directive
+	| server_tokens_directive
 	| access_log_directive
 	| error_log_directive
 	| root_directive
@@ -268,6 +270,14 @@ server_name
 	|
 	NAME
 	{f_server_name($1, SERVER_NAME_EXACT);}
+	;
+server_tokens_directive
+	:
+	SERVERTOKENS ON EOL
+	{f_server_tokens(true);}
+	|
+	SERVERTOKENS OFF EOL
+	{f_server_tokens(false);}
 	;
 upstream_directive
 	: UPSTREAM NAME '{' upstreams '}'
@@ -418,6 +428,8 @@ fastcgi_param
 	{f_fastcgi_param($2, $3, $4);}
 	| FASTCGIPARAM NAME PATH VARIABLE EOL
 	{f_fastcgi_param($2, $3, $4);}
+	| FASTCGIPARAM NAME VARIABLE NAME EOL
+	{f_fastcgi_param($2, $3, NULL);}
 	;
 try_files_directive
 	:
@@ -520,7 +532,14 @@ void f_autoindex(int flag) {
 		printf("Auto index OFF\n");
 	}
 }
-void f_sendfile(int flag) {
+void f_server_tokens(bool flag) {
+	if (flag) {
+		printf("Server tokens ON\n");
+	} else {
+		printf("Server tokens OFF\n");
+	}
+}
+void f_sendfile(bool flag) {
 	if (flag) {
 		printf("Sendfle ON\n");
 	} else {
@@ -645,8 +664,11 @@ void f_fastcgi_pass(char *address, int port) {
 void f_fastcgi_split_path_info(char *regex) {
 	printf("fastcgi_split_path_info using regex %s\n", regex);
 }
-void f_fastcgi_param(char *name, char *value) {
-	printf("fastcgi_param set %s to %s\n", name, value);
+void f_fastcgi_param(char *name, char *value, char *value2) {
+	printf("fastcgi_param set %s to %s %s\n", name, value, value2);
+}
+void f_fastcgi_num_param(char *name, int value) {
+	printf("fastcgi_num_param set %s to %s\n", name, value);
 }
 void f_fastcgi_index(char *name) {
 	printf("fastcgi_index file name %s\n", name);

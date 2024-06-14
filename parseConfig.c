@@ -563,11 +563,9 @@ void
 f_trace(bool trace) {
 	setTrace(trace);
 	if (isTrace()) {
-		if (trace) {
-			fprintf(stderr,"Show network trace ON\n");
-		} else {
-			fprintf(stderr,"Show network trace OFF\n");
-		}
+		fprintf(stderr,"Show network trace ON\n");
+	} else {
+		fprintf(stderr,"Show network trace OFF\n");
 	}
 }
 
@@ -868,6 +866,16 @@ f_server_name(char *serverName, int type) {
 		fprintf(stderr,"server name: %s\n", serverName);
 	}
 	return;
+}
+
+void
+f_server_tokens(bool flag) {
+	setServerTokens(flag);
+	if (isServerTokensOn()) {
+		fprintf(stderr,"Show server tokens ON\n");
+	} else {
+		fprintf(stderr,"Show server tokens OFF\n");
+	}
 }
 
 // index file name
