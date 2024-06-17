@@ -60,6 +60,7 @@ parseConfig() {
 	if (yyparse() != 0) {
 		errorExit("Config file not parsed correctly.\n");
 	}
+	fclose(yyin);
 	unlink((char *)&tempFile);
 }
 

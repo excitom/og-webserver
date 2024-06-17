@@ -62,9 +62,9 @@ daemonize()
 		char path[256];
 		char *p = (char *)&path;
 		strcpy(p, getConfigDir());
-		const char debugFile[] = "/debug.out";
+		const char debugFile[] = "debug.out";
 		strcat(p, debugFile);
-		int fd = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+		int fd = open(p, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 		if (fd == -1) {
 			int e = errno;
 			fprintf(stderr, "%s: file open failed: %s\n", p, strerror(e));
