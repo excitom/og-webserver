@@ -922,6 +922,13 @@ f_access_log(char *path, int type) {
 	return;
 }
 
+// ssl parameter for DHE ciphers
+void
+f_ssl_dhparam(char *path) {
+	fprintf(stderr, "SSL DH parameter %s ignored\n", path);
+	return;
+}
+
 // ssl/tls certificate file
 void
 f_ssl_certificate(char *path) {

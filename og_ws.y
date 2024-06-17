@@ -26,6 +26,7 @@ void yyerror( const char * );
 %token <str>  INCLUDE;
 %token <str>  PID;
 %token <str>  PATH;
+%token <str>  COMPLEX;
 %token EVENTS;
 %token <iValue> WORKERCONNECTIONS;
 %token <iValue> WORKERRLIMIT;
@@ -64,6 +65,7 @@ void yyerror( const char * );
 %token <str>  TRYFILES;
 %token <str>  SSLCERTIFICATEKEY;
 %token <str>  SSLCERTIFICATE;
+%token <str>  SSLDHPARAM;
 %token SSL_;
 %token TRACE;
 %token REUSEPORT;
@@ -354,6 +356,9 @@ ssl_directive
 	|
 	SSLCERTIFICATEKEY PATH EOL
 	{f_ssl_certificate_key($2);}
+	|
+	SSLDHPARAM PATH EOL
+	{f_ssl_dhparam($2);}
 	;
 autoindex_directive
 	:
@@ -588,6 +593,9 @@ void f_ssl_certificate(char *cert) {
 }
 void f_ssl_certificate_key(char *key) {
 	printf("SSL key %s\n", key);
+}
+void f_ssl_dhparam(char *key) {
+	printf("SSL DH Param %s\n", key);
 }
 void f_listen(char *n, int p) {
 	if (p > 0) {

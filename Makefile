@@ -5,15 +5,15 @@ LEX = flex
 
 %.c: %.y
 
-ogws.tab.c: ogws.y
-	$(YACC) $(YFLAGS) ogws.y
+og_ws.tab.c: og_ws.y
+	$(YACC) $(YFLAGS) og_ws.y
 
 lex.yy.c:
-	$(LEX) ogws.l
+	$(LEX) og_ws.l
 
-LEXYACCSRC = ogws.tab.c lex.yy.c
+LEXYACCSRC = og_ws.tab.c lex.yy.c
 
-SRCS = ogws.tab.c \
+SRCS = og_ws.tab.c \
 	ogws.c \
 	serverState.c \
 	getTimestamp.c \
@@ -106,5 +106,5 @@ debuginstall:
 clean:
 	rm -f $(RELEXE) $(RELOBJS) $(DBGEXE) $(DBGOBJS)
 	rm -f lex.yy.*
-	rm -f ogws.tab.*
-	rm -f ogws.output $(LEXYACCSRC)
+	rm -f og_ws.tab.*
+	rm -f og_ws.output $(LEXYACCSRC)
