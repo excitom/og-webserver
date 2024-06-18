@@ -4,7 +4,7 @@
 // I use a full-featured sample from the NGINX documentation
 // for testing the grammar.
 #include <stdio.h>
-#include "ogws.tab.h"
+#include "og_ws.tab.h"
 extern int main(int, char **);
 extern YYSTYPE yylval;
 %}
@@ -16,6 +16,7 @@ worker_rlimit_nofile {yylval.iValue = atoi(yytext); return WORKERRLIMIT;}
 ssl_certificate_key	{yylval.str = strdup(yytext); return SSLCERTIFICATEKEY;}
 worker_connections	{yylval.iValue = atoi(yytext); return WORKERCONNECTIONS;}
 keepalive_timeout	{yylval.iValue = atoi(yytext); return KEEPALIVETIMEOUT;}
+ssl_session_cache	{yylval.str = strdup(yytext); return SSLSESSIONCACHE;}
 worker_processes	{yylval.iValue = atoi(yytext); return WORKERPROCESSES;}
 ssl_certificate	{yylval.str = strdup(yytext); return SSLCERTIFICATE;}
 default_server	{yylval.str = strdup(yytext); return DEFAULTSERVER;}

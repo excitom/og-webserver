@@ -929,6 +929,13 @@ f_ssl_dhparam(char *path) {
 	return;
 }
 
+// ssl sessionn cache parameters
+void
+f_ssl_session_cache(char *spec) {
+	fprintf(stderr, "SSL session cache parameter %s ignored\n", spec);
+	return;
+}
+
 // ssl/tls certificate file
 void
 f_ssl_certificate(char *path) {

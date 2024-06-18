@@ -64,6 +64,7 @@ void yyerror( const char * );
 %token <str>  LOGNOTFOUND;
 %token <str>  TRYFILES;
 %token <str>  SSLCERTIFICATEKEY;
+%token <str>  SSLSESSIONCACHE;
 %token <str>  SSLCERTIFICATE;
 %token <str>  SSLDHPARAM;
 %token SSL_;
@@ -172,6 +173,7 @@ http_directive
 	| server_names_hash_bucket_size_directive
 	| server_section
 	| upstream_directive
+	| ssl_directive
 	;
 index_directive
 	: INDEX index_files index_file EOL
@@ -356,6 +358,18 @@ ssl_directive
 	|
 	SSLCERTIFICATEKEY PATH EOL
 	{f_ssl_certificate_key($2);}
+	|
+	SSLSESSIONCACHE NAME EOL
+	{f_ssl_session_cache($2);}
+	|
+	SSLSESSIONCACHE OFF EOL
+	{f_ssl_session_cache("off");}
+	|
+	SSLSESSIONCACHE NAME PORT EOL
+	{f_ssl_session_cache($2);}
+	|
+	SSLSESSIONCACHE COMPLEX EOL
+	{f_ssl_session_cache($2);}
 	|
 	SSLDHPARAM PATH EOL
 	{f_ssl_dhparam($2);}
@@ -593,6 +607,9 @@ void f_ssl_certificate(char *cert) {
 }
 void f_ssl_certificate_key(char *key) {
 	printf("SSL key %s\n", key);
+}
+void f_ssl_session_cache(char *key) {
+	printf("SSL session cache %s\n", key);
 }
 void f_ssl_dhparam(char *key) {
 	printf("SSL DH Param %s\n", key);

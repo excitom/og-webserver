@@ -67,3 +67,5 @@ list*
 cacert.pem
 ogws.conf.debug
 ogws
+test/test.conf
+test/letsencrypt
