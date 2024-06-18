@@ -929,10 +929,52 @@ f_ssl_dhparam(char *path) {
 	return;
 }
 
-// ssl sessionn cache parameters
+// SSL session cache parameters
+// Syntax:	ssl_session_cache off | none | [builtin[:size]] [shared:name:size];
+// Default: ssl_session_cache none;
+// Context:	http, server
 void
 f_ssl_session_cache(char *spec) {
-	fprintf(stderr, "SSL session cache parameter %s ignored\n", spec);
+	bool valid = false;
+	if (strcmp(spec, "off") == 0) {
+		fprintf(stderr, "SSL session cache will be disabled (NOT YET IMPLEMENTED)\n");
+		valid = true;
+	}
+	if (strcmp(spec, "none") == 0) {
+		fprintf(stderr, "SSL session cache will be disabled (NOT YET IMPLEMENTED)\n");
+		valid = true;
+	}
+	if (strncmp(spec, "builtin", strlen("builtin")) == 0) {
+		fprintf(stderr, "SSL internal session cache will be used (NOT YET IMPLEMENTED)\n");
+		valid = true;
+		char *s = strchr(spec, ':');
+		if (s && (strlen(s) > 1)) {
+			s++;
+			fprintf(stderr, "SSL internal session cache size: %s\n", s);
+		}
+	}
+	if (strncmp(spec, "shared", strlen("shared")) == 0) {
+		fprintf(stderr, "SSL shared session cache will be used (NOT YET IMPLEMENTED)\n");
+		valid = true;
+		char *s = strchr(spec, ':');
+		if (!s) {
+			fprintf(stderr, "INVALID SSL shared session cache size: %s\n", spec);
+			valid = false;
+		} else {
+			s++;
+			char *sz = strchr(s, ':');
+			if (!s) {
+				fprintf(stderr, "INVALID SSL shared session cache size: %s\n", spec);
+				valid = false;
+			} else {
+				sz++;
+				fprintf(stderr, "SSL shared session cache size: %s\n", sz);
+			}
+		}
+	}
+	if (!valid) {
+		fprintf(stderr, "SSL shared session cache: UNRECOGNIED PARAMETER %s\n", spec);
+	}
 	return;
 }
 
