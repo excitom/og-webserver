@@ -65,6 +65,7 @@ void yyerror( const char * );
 %token <str>  TRYFILES;
 %token <str>  SSLCERTIFICATEKEY;
 %token <str>  SSLSESSIONCACHE;
+%token <str>  SSLSESSIONTIMEOUT;
 %token <str>  SSLCERTIFICATE;
 %token <str>  SSLDHPARAM;
 %token SSL_;
@@ -359,6 +360,12 @@ ssl_directive
 	SSLCERTIFICATEKEY PATH EOL
 	{f_ssl_certificate_key($2);}
 	|
+	SSLSESSIONTIMEOUT UNITS EOL
+	{f_ssl_session_timeout($2);}
+	|
+	SSLSESSIONTIMEOUT NUMBER EOL
+	{f_ssl_session_timeout_num($2);}
+	|
 	SSLSESSIONCACHE NAME EOL
 	{f_ssl_session_cache($2);}
 	|
@@ -607,6 +614,12 @@ void f_ssl_certificate(char *cert) {
 }
 void f_ssl_certificate_key(char *key) {
 	printf("SSL key %s\n", key);
+}
+void f_ssl_session_timeout(char *units) {
+	printf("SSL session timeout %s\n", units);
+}
+void f_ssl_session_timeout_num(int units) {
+	printf("SSL session timeout %s\n", units);
 }
 void f_ssl_session_cache(char *key) {
 	printf("SSL session cache %s\n", key);

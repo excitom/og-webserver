@@ -19,6 +19,8 @@ void f_access_log(char *, int);
 void f_ssl_certificate(char *);
 void f_ssl_certificate_key(char *);
 void f_ssl_session_cache(char *);
+void f_ssl_session_timeout(char *);
+void f_ssl_session_timeout_num(int);
 void f_ssl_dhparam(char *);
 void f_listen(char *, int);
 void f_tls();

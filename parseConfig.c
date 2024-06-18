@@ -922,10 +922,64 @@ f_access_log(char *path, int type) {
 	return;
 }
 
-// ssl parameter for DHE ciphers
+// SSL parameter for DHE ciphers
+// Syntax:	ssl_dhparam file;
+// Default:	—
+// Context:	http, server
 void
 f_ssl_dhparam(char *path) {
 	fprintf(stderr, "SSL DH parameter %s ignored\n", path);
+	return;
+}
+
+// SSL session timeout
+// Syntax:	ssl_session_timeout time;
+// Default: ssl_session_timeout 5m;
+// Context:	http, server
+void
+f_ssl_session_timeout(char *units) {
+	bool valid = true;
+	int val = 0;
+	int mult = 1;
+	const int l = strlen(units);
+	char c = units[l-1];
+	switch(c) {
+		case 's':
+			mult = 1;
+			break;
+		case 'm':
+			mult = 60;
+			break;
+		case 'h':
+			mult = 60*60;
+			break;
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			mult = 1;
+			break;
+		default:
+			valid = false;
+	}
+	if (!valid) {
+		fprintf(stderr, "SSL session timeout: UNRECOGNIED PARAMETER %s\n", units);
+	} else {
+		val = atoi(units) * mult;
+		fprintf(stderr, "SSL session timeout: %d (NOT YET IMPLEMENTED)\n", val);
+	}
+	return;
+}
+// the parameter is passed as an integer rather than with a UNITS suffix
+void
+f_ssl_session_timeout_num(int val) {
+	fprintf(stderr, "SSL session timeout: %d (NOT YET IMPLEMENTED)\n", val);
 	return;
 }
 
