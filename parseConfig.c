@@ -935,6 +935,19 @@ f_ssl_dhparam(char *path) {
 	return;
 }
 
+// SSL session tickets
+// Syntax:	ssl_session_tickets on | off;
+// Default: ssl_session_tickets on;
+// Context:	http, server
+void
+f_ssl_session_tickets(bool flag) {
+	if (flag) {
+		fprintf(stderr, "Set ssl session tickets ON (NOT YET IMPLEMENTED)\n");
+	} else {
+		fprintf(stderr, "Set ssl session tickets OFF (NOT YET IMPLEMENTED)\n");
+	}
+}
+
 // SSL session timeout
 // Syntax:	ssl_session_timeout time;
 // Default: ssl_session_timeout 5m;

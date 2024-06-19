@@ -15,6 +15,7 @@ fastcgi_split_path_info	{yylval.str = strdup(yytext); return FASTCGISPLITPATHINF
 worker_rlimit_nofile {yylval.iValue = atoi(yytext); return WORKERRLIMIT;}
 ssl_certificate_key	{yylval.str = strdup(yytext); return SSLCERTIFICATEKEY;}
 ssl_session_timeout	{yylval.str = strdup(yytext); return SSLSESSIONTIMEOUT;}
+ssl_session_tickets	{yylval.str = strdup(yytext); return SSLSESSIONTICKETS;}
 worker_connections	{yylval.iValue = atoi(yytext); return WORKERCONNECTIONS;}
 keepalive_timeout	{yylval.iValue = atoi(yytext); return KEEPALIVETIMEOUT;}
 ssl_session_cache	{yylval.str = strdup(yytext); return SSLSESSIONCACHE;}

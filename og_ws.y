@@ -66,6 +66,7 @@ void yyerror( const char * );
 %token <str>  SSLCERTIFICATEKEY;
 %token <str>  SSLSESSIONCACHE;
 %token <str>  SSLSESSIONTIMEOUT;
+%token <str>  SSLSESSIONTICKETS;
 %token <str>  SSLCERTIFICATE;
 %token <str>  SSLDHPARAM;
 %token SSL_;
@@ -378,6 +379,13 @@ ssl_directive
 	SSLSESSIONCACHE COMPLEX EOL
 	{f_ssl_session_cache($2);}
 	|
+	SSLSESSIONTICKETS ON EOL
+	{f_ssl_session_tickets(true);}
+	|
+	SSLSESSIONTICKETS OFF EOL
+	{f_ssl_session_tickets(false);}
+	;
+	|
 	SSLDHPARAM PATH EOL
 	{f_ssl_dhparam($2);}
 	;
@@ -626,6 +634,13 @@ void f_ssl_session_cache(char *key) {
 }
 void f_ssl_dhparam(char *key) {
 	printf("SSL DH Param %s\n", key);
+}
+void f_ssl_session_tickets(bool flag) {
+	if (flag) {
+		printf("SSL session tickets ON\n");
+	} else {
+		printf("SSL session tickets OFF\n");
+	}
 }
 void f_listen(char *n, int p) {
 	if (p > 0) {
