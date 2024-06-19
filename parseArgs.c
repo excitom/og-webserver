@@ -13,13 +13,11 @@
 #include <sys/types.h>
 #include "serverlist.h"
 #include "server.h"
-
-void initGlobals(const char *);
+#include "version.h"
 
 void
-parseArgs(int argc, char* argv[], const char *version)
+parseArgs(int argc, char* argv[])
 {
-	initGlobals(version);
 	int c;
 	while ((c = getopt(argc, argv, "dfhntvs:")) != EOF)
 		switch(c) {
@@ -87,28 +85,10 @@ parseArgs(int argc, char* argv[], const char *version)
 	p = (char *)malloc(strlen(configFile)+1);
 	strcpy(p, configFile);
 	setConfigDir(p);
-}
 
-/**
- * Initialize global variables
- */
-void
-initGlobals(const char *version)
-{
-	const char pidFile[] = "/etc/ogws/ogws.pid";
-	char *pf = (char *)malloc(strlen(pidFile)+1);
-	strcpy(pf, pidFile);
-	setPidFile(pf);
-
-	char *ver = (char *)malloc(strlen(version)+1);
-	strcpy(ver, version);
-	setVersion(ver);
-
-	const char u[] = "ogws";
-	char *user = (char *)malloc(strlen(u)+1);
-	strcpy(user, u);
-	setUser(user);
-	char *group = (char *)malloc(strlen(u)+1);
-	strcpy(group, u);
-	setGroup(group);
+	// set defaults
+	setVersion(_VERSION);
+	setPidFile("/etc/ogws/ogws.pid");
+	setUser("ogws");
+	setGroup("ogws");
 }

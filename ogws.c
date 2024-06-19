@@ -8,8 +8,6 @@
   * (c) Tom Lang 2/2023
   */
 
-const char version[] = "0.4.0";
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,12 +34,12 @@ int
 main(int argc, char *argv[])
 {
 	setlocale(LC_NUMERIC, "");
-	parseArgs(argc, argv, version);
+	parseArgs(argc, argv);
+	parseConfig();
 	if (isShowVersion()) {
-		printf("ogws web server version: %s\n", version);
+		printf("ogws web server version: %s\n", getVersion());
 		exit(0);
 	}
-	parseConfig();
 	// check if a signal should be sent
 	const char *sn = getSignalName();
 	if (sn != NULL) {

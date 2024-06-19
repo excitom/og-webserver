@@ -460,4 +460,3 @@ char *
 getDefaultType() {
 	return defaultType;
 }
-

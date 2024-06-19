@@ -536,6 +536,9 @@ checkDocRoots(_server *s)
  */
 
 // specify the pid file location
+// Syntax:	pid file;
+// Default:pid /etc/ogws/ogws.pid;
+// Context:	main
 void
 f_pid(char *pidFile) {
 	setPidFile(pidFile);
