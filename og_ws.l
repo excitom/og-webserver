@@ -12,6 +12,7 @@ extern YYSTYPE yylval;
 %%
 server_names_hash_bucket_size {yylval.iValue = atoi(yytext); return HASHBUCKET;}
 fastcgi_split_path_info	{yylval.str = strdup(yytext); return FASTCGISPLITPATHINFO;}
+ssl_prefer_server_ciphers {yylval.str = strdup(yytext); return SSLPREFERSERVERCIPHERS;}
 worker_rlimit_nofile {yylval.iValue = atoi(yytext); return WORKERRLIMIT;}
 ssl_certificate_key	{yylval.str = strdup(yytext); return SSLCERTIFICATEKEY;}
 ssl_session_timeout	{yylval.str = strdup(yytext); return SSLSESSIONTIMEOUT;}
@@ -66,15 +67,17 @@ ssl			{yylval.str = strdup(yytext); return SSL_;}
 off			{yylval.str = strdup(yytext); return OFF;}
 on			{yylval.str = strdup(yytext); return ON;}
 ;			{yylval.str = strdup(yytext); return EOL;}
+builtin:[0-9]+[mk]*	{yylval.str = strdup(yytext); return BUILTIN;}
+shared:[A-Za-z0-9_-]+:[0-9]+[mk]*	{yylval.str = strdup(yytext); return SHARED;}
 [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+	{yylval.str = strdup(yytext); return IP;}
 [0-9]+[kmgshd]	{yylval.str = strdup(yytext); return UNITS;}
 :[0-9]+			{yylval.iValue = atoi(yytext+1); return PORT;}
 [0-9]+			{yylval.iValue = atoi(yytext); return NUMBER;}
+\$[A-Za-z0-9._-]+\$[A-Za-z0-9._-]+	{yylval.str = strdup(yytext); return DUBVAR;}
 \*\.[A-Za-z0-9._-]+		{yylval.str = strdup(yytext); return PREFIXNAME;}
 [A-Za-z0-9._-]+\.\*		{yylval.str = strdup(yytext); return SUFFIXNAME;}
 \$[A-Za-z0-9._-]+\/*	{yylval.str = strdup(yytext); return VARIABLE;}
 [A-Za-z0-9._-]+		{yylval.str = strdup(yytext); return NAME;}
-[A-Za-z0-9._:-]+		{yylval.str = strdup(yytext); return COMPLEX;}
 [A-Za-z0-9._/-]+	{yylval.str = strdup(yytext); return PATH;}
 '[^';]*'		{yylval.str = strdup(yytext); return QUOTEDSTRING;}
 (~|~\*|^~).*/\{	{yylval.str = strdup(yytext); return REGEXP;}

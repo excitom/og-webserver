@@ -948,6 +948,19 @@ f_ssl_session_tickets(bool flag) {
 	}
 }
 
+// SSL server ciphers
+// Syntax:	ssl_prefer_server_ciphers on | off;
+// Default: ssl_prefer_server_ciphers off;
+// Context:	http, server
+void
+f_ssl_prefer_server_ciphers(bool flag) {
+	if (flag) {
+		fprintf(stderr, "Set ssl prefer server ciphers ON (NOT YET IMPLEMENTED)\n");
+	} else {
+		fprintf(stderr, "Set ssl prefer server ciphers OFF (NOT YET IMPLEMENTED)\n");
+	}
+}
+
 // SSL session timeout
 // Syntax:	ssl_session_timeout time;
 // Default: ssl_session_timeout 5m;
@@ -1003,17 +1016,9 @@ f_ssl_session_timeout_num(int val) {
 // Syntax:	ssl_session_cache off | none | [builtin[:size]] [shared:name:size];
 // Default: ssl_session_cache none;
 // Context:	http, server
-void
-f_ssl_session_cache(char *spec) {
+bool
+check_ssl_session_cache(char *spec) {
 	bool valid = false;
-	if (strcmp(spec, "off") == 0) {
-		fprintf(stderr, "SSL session cache will be disabled (NOT YET IMPLEMENTED)\n");
-		valid = true;
-	}
-	if (strcmp(spec, "none") == 0) {
-		fprintf(stderr, "SSL session cache will be disabled (NOT YET IMPLEMENTED)\n");
-		valid = true;
-	}
 	if (strncmp(spec, "builtin", strlen("builtin")) == 0) {
 		fprintf(stderr, "SSL internal session cache will be used (NOT YET IMPLEMENTED)\n");
 		valid = true;
@@ -1041,6 +1046,33 @@ f_ssl_session_cache(char *spec) {
 				fprintf(stderr, "SSL shared session cache size: %s\n", sz);
 			}
 		}
+	}
+	return valid;
+}
+void
+f_ssl_session_cache(char *spec, char *spec2) {
+	bool valid = check_ssl_session_cache(spec);
+	if (!valid) {
+		fprintf(stderr, "SSL shared session cache: UNRECOGNIED PARAMETER %s\n", spec);
+	}
+	if (spec2) {
+		valid = check_ssl_session_cache(spec2);
+		if (!valid) {
+			fprintf(stderr, "Second SSL shared session cache: UNRECOGNIED PARAMETER %s\n", spec2);
+		}
+	}
+	return;
+}
+void
+f_ssl_session_cache_off(char *spec) {
+	bool valid = false;
+	if (strcmp(spec, "off") == 0) {
+		fprintf(stderr, "SSL session cache will be disabled (NOT YET IMPLEMENTED)\n");
+		valid = true;
+	}
+	if (strcmp(spec, "none") == 0) {
+		fprintf(stderr, "SSL session cache will be disabled (NOT YET IMPLEMENTED)\n");
+		valid = true;
 	}
 	if (!valid) {
 		fprintf(stderr, "SSL shared session cache: UNRECOGNIED PARAMETER %s\n", spec);
@@ -1292,6 +1324,9 @@ f_fastcgi_index(char *file) {
 	fprintf(stderr, "fastcgi_index file %s, unimplemented, ignored\n", file);
 	free(file);
 }
+// Syntax:	fastcgi_param parameter value [if_not_empty];
+// Default:	—
+// Context:	http, server, location
 void
 f_fastcgi_param(char *name, char *value, char *value2) {
 	if (value2) {

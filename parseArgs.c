@@ -59,16 +59,17 @@ parseArgs(int argc, char* argv[])
 				break;
 		}
 	//
-	// config file path
+	// config file and config file path
 	//
 	char *configFile;
+	int len;
 	if (optind >= argc) {
 		const char defaultConfigFile[] = "/etc/ogws/ogws.conf";
-		int len = strlen(defaultConfigFile);
+		len = strlen(defaultConfigFile);
 		configFile = malloc(len+1);
 		strcpy(configFile, defaultConfigFile);
 	} else {
-		int len = strlen(argv[optind]);
+		len = strlen(argv[optind]);
 		configFile = malloc(len+1);
 		strcpy(configFile, argv[optind]);
 		optind++;
@@ -77,18 +78,31 @@ parseArgs(int argc, char* argv[])
 		perror("config file not valid:");
 		exit(1);
 	}
-	char *p = (char *)malloc(strlen(configFile)+1);
-	strcpy(p, configFile);
-	setConfigFile(p);
-	char *q = strrchr(configFile, '/');
+	setConfigFile(configFile);
+	char *p = strdup(configFile);
+	char *q = strrchr(p, '/');
 	*++q = '\0';
-	p = (char *)malloc(strlen(configFile)+1);
-	strcpy(p, configFile);
 	setConfigDir(p);
 
 	// set defaults
-	setVersion(_VERSION);
-	setPidFile("/etc/ogws/ogws.pid");
-	setUser("ogws");
-	setGroup("ogws");
+	const char defaultVersion[] = _VERSION;
+	len = strlen(defaultVersion);
+	char *version = malloc(len+1);
+	strcpy(version, defaultVersion);
+	setVersion(version);
+
+	const char defaultPidFile[] = "/etc/ogws/ogws.pid";
+	len = strlen(defaultPidFile);
+	char *pidFile = malloc(len+1);
+	strcpy(pidFile, defaultPidFile);
+	setPidFile(pidFile);
+
+	const char defaultUser[] = "ogws";
+	len = strlen(defaultUser);
+	char *user = malloc(len+1);
+	strcpy(user, defaultUser);
+	setUser(user);
+
+	char *group = strdup(user);
+	setGroup(group);
 }

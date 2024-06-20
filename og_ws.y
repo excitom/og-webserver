@@ -26,7 +26,8 @@ void yyerror( const char * );
 %token <str>  INCLUDE;
 %token <str>  PID;
 %token <str>  PATH;
-%token <str>  COMPLEX;
+%token <str>  BUILTIN;
+%token <str>  SHARED;
 %token EVENTS;
 %token <iValue> WORKERCONNECTIONS;
 %token <iValue> WORKERRLIMIT;
@@ -63,6 +64,7 @@ void yyerror( const char * );
 %token <str>  ERRORPAGE;
 %token <str>  LOGNOTFOUND;
 %token <str>  TRYFILES;
+%token <str>  SSLPREFERSERVERCIPHERS;
 %token <str>  SSLCERTIFICATEKEY;
 %token <str>  SSLSESSIONCACHE;
 %token <str>  SSLSESSIONTIMEOUT;
@@ -83,6 +85,7 @@ void yyerror( const char * );
 %token <iValue> NUMBER;
 %token <str>  NAME;
 %token <str>  VARIABLE;
+%token <str>  DUBVAR;
 %token <str>  PREFIXNAME;
 %token <str>  SUFFIXNAME;
 %token EQUAL_OPERATOR;
@@ -176,6 +179,7 @@ http_directive
 	| server_section
 	| upstream_directive
 	| ssl_directive
+	| fastcgi_param
 	;
 index_directive
 	: INDEX index_files index_file EOL
@@ -258,6 +262,7 @@ server_directive
 	| ssl_directive
 	| index_directive
 	| default_type_directive
+	| fastcgi_param
 	;
 server_name_directive
 	: SERVERNAME server_names EOL
@@ -368,22 +373,34 @@ ssl_directive
 	{f_ssl_session_timeout_num($2);}
 	|
 	SSLSESSIONCACHE NAME EOL
-	{f_ssl_session_cache($2);}
+	{f_ssl_session_cache_off($2);}
 	|
 	SSLSESSIONCACHE OFF EOL
-	{f_ssl_session_cache("off");}
+	{f_ssl_session_cache_off("off");}
 	|
 	SSLSESSIONCACHE NAME PORT EOL
-	{f_ssl_session_cache($2);}
+	{f_ssl_session_cache($2, NULL);}
 	|
-	SSLSESSIONCACHE COMPLEX EOL
-	{f_ssl_session_cache($2);}
+	SSLSESSIONCACHE BUILTIN EOL
+	{f_ssl_session_cache($2, NULL);}
+	|
+	SSLSESSIONCACHE SHARED EOL
+	{f_ssl_session_cache($2, NULL);}
+	|
+	SSLSESSIONCACHE BUILTIN SHARED EOL
+	{f_ssl_session_cache($2, $3);}
 	|
 	SSLSESSIONTICKETS ON EOL
 	{f_ssl_session_tickets(true);}
 	|
 	SSLSESSIONTICKETS OFF EOL
 	{f_ssl_session_tickets(false);}
+	|
+	SSLPREFERSERVERCIPHERS ON EOL
+	{f_ssl_prefer_server_ciphers(true);}
+	|
+	SSLPREFERSERVERCIPHERS OFF EOL
+	{f_ssl_prefer_server_ciphers(false);}
 	;
 	|
 	SSLDHPARAM PATH EOL
@@ -452,12 +469,14 @@ fastcgi_index
 	{f_fastcgi_index($2);}
 	;
 fastcgi_param
-	: FASTCGIPARAM NAME VARIABLE EOL
+	: FASTCGIPARAM NAME DUBVAR EOL
 	{f_fastcgi_param($2, $3, NULL);}
 	| FASTCGIPARAM NAME PATH EOL
 	{f_fastcgi_param($2, $3, NULL);}
 	| FASTCGIPARAM NAME NUMBER EOL
 	{f_fastcgi_num_param($2, $3);}
+	| FASTCGIPARAM NAME VARIABLE EOL
+	{f_fastcgi_param($2, $3, NULL);}
 	| FASTCGIPARAM NAME VARIABLE VARIABLE EOL
 	{f_fastcgi_param($2, $3, $4);}
 	| FASTCGIPARAM NAME PATH VARIABLE EOL
@@ -629,8 +648,15 @@ void f_ssl_session_timeout(char *units) {
 void f_ssl_session_timeout_num(int units) {
 	printf("SSL session timeout %s\n", units);
 }
-void f_ssl_session_cache(char *key) {
-	printf("SSL session cache %s\n", key);
+void f_ssl_session_cache(char *key, char *key2) {
+	if (key2) {
+		printf("SSL session cache %s - %s\n", key, key2);
+	} else {
+		printf("SSL session cache %s\n", key);
+	}
+}
+void f_ssl_session_cache_off(char *key) {
+	printf("SSL session cache OFF  %s\n", key);
 }
 void f_ssl_dhparam(char *key) {
 	printf("SSL DH Param %s\n", key);
@@ -640,6 +666,13 @@ void f_ssl_session_tickets(bool flag) {
 		printf("SSL session tickets ON\n");
 	} else {
 		printf("SSL session tickets OFF\n");
+	}
+}
+void f_ssl_prefer_server_ciphers(bool flag) {
+	if (flag) {
+		printf("SSL prefer server ciphers ON\n");
+	} else {
+		printf("SSL prefer server ciphers OFF\n");
 	}
 }
 void f_listen(char *n, int p) {
