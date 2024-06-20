@@ -425,7 +425,7 @@ defaultLocation()
  */
 void
 defaultType() {
-	char d[] = "text/html";
+	char d[] = "text/plain";
 	char *dt = (char *)calloc(1, strlen(d)+1);
 	strcpy(dt, d);
 	setDefaultType(dt);
@@ -549,6 +549,9 @@ f_pid(char *pidFile) {
 
 // Include a file. Note: This should never be called since a pre-processing
 // step expands all the include files.
+// Syntax:	include file | mask;
+// Default:	—
+// Context:	any
 void
 f_include(char *path) {
 	if (isDebug()) {
@@ -557,6 +560,9 @@ f_include(char *path) {
 }
 
 // set the default MIME type for responses
+// Syntax:	default_type mime-type;
+// Default: default_type text/plain;
+// Context:	http, server, location
 void
 f_default_type(char *type) {
 	setDefaultType(type);
@@ -574,6 +580,10 @@ f_trace(bool trace) {
 }
 
 // specify if directory listing should be allowed
+// Syntax:	autoindex on | off;
+// Default: autoindex off;
+// Context:	http, server, location
+
 void
 f_autoindex(int flag) {
 	autoIndex = flag;
@@ -584,6 +594,9 @@ f_autoindex(int flag) {
 }
 
 // specify if the `sendfile` system call should be used
+// Syntax:	sendfile on | off;
+// Default: sendfile off;
+// Context:	http, server, location, if in location
 void
 f_sendfile(bool sendFile) {
 	setSendFile(sendFile);
@@ -597,6 +610,9 @@ f_sendfile(bool sendFile) {
 }
 
 // specify if the `tcp_nopush` option
+// Syntax:	tcp_nopush on | off;
+// Default:	tcp_nopush off;
+// Context:	http, server, location
 void
 f_tcpnopush(bool tcpNoPush) {
 	setTcpNoPush(tcpNoPush);
@@ -610,6 +626,9 @@ f_tcpnopush(bool tcpNoPush) {
 }
 
 // specify the user name to be used for the server process
+// Syntax:	user user [group];
+// Default: user nobody nobody;
+// Context:	main
 void
 f_user(char *user, char *group) {
 	setUser(user);
@@ -769,6 +788,9 @@ f_http() {
 }
 
 // document root
+// Syntax:	root path;
+// Default: root html;
+// Context:	http, server, location, if in location
 void
 f_root(char *root) {
 	_location *defLoc = locations;
@@ -803,6 +825,10 @@ f_root(char *root) {
 }
 
 // expires directive
+// Syntax:	expires [modified] time;
+//          expires epoch | max | off;
+// Default: expires off;
+// Context:	http, server, location, if in location
 void
 f_expires(char *expires) {
 	if (!locations) {
@@ -839,6 +865,9 @@ f_expires(char *expires) {
 }
 
 // server name
+// Syntax:	server_name name ...;
+// Default:	 server_name "";
+// Context:	server
 int dupName(char *name) {
 	_server_name *sn = serverNames;
 	while(sn) {
@@ -872,6 +901,9 @@ f_server_name(char *serverName, int type) {
 	return;
 }
 
+// Syntax:	server_tokens on | off | build | string;
+// Default:	server_tokens on;
+// Context:	http, server, location
 void
 f_server_tokens(bool flag) {
 	setServerTokens(flag);
@@ -883,6 +915,9 @@ f_server_tokens(bool flag) {
 }
 
 // index file name
+// Syntax:	index file ...;
+// Default: index index.html;
+// Context:	http, server, location
 void
 f_indexFile(char *indexFile) {
 	_index_file *i = (_index_file *)calloc(1, sizeof(_index_file));
@@ -896,6 +931,9 @@ f_indexFile(char *indexFile) {
 }
 
 // error log file path
+// Syntax:	error_log file [level];
+// Default: error_log logs/error.log error;
+// Context:	main, http, mail, stream, server, location
 void
 f_error_log(char *path) {
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
@@ -909,6 +947,10 @@ f_error_log(char *path) {
 }
 
 // access log file path
+// Syntax:	access_log path [format [buffer=size] [gzip[=level]] [flush=time] [if=condition]];
+//           access_log off;
+// Default: access_log logs/access.log combined;
+// Context:	http, server, location, if in location, limit_except
 void
 f_access_log(char *path, int type) {
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
