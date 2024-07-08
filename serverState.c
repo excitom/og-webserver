@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "serverlist.h"
 #include "mimeTypes.h"
 #include "clients.h"
@@ -313,14 +314,23 @@ getUpstreamList() {
 // The order doesn't matter.
 // Client connections come and go so this variable has a remove method.
 // The client removed depends on the client's file descriptor.
+//
+// Since the TLS server uses threads we need a mutex here to serialize
+// changes o the data structure.
+//
 static _clientConnection *clients = NULL;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void
 setClientConnection(_clientConnection *client) {
+	pthread_mutex_lock(&mutex);
 	client->next = clients;
 	clients = client;
+	pthread_mutex_unlock(&mutex);
 }
 _clientConnection *
 getClientConnection(int fd) {
+	pthread_mutex_lock(&mutex);
 	_clientConnection *c = clients;
 	while(c) {
 		if (c->fd == fd) {
@@ -328,10 +338,12 @@ getClientConnection(int fd) {
 		}
 		c = c->next;
 	}
+	pthread_mutex_unlock(&mutex);
 	return c;
 }
 _clientConnection *
 removeClientConnection(int fd) {
+	pthread_mutex_lock(&mutex);
 	_clientConnection *c = clients;
 	_clientConnection *prev = NULL;
 	while(c) {
@@ -346,6 +358,7 @@ removeClientConnection(int fd) {
 		prev = c;
 		c = c->next;
 	}
+	pthread_mutex_unlock(&mutex);
 	return c;
 }
 
