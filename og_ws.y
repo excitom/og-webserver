@@ -70,6 +70,7 @@ void yyerror( const char * );
 %token <str>  SSLSESSIONTIMEOUT;
 %token <str>  SSLSESSIONTICKETS;
 %token <str>  SSLCERTIFICATE;
+%token <str>  SSLPROTOCOLS;
 %token <str>  SSLDHPARAM;
 %token SSL_;
 %token TRACE;
@@ -401,10 +402,20 @@ ssl_directive
 	|
 	SSLPREFERSERVERCIPHERS OFF EOL
 	{f_ssl_prefer_server_ciphers(false);}
-	;
 	|
 	SSLDHPARAM PATH EOL
 	{f_ssl_dhparam($2);}
+	|
+	SSLPROTOCOLS protocol_names EOL
+	;
+protocol_names
+	: protocol_names protocol_name
+	| protocol_name
+	;
+protocol_name
+	:
+	NAME
+	{f_ssl_protocol($1);}
 	;
 autoindex_directive
 	:
@@ -660,6 +671,9 @@ void f_ssl_session_cache_off(char *key) {
 }
 void f_ssl_dhparam(char *key) {
 	printf("SSL DH Param %s\n", key);
+}
+void f_ssl_protocol(char *name) {
+	printf("SSL Protocol Name %s\n", name);
 }
 void f_ssl_session_tickets(bool flag) {
 	if (flag) {

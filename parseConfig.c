@@ -30,21 +30,22 @@ static char *keyFile = NULL;
 static int autoIndex = 0;
 static int protocol = PROTOCOL_UNSET;
 
-// common error exit
-void
-errorExit(char *msg)
-{
-	fprintf(stderr, msg);
-	fprintf(stderr, "Bad configuration, exiting\n");
-	exit(1);
-}
-
 /**
  * This is the interface to generated parser code from yacc/lex.
  */
 extern FILE *yyin;
 int yyparse (void);
 char tempFile[] = "/tmp/ogws.conf";
+
+// common error exit
+void
+errorExit(char *msg)
+{
+	fprintf(stderr, msg);
+	fprintf(stderr, "Bad configuration, exiting\n");
+	fprintf(stderr, "Examine the file %s to determine the error.\n", tempFile);
+	exit(1);
+}
 
 void
 parseConfig() {
@@ -975,6 +976,14 @@ void
 f_ssl_dhparam(char *path) {
 	fprintf(stderr, "SSL DH parameter %s ignored\n", path);
 	return;
+}
+
+// Syntax:	ssl_protocols [SSLv2] [SSLv3] [TLSv1] [TLSv1.1] [TLSv1.2] [TLSv1.3];
+// Default:	 ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+//Context:	http, server
+void
+f_ssl_protocol(char *name) {
+	printf("SSL Protocol Name %s IGNORED\n", name);
 }
 
 // SSL session tickets

@@ -23,6 +23,7 @@ void f_ssl_session_cache_off(char *);
 void f_ssl_session_timeout(char *);
 void f_ssl_session_timeout_num(int);
 void f_ssl_dhparam(char *);
+void f_ssl_protocol(char *);
 void f_ssl_session_tickets(bool);
 void f_ssl_prefer_server_ciphers(bool);
 void f_listen(char *, int);

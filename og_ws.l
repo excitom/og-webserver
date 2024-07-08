@@ -23,6 +23,7 @@ ssl_session_cache	{yylval.str = strdup(yytext); return SSLSESSIONCACHE;}
 worker_processes	{yylval.iValue = atoi(yytext); return WORKERPROCESSES;}
 ssl_certificate	{yylval.str = strdup(yytext); return SSLCERTIFICATE;}
 default_server	{yylval.str = strdup(yytext); return DEFAULTSERVER;}
+ssl_protocols	{yylval.str = strdup(yytext); return SSLPROTOCOLS;}
 fastcgi_index	{yylval.str = strdup(yytext); return FASTCGIINDEX;}
 fastcgi_param	{yylval.str = strdup(yytext); return FASTCGIPARAM;}
 log_not_found	{yylval.str = strdup(yytext); return LOGNOTFOUND;}
