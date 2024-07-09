@@ -30,6 +30,7 @@ log_not_found	{yylval.str = strdup(yytext); return LOGNOTFOUND;}
 server_tokens	{yylval.str = strdup(yytext); return SERVERTOKENS;}
 fastcgi_pass	{yylval.str = strdup(yytext); return FASTCGIPASS;}
 default_type	{yylval.str = strdup(yytext); return DEFAULTTYPE;}
+ssl_ciphers	{yylval.str = strdup(yytext); return SSLCIPHERS;}
 server_name	{yylval.str = strdup(yytext); return SERVERNAME;}
 ssl_dhparam	{yylval.str = strdup(yytext); return SSLDHPARAM;}
 tcp_nopush	{yylval.str = strdup(yytext); return TCPNOPUSH;}
@@ -81,6 +82,7 @@ shared:[A-Za-z0-9_-]+:[0-9]+[mk]*	{yylval.str = strdup(yytext); return SHARED;}
 [A-Za-z0-9._-]+		{yylval.str = strdup(yytext); return NAME;}
 [A-Za-z0-9._/-]+	{yylval.str = strdup(yytext); return PATH;}
 '[^';]*'		{yylval.str = strdup(yytext); return QUOTEDSTRING;}
+\"[^";]*\"		{yylval.str = strdup(yytext); return DQUOTEDSTRING;}
 (~|~\*|^~).*/\{	{yylval.str = strdup(yytext); return REGEXP;}
 =			{return EQUAL_OPERATOR;}
 \*			{return WILDCARD;}

@@ -32,6 +32,7 @@ void yyerror( const char * );
 %token <iValue> WORKERCONNECTIONS;
 %token <iValue> WORKERRLIMIT;
 %token <str>  QUOTEDSTRING;
+%token <str>  DQUOTEDSTRING;
 %token <str>  HTTP2;
 %token <str>  HTTP2L;
 %token <str>  HTTPS;
@@ -71,6 +72,7 @@ void yyerror( const char * );
 %token <str>  SSLSESSIONTICKETS;
 %token <str>  SSLCERTIFICATE;
 %token <str>  SSLPROTOCOLS;
+%token <str>  SSLCIPHERS;
 %token <str>  SSLDHPARAM;
 %token SSL_;
 %token TRACE;
@@ -407,6 +409,9 @@ ssl_directive
 	{f_ssl_dhparam($2);}
 	|
 	SSLPROTOCOLS protocol_names EOL
+	|
+	SSLCIPHERS DQUOTEDSTRING EOL
+	{f_ssl_ciphers($2);}
 	;
 protocol_names
 	: protocol_names protocol_name
@@ -674,6 +679,9 @@ void f_ssl_dhparam(char *key) {
 }
 void f_ssl_protocol(char *name) {
 	printf("SSL Protocol Name %s\n", name);
+}
+void f_ssl_ciphers(char *name) {
+	printf("SSL Ciphers %s\n", name);
 }
 void f_ssl_session_tickets(bool flag) {
 	if (flag) {

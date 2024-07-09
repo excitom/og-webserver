@@ -852,7 +852,7 @@ f_expires(char *expires) {
 			} else if (c == 'h') {
 				mult *= 60*60;
 			} else {
-				printf("Unknown unit, ignored\n");
+				fprintf(stderr, "Unknown unit, ignored\n");
 			}
 			expires[len-1] = '\0';
 			locations->expires = atoi(expires) * mult;
@@ -974,16 +974,24 @@ f_access_log(char *path, int type) {
 // Context:	http, server
 void
 f_ssl_dhparam(char *path) {
-	fprintf(stderr, "SSL DH parameter %s ignored\n", path);
+	fprintf(stderr, "SSL DH parameter %s NOT YET IMPLEMENTED\n", path);
 	return;
 }
 
 // Syntax:	ssl_protocols [SSLv2] [SSLv3] [TLSv1] [TLSv1.1] [TLSv1.2] [TLSv1.3];
 // Default:	 ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
-//Context:	http, server
+// Context:	http, server
 void
 f_ssl_protocol(char *name) {
-	printf("SSL Protocol Name %s IGNORED\n", name);
+	fprintf(stderr, "SSL Protocol Name %s NOT YET IMPLEMENTED\n", name);
+}
+
+// Syntax:	ssl_ciphers ciphers;
+// Default:	ssl_ciphers HIGH:!aNULL:!MD5;
+// Context:	http, server
+void
+f_ssl_ciphers(char *name) {
+	fprintf(stderr, "SSL Ciphers %s NOT YET IMPLEMENTED\n", name);
 }
 
 // SSL session tickets
