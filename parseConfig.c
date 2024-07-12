@@ -25,6 +25,8 @@ static _port *ports = NULL;
 static _location *locations = NULL;
 static _try_target *tryTargets = NULL;
 static _upstream *servers = NULL;
+static _log_file *currentAccessLog = NULL;
+static _log_file *currentErrorLog = NULL;
 static char *certFile = NULL;
 static char *keyFile = NULL;
 static int autoIndex = 0;
@@ -750,13 +752,23 @@ f_server() {
 	server->autoIndex = autoIndex;
 	server->certFile = certFile;
 	server->keyFile = keyFile;
+	if (currentAccessLog) {
+		server->accessLog = currentAccessLog;
+		currentAccessLog = NULL;
+	} else {
+		server->accessLog = getDefaultAccessLog();
+	}
+	if (currentErrorLog) {
+		server->errorLog = currentErrorLog;
+		currentErrorLog = NULL;
+	} else {
+		server->errorLog = getDefaultErrorLog();
+	}
+		
 	// reset defaults
 	autoIndex = 0;
 	certFile = NULL;
 	keyFile = NULL;
-	// pick the top of the stack but don't pop
-	server->accessLog = getDefaultAccessLog();
-	server->errorLog = getDefaultErrorLog();
 	return;
 }
 
@@ -937,6 +949,10 @@ f_indexFile(char *indexFile) {
 // Context:	main, http, mail, stream, server, location
 void
 f_error_log(char *path) {
+	if (currentErrorLog) {
+		fprintf(stderr, "More than one error log defined for a server, not allowed\n");
+		exit(1);
+	}
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = path;
 	log->fd = -1;
@@ -944,6 +960,7 @@ f_error_log(char *path) {
 	if (isDebug()) {
 		fprintf(stderr,"Error log file path %s\n", log->path);
 	}
+	currentErrorLog = log;
 	return;
 }
 
@@ -954,6 +971,10 @@ f_error_log(char *path) {
 // Context:	http, server, location, if in location, limit_except
 void
 f_access_log(char *path, int type) {
+	if (currentAccessLog) {
+		fprintf(stderr, "More than one access log defined for a server, not allowed\n");
+		exit(1);
+	}
 	_log_file *log = (_log_file *)calloc(1, sizeof(_log_file));
 	log->path = path;
 	log->type = type;
@@ -965,6 +986,7 @@ f_access_log(char *path, int type) {
 	if (type) {
 		fprintf(stderr, "Access log MAIN ignored\n");
 	}
+	currentAccessLog = log;
 	return;
 }
 
