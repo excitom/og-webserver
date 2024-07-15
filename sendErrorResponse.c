@@ -49,6 +49,6 @@ sendErrorResponse( _request *req, int code, char *msg, char *path )
 	sendData(req->clientFd, req->ssl, buffer2, sz2);
 	sendData(req->clientFd, req->ssl, buffer1, sz1);
 
-	errorLog(req->clientFd, req->errorFd, req->verb, code, path, msg);
+	errorLog(req->clientFd, req->server, req->verb, code, path, msg);
 	return;
 }

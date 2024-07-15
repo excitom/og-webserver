@@ -39,7 +39,7 @@ int  threadCount = 0;
  * The SSL server
  */
 void
-tlsServer(int portNum, int errorFd)
+tlsServer(int portNum, _server *server)
 {
 	SSL_CTX *ctx = createContext();
 	configureContext(ctx, portNum);
@@ -58,7 +58,7 @@ tlsServer(int portNum, int errorFd)
 				fprintf(stderr, "Resuming interrupted `accept()`\n");
 			}
 		}
-		_clientConnection *client = queueClientConnection(clientFd, errorFd, addr, ctx);
+		_clientConnection *client = queueClientConnection(clientFd, server, addr, ctx);
 		pthread_t thread;
 		pthread_create(&thread, NULL, processRequest, (void *)client);
 	}
@@ -90,7 +90,7 @@ processRequest(void *param)
 		} else {
 			_request *req = (_request *)calloc(1,sizeof(_request));
 			req->clientFd = c->fd;
-			req->errorFd = c->errorFd;
+			req->server = c->server;
 			req->ssl = ssl;
 			processInput(req);
 			if (req->path) free(req->path);

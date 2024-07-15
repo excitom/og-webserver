@@ -104,7 +104,6 @@ typedef struct _request {
 	char *protocol;;
 	char *host;
 	int localFd;	// file being served
-	int errorFd;
 	int clientFd;	// socket connection to the client
 	int isDir;
 	SSL *ssl;

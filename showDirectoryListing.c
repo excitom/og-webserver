@@ -88,7 +88,7 @@ showDirectoryListing(_request *req)
 		free(f);
 	}
 	sendData(req->clientFd, req->ssl, footer, strlen(footer));
-	accessLog(req->clientFd, req->server->accessLog->fd, "GET", 200, req->path, contentLength);
+	accessLog(req->clientFd, req->server, "GET", 200, req->path, contentLength);
 	return;
 }
 

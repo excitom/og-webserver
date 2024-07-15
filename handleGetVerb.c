@@ -100,9 +100,9 @@ serveFile(_request *req)
 	// only send the response body if the verb is GET
 	if (strcmp(req->verb, "GET") == 0) {
 		sendFile(req, size);
-		accessLog(req->clientFd, req->server->accessLog->fd, "GET", httpCode, req->path, size);
+		accessLog(req->clientFd, req->server, "GET", httpCode, req->path, size);
 	} else {
-		accessLog(req->clientFd, req->server->accessLog->fd, "HEAD", httpCode, req->path, size);
+		accessLog(req->clientFd, req->server, "HEAD", httpCode, req->path, size);
 	}
 	close(req->localFd);
 	return;

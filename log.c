@@ -17,7 +17,7 @@
 #include "server.h"
 
 void
-accessLog(int clientFd, int logFd,  char *verb, int httpCode, char *path, int size)
+accessLog(int clientFd, _server *server,  char *verb, int httpCode, char *path, int size)
 {
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, LOG_RECORD_FORMAT);
@@ -29,12 +29,12 @@ accessLog(int clientFd, int logFd,  char *verb, int httpCode, char *path, int si
 	inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, peerIp, INET_ADDRSTRLEN);
 
 	char buffer[BUFF_SIZE];
-	int sz = snprintf(buffer, BUFF_SIZE, "%s %s %s %d %s %d\n", ts, peerIp, verb, httpCode, path, size);
-	write(logFd, buffer, sz);
+	int sz = snprintf(buffer, BUFF_SIZE, "%s %s %s %d %s %s %d\n", ts, peerIp, verb, httpCode, server->serverNames->serverName, path, size);
+	write(server->accessLog->fd, buffer, sz);
 }
 
 void
-errorLog(int clientFd, int logFd, char *verb, int httpCode, char *path, char *msg)
+errorLog(int clientFd, _server *server, char *verb, int httpCode, char *path, char *msg)
 {
 	char ts[TIME_BUF];
 	getTimestamp((char *)&ts, LOG_RECORD_FORMAT);
@@ -46,8 +46,8 @@ errorLog(int clientFd, int logFd, char *verb, int httpCode, char *path, char *ms
 	inet_ntop(AF_INET, &peeraddr.sin_addr.s_addr, peerIp, INET_ADDRSTRLEN);
 
 	char buffer[BUFF_SIZE];
-	int sz = snprintf(buffer, BUFF_SIZE, "%s %s %s %d %s %s\n", ts, peerIp, verb, httpCode, path, msg);
-	write(logFd, buffer, sz);
+	int sz = snprintf(buffer, BUFF_SIZE, "%s %s %s %d %s %s %s\n", ts, peerIp, verb, httpCode, server->serverNames->serverName, path, msg);
+	write(server->errorLog->fd, buffer, sz);
 }
 
 /**

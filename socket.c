@@ -176,11 +176,11 @@ sendFile(_request *req, size_t size)
  * Keep track of client connections
  */
 _clientConnection *
-queueClientConnection(int fd, int errorFd, struct sockaddr_in addr, SSL_CTX *ctx)
+queueClientConnection(int fd, _server *server, struct sockaddr_in addr, SSL_CTX *ctx)
 {
 	_clientConnection *client = (_clientConnection *)malloc(sizeof(_clientConnection));
 	client->fd = fd;
-	client->errorFd = errorFd;
+	client->server = server;
 	client->ctx = ctx;
 	char ip[INET_ADDRSTRLEN];
 	if (inet_ntop(AF_INET, &addr.sin_addr.s_addr, ip, INET_ADDRSTRLEN) != NULL) {

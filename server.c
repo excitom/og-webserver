@@ -27,7 +27,7 @@ char buff[BUFF_SIZE];
 char* buffer = (char *)&buff;
 
 void
-server(int portNum, int errorFd)
+server(int portNum, _server *server)
 {
 	int epollFd = epollCreate();
 	const int isTLS = 0;
@@ -115,7 +115,7 @@ server(int portNum, int errorFd)
 					// at a time. We queue the connection here, but don't need
 					// to keep track of the returned object since there is
 					// only one.
-					queueClientConnection(clientFd, errorFd, peerAddr, NULL);
+					queueClientConnection(clientFd, server, peerAddr, NULL);
 
 					//
 					// Add a new event to listen for
@@ -136,7 +136,7 @@ server(int portNum, int errorFd)
 					// Process the incoming data from a socket
 					//
 					_request *req = (_request *)calloc(1,sizeof(_request));
-					req->errorFd = errorFd;
+					req->server = server;
 					req->clientFd = fd;
 					req->ssl = NULL;
 					processInput(req);

@@ -159,9 +159,9 @@ startProcesses()
 		p = p->next;
 	}
 	if (p->tls) {
-		tlsServer(p->portNum, p->server->errorLog->fd);
+		tlsServer(p->portNum, p->server);
 	} else {
-		server(p->portNum, p->server->errorLog->fd);
+		server(p->portNum, p->server);
 	}
 	// The servers loop forever, handling requests. We don't expect
 	// control to return here, but if it did the process will exit.

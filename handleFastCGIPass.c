@@ -165,6 +165,6 @@ handleFastCGIPass(_request *req)
 	} while(bytes == BUFF_SIZE);
 	shutdown(upstream, SHUT_RDWR);
 	close(upstream);
-	accessLog(req->clientFd, req->server->accessLog->fd, req->verb, httpCode, req->path, size);
+	accessLog(req->clientFd, req->server, req->verb, httpCode, req->path, size);
 	return;
 }
