@@ -895,10 +895,7 @@ f_expires(char *expires) {
 	return;
 }
 
-// server name
-// Syntax:	server_name name ...;
-// Default:	 server_name "";
-// Context:	server
+// check for a duplicate server name
 int dupName(char *name) {
 	_server_name *sn = serverNames;
 	while(sn) {
@@ -1191,6 +1188,9 @@ f_ssl_session_cache_off(char *spec) {
 }
 
 // ssl/tls certificate file
+// Syntax:	ssl_certificate file;
+// Default:	—
+// Context:	http, server
 void
 f_ssl_certificate(char *path) {
 	if (certFile) {
