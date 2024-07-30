@@ -588,7 +588,8 @@ f_default_type(char *type) {
 	setDefaultType(type);
 }
 
-// specify option for network trace
+// specify option for network trace.
+// note: this is not an NGINX directive.
 void
 f_trace(bool trace) {
 	setTrace(trace);
@@ -913,6 +914,10 @@ int dupName(char *name) {
 	return 0;
 }
 
+// server name
+// Syntax:	server_name name ...;
+// Default: server_name "";
+// Context:	server
 void
 f_server_name(char *serverName, int type) {
 	if (dupName(serverName)) {
@@ -1104,6 +1109,9 @@ f_ssl_session_timeout(char *units) {
 	return;
 }
 // the parameter is passed as an integer rather than with a UNITS suffix
+// Syntax:	ssl_session_timeout time;
+// Default: ssl_session_timeout 5m;
+// Context:	http, server
 void
 f_ssl_session_timeout_num(int val) {
 	fprintf(stderr, "SSL session timeout: %d (NOT YET IMPLEMENTED)\n", val);
@@ -1147,6 +1155,10 @@ check_ssl_session_cache(char *spec) {
 	}
 	return valid;
 }
+
+// Syntax:	ssl_session_cache off | none | [builtin[:size]] [shared:name:size];
+// Default: ssl_session_cache none;
+// Context:	http, server
 void
 f_ssl_session_cache(char *spec, char *spec2) {
 	bool valid = check_ssl_session_cache(spec);
@@ -1194,6 +1206,9 @@ f_ssl_certificate(char *path) {
 }
 
 // ssl/tls certificate key file
+// Syntax:	ssl_certificate file;
+// Default:	—
+// Context:	http, server
 void
 f_ssl_certificate_key(char *path) {
 	if (keyFile) {
@@ -1232,6 +1247,14 @@ int dupPort(int portNum) {
 	return 0;
 }
 
+// Syntax:	listen address[:port] [default_server] [ssl] [http2 | quic] [proxy_protocol] [setfib=number] [fastopen=number] [backlog=number] [rcvbuf=size] [sndbuf=size] [accept_filter=filter] [deferred] [bind] [ipv6only=on|off] [reuseport] [so_keepalive=on|off|[keepidle]:[keepintvl]:[keepcnt]];
+//
+//          listen port [default_server] [ssl] [http2 | quic] [proxy_protocol] [setfib=number] [fastopen=number] [backlog=number] [rcvbuf=size] [sndbuf=size] [accept_filter=filter] [deferred] [bind] [ipv6only=on|off] [reuseport] [so_keepalive=on|off|[keepidle]:[keepintvl]:[keepcnt]];
+//
+//          listen unix:path [default_server] [ssl] [http2 | quic] [proxy_protocol] [backlog=number] [rcvbuf=size] [sndbuf=size] [accept_filter=filter] [deferred] [bind] [so_keepalive=on|off|[keepidle]:[keepintvl]:[keepcnt]];
+//
+// Default: 	listen *:80 | *:8000;
+// Context:	server
 void
 f_listen(char *name, int portNum) {
 	if (portNum > 0) {
@@ -1257,12 +1280,17 @@ f_listen(char *name, int portNum) {
 	return;
 }
 
+// this is a sub-directive of the `listen` directive
 void
 f_tls() {
 	ports->tls = 1;
 }
 
 // location directive
+// Syntax:	location [ = | ~ | ~* | ^~ ] uri { ... }
+//          location @name { ... }
+// Default:	—
+// Context:	server, location
 void
 f_location(int matchType, char *match) {
 	_location *loc = locations;
@@ -1304,6 +1332,7 @@ f_upstream(char *host, int port, int weight) {
 	}
 }
 
+// this is a sub-directive of the `try_files` directive
 void
 f_try_target(char *target) {
 	_try_target *tt = calloc(1, sizeof(_try_target));
@@ -1322,6 +1351,10 @@ f_try_target(char *target) {
 }
 
 // try_files directive
+// Syntax:	try_files file ... uri;
+//          try_files file ... =code;
+// Default:	—
+// Context:	server, location
 void
 f_try_files() {
 	_location *defLoc = locations;
@@ -1356,6 +1389,7 @@ f_try_files() {
 }
 
 // proxy_pass protocol
+// this is a subdirective of the `proxy_pass` directive
 void
 f_protocol(char *p) {
 	int len = strlen(p);
@@ -1381,6 +1415,10 @@ f_protocol(char *p) {
 // proxy_pass directive
 // note: proxy_pass and fastcgi_pass are handled basically the same.
 // a flag is passed at runtime to indicate the difference.
+//
+// Syntax:	proxy_pass URL;
+// Default:	—
+// Context:	location, if in location, limit_except
 void
 f_proxy_pass(char *host, int port) {
 	_upstreams *group = isUpstreamGroup(host);
@@ -1394,6 +1432,9 @@ f_proxy_pass(char *host, int port) {
 }
 //
 // fastcgi_pass directive
+// Syntax:	fastcgi_pass address;
+// Default:	--
+// Context:	location, if in location
 void
 f_fastcgi_pass(char *host, int port) {
 	_upstreams *group = isUpstreamGroup(host);
@@ -1407,6 +1448,9 @@ f_fastcgi_pass(char *host, int port) {
 }
 
 // keepalive timeout
+// Syntax:	keepalive_timeout timeout [header_timeout];
+// Default:	keepalive_timeout 75s;
+// Context:	http, server, location
 void
 f_keepalive_timeout(int timeout) {
 	setKeepaliveTimeout(timeout);
@@ -1417,6 +1461,9 @@ f_keepalive_timeout(int timeout) {
 
 // fastcgi index, param, and split path info - unimplemented for now,
 // until the fast CGI API is implemented.
+// Syntax:	fastcgi_index name;
+// Default:	—
+// Context:	http, server, location
 void
 f_fastcgi_index(char *file) {
 	fprintf(stderr, "fastcgi_index file %s, unimplemented, ignored\n", file);
@@ -1445,6 +1492,9 @@ f_fastcgi_num_param(char *name, int value) {
 	sprintf(str, "%d", value);
 	checkParameter(name, str);
 }
+// Syntax:	fastcgi_split_path_info regex;
+// Default:	—
+// Context:	location
 void
 f_fastcgi_split_path_info(char *regex) {
 	fprintf(stderr, "fastcgi_split_path_info using regex %s, unimplemented, ignored\n", regex);
@@ -1452,6 +1502,9 @@ f_fastcgi_split_path_info(char *regex) {
 }
 
 // max worker processes
+// Syntax:	worker_processes number | auto;
+// Default: worker_processes 1;
+// Context:	main
 void
 f_workerProcesses(int workerProcesses) {
 	setWorkerProcesses(workerProcesses);
@@ -1461,6 +1514,9 @@ f_workerProcesses(int workerProcesses) {
 }
 
 // max worker connections
+// Syntax:	worker_connections number;
+// Default: worker_connections 512;
+// Context:	events
 void
 f_workerConnections(int workerConnections) {
 	setWorkerConnections(workerConnections);
