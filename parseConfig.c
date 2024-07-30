@@ -20,7 +20,7 @@
 #include "parseConfig.h"
 
 //
-// These are temporary lists if objects that are built up
+// These are temporary lists of objects that are built up
 // during config file parsing.
 //
 static _index_file *indexFiles = NULL;
