@@ -19,6 +19,10 @@
 #include "server.h"
 #include "parseConfig.h"
 
+//
+// These are temporary lists if objects that are built up
+// during config file parsing.
+//
 static _index_file *indexFiles = NULL;
 static _server_name *serverNames = NULL;
 static _port *ports = NULL;
@@ -49,6 +53,19 @@ errorExit(char *msg)
 	exit(1);
 }
 
+/**
+ * The first step of config file processing is to recursively find all the 
+ * included files and concatenate their contents into a temp file.
+ *
+ * Next defaults are set up for each essential component such that a bare bones
+ * config file consists simply of:
+ * http {
+ *    server {
+ *    }
+ * }
+ *
+ * Finally, parse the contents of the expanded, concatenated config files.
+ */
 void
 parseConfig() {
 	yyin = expandIncludeFiles((char *)&tempFile);
